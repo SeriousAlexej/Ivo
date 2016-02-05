@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>951</width>
+    <height>632</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Ivo</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../res.qrc">
+    <normaloff>:/icons/icons/stupid_logo.png</normaloff>:/icons/icons/stupid_logo.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QFrame" name="frameLeft">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+      </widget>
+      <widget class="QFrame" name="frameRight">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>951</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionOpen_obj"/>
+    <addaction name="actionLoad_Texture"/>
+    <addaction name="actionRemove_Texture"/>
+    <addaction name="actionSave_As"/>
+    <addaction name="actionSave"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_Sheets"/>
+    <addaction name="actionSettings"/>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="movable">
+    <bool>true</bool>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>24</width>
+     <height>24</height>
+    </size>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpen_obj"/>
+   <addaction name="actionLoad_Texture"/>
+   <addaction name="separator"/>
+   <addaction name="actionModeMove"/>
+   <addaction name="actionModeRotate"/>
+   <addaction name="actionModeSnap"/>
+   <addaction name="actionModeFlaps"/>
+   <addaction name="separator"/>
+   <addaction name="actionModeAddSheet"/>
+   <addaction name="actionModeMoveSheet"/>
+   <addaction name="actionModeRemSheet"/>
+   <addaction name="separator"/>
+   <addaction name="actionSettings"/>
+  </widget>
+  <action name="actionOpen_obj">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-new.png</normaloff>:/icons/icons/48px-Document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load &amp;Model</string>
+   </property>
+   <property name="shortcut">
+    <string>M</string>
+   </property>
+  </action>
+  <action name="actionSave_As">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-save-as.png</normaloff>:/icons/icons/48px-Document-save-as.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save &amp;As</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-save.png</normaloff>:/icons/icons/48px-Document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-System-log-out.png</normaloff>:/icons/icons/48px-System-log-out.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Exit</string>
+   </property>
+  </action>
+  <action name="actionLoad_Texture">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load &amp;Texture</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Help-browser.png</normaloff>:/icons/icons/Help-browser.png</iconset>
+   </property>
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionRemove_Texture">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Image-x-Remove.png</normaloff>:/icons/icons/48px-Image-x-Remove.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Remove Texture</string>
+   </property>
+  </action>
+  <action name="actionModeRotate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-View-refresh.png</normaloff>:/icons/icons/48px-View-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeRotate</string>
+   </property>
+   <property name="toolTip">
+    <string>Rotate mode</string>
+   </property>
+   <property name="shortcut">
+    <string>2</string>
+   </property>
+  </action>
+  <action name="actionModeSnap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Go-bottom.png</normaloff>:/icons/icons/48px-Go-bottom.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeSnap</string>
+   </property>
+   <property name="toolTip">
+    <string>JoinBreak edges mode</string>
+   </property>
+   <property name="shortcut">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="actionModeMove">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Move_mode.png</normaloff>:/icons/icons/Move_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeMove</string>
+   </property>
+   <property name="toolTip">
+    <string>Move mode</string>
+   </property>
+   <property name="shortcut">
+    <string>1</string>
+   </property>
+  </action>
+  <action name="actionModeFlaps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Flaps_mode.png</normaloff>:/icons/icons/Flaps_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeFlaps</string>
+   </property>
+   <property name="toolTip">
+    <string>Switch flaps</string>
+   </property>
+   <property name="shortcut">
+    <string>4</string>
+   </property>
+  </action>
+  <action name="actionModeAddSheet">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Sheet-Add.png</normaloff>:/icons/icons/Sheet-Add.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeAddSheet</string>
+   </property>
+   <property name="toolTip">
+    <string>Add sheet of paper</string>
+   </property>
+   <property name="shortcut">
+    <string>5</string>
+   </property>
+  </action>
+  <action name="actionModeMoveSheet">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Sheet-Move.png</normaloff>:/icons/icons/Sheet-Move.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeMoveSheet</string>
+   </property>
+   <property name="toolTip">
+    <string>Move sheet of paper</string>
+   </property>
+   <property name="shortcut">
+    <string>6</string>
+   </property>
+  </action>
+  <action name="actionModeRemSheet">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Sheet-Rem.png</normaloff>:/icons/icons/Sheet-Rem.png</iconset>
+   </property>
+   <property name="text">
+    <string>ModeRemSheet</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete sheet of paper</string>
+   </property>
+   <property name="shortcut">
+    <string>7</string>
+   </property>
+  </action>
+  <action name="actionExport_Sheets">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Printer.png</normaloff>:/icons/icons/48px-Printer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export Sheets</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Preferences-system.png</normaloff>:/icons/icons/48px-Preferences-system.png</iconset>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit rendering, paper and export settings</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="../res.qrc"/>
+ </resources>
+ <connections/>
+</ui>

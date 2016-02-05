@@ -1,0 +1,22 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/48px-System-log-out.png</file>
+    <file>icons/Help-browser.png</file>
+    <file>icons/Sheet-Rem.png</file>
+    <file>icons/Sheet-Move.png</file>
+    <file>icons/Sheet-Add.png</file>
+    <file>icons/Flaps_mode.png</file>
+    <file>icons/48px-Printer.png</file>
+    <file>icons/48px-Image-x-Remove.png</file>
+    <file>icons/48px-Preferences-system.png</file>
+    <file>icons/Move_mode.png</file>
+    <file>icons/48px-View-refresh.png</file>
+    <file>icons/48px-Go-bottom.png</file>
+    <file>icons/stupid_logo.png</file>
+    <file>icons/48px-Document-new.png</file>
+    <file>icons/48px-Document-open.png</file>
+    <file>icons/48px-Document-save-as.png</file>
+    <file>icons/48px-Document-save.png</file>
+    <file>icons/48px-Image-x-generic.png</file>
+  </qresource>
+</RCC>
