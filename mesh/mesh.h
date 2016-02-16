@@ -20,10 +20,11 @@ public:
     bool LoadMesh(std::string path);
     void Clear();
 
-    inline const std::vector<glm::vec3> &GetNormals()   const { return m_flatNormals; }
-    inline const std::vector<glm::vec2> &GetUVCoords()  const { return m_uvCoords; }
-    inline const std::vector<glm::vec3> &GetVertices()  const { return m_vertices; }
-    inline const std::vector<Triangle>  &GetTriangles() const { return m_triangles; }
+    inline const std::vector<glm::vec3>& GetNormals()   const { return m_flatNormals; }
+    inline const std::vector<glm::vec2>& GetUVCoords()  const { return m_uvCoords; }
+    inline const std::vector<glm::vec3>& GetVertices()  const { return m_vertices; }
+    inline const std::vector<Triangle>&  GetTriangles() const { return m_triangles; }
+    inline const glm::vec3*              GetAABBox()    const { return m_aabbox; }
 
     const CMesh::STriGroup*   GroupUnderCursor(glm::vec2 &curPos) const;
     void                      GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
@@ -35,8 +36,8 @@ private:
     void GroupTriangles(float maxAngleDeg);
     void PackGroups();
     void UpdateGroupDepth();
+    void CalculateAABBox();
 
-private:
     std::vector<glm::vec2>      m_uvCoords;
     std::vector<glm::vec3>      m_normals;
     std::vector<glm::vec3>      m_vertices;
@@ -46,6 +47,7 @@ private:
     std::vector<STriangle2D>    m_tri2D;
     std::list<SEdge>            m_edges;
     std::list<STriGroup>        m_groups;
+    glm::vec3                   m_aabbox[8];
 
     friend class CRenWin3D;
     friend class CRenWin2D;
@@ -53,15 +55,27 @@ private:
 public:
     struct STriangle2D
     {
-        void        GroupHasTransformed(glm::mat3 &parMx);
         void        SetRelMx(glm::mat3 &invParentMx);
         glm::mat3   GetMatrix() const;
-        void        Init();
         void        SetRotation(float degCCW);
         void        SetPosition(glm::vec2 pos);
         bool        Intersect(const STriangle2D &other) const;
         bool        PointInside(const glm::vec2 &point) const;
         bool        PointIsNearEdge(const glm::vec2 &point, const int &e, float &score) const;
+
+        const glm::vec2& operator[](size_t index) const;
+
+        const int& ID() const;
+        STriGroup* GetGroup() const;
+        bool       IsFlapSharp(size_t index) const;
+        SEdge*     GetEdge(size_t index) const;
+        const glm::vec2& GetNormal(size_t index) const;
+
+    private:
+        void        Init();
+        void        ComputeNormals();
+        void        GroupHasTransformed(glm::mat3 &parMx);
+        static bool EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2);
 
         int         m_id;
         glm::vec2   m_vtx[3]; //initial position (imagine this is constant)
@@ -78,37 +92,52 @@ public:
         glm::mat3   m_relativeMx;
         SEdge*      m_edges[3];
 
-    private:
-        void        ComputeNormals();
-        static bool EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2);
+        friend class CMesh;
     };
 
     struct SEdge
     {
-        void        NextFlapPosition();
-        inline bool HasTwoTriangles() const { return m_left && m_right; }
+        enum EFlapPosition
+        {
+            FP_LEFT=0,
+            FP_RIGHT,
+            FP_BOTH,
+            FP_NONE
+        };
+        enum EFoldType
+        {
+            FT_MOUNTAIN,
+            FT_VALLEY,
+            FT_FLAT
+        };
 
+        void          NextFlapPosition();
+        inline bool   HasTwoTriangles() const { return m_left && m_right; }
+        STriangle2D*  GetOtherTriangle(const STriangle2D* aFirstTri) const;
+        int           GetOtherTriIndex(const STriangle2D* aFirstTri) const;
+        STriangle2D*  GetAnyTriangle() const;
+        int           GetAnyTriIndex() const;
+        STriangle2D*  GetTriangle(size_t index) const;
+        int           GetTriIndex(size_t index) const;
+        bool          IsSnapped() const;
+        EFlapPosition GetFlapPosition() const;
+        EFoldType     GetFoldType() const;
+
+    private:
         STriangle2D*    m_left;
         STriangle2D*    m_right;
         int             m_leftIndex;
         int             m_rightIndex;
         float           m_angle;
         bool            m_snapped;
-        enum
-        { FP_LEFT=0,
-          FP_RIGHT,
-          FP_BOTH,
-          FP_NONE }     m_flapPosition;
-        enum
-        { FT_MOUNTAIN,
-          FT_VALLEY,
-          FT_FLAT }     m_foldType;
+        EFlapPosition   m_flapPosition;
+        EFoldType       m_foldType;
 
+        friend class CMesh;
     };
 
     struct STriGroup
     {
-    public:
         STriGroup(CMesh *m);
 
         void                JoinEdge(STriangle2D* tr, int e);
@@ -120,19 +149,25 @@ public:
         void                SetPosition(float x, float y);
         inline glm::vec2    GetPosition() const { return m_position; }
         inline float        GetRotation() const { return m_rotation; }
+        const float&        GetDepth() const;
+        const float&        GetAABBHalfSide() const;
 
+        const std::list<STriangle2D*>& GetTriangles() const;
+
+        static float        GetDepthStep();
+
+    private:
         std::list<STriangle2D*> m_tris;
         glm::vec2               m_toTopLeft;
         glm::vec2               m_toRightDown;
         float                   m_aabbHSide;
         float                   m_depth;
-        static float            ms_depthStep;
+        glm::vec2               m_position;
+        float                   m_rotation;
+        glm::mat3               m_matrix;
+        CMesh*                  m_msh;
 
-    private:
-        glm::vec2   m_position;
-        float       m_rotation;
-        glm::mat3   m_matrix;
-        CMesh*      m_msh;
+        static float            ms_depthStep;
 
         friend class CMesh;
     };

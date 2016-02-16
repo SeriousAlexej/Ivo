@@ -281,3 +281,23 @@ void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
         tr->m_edges[e]->m_flapPosition = SEdge::FP_LEFT;
     }
 }
+
+const float& CMesh::STriGroup::GetDepth() const
+{
+    return m_depth;
+}
+
+float CMesh::STriGroup::GetDepthStep()
+{
+    return ms_depthStep;
+}
+
+const float& CMesh::STriGroup::GetAABBHalfSide() const
+{
+    return m_aabbHSide;
+}
+
+const std::list<CMesh::STriangle2D*>& CMesh::STriGroup::GetTriangles() const
+{
+    return m_tris;
+}

@@ -22,6 +22,65 @@ void CMesh::SEdge::NextFlapPosition()
     }
 }
 
+CMesh::STriangle2D* CMesh::SEdge::GetOtherTriangle(const STriangle2D *aFirstTri) const
+{
+    return (m_left == aFirstTri ?
+            m_right :
+            m_left);
+}
+
+int CMesh::SEdge::GetOtherTriIndex(const STriangle2D *aFirstTri) const
+{
+    return (m_left == aFirstTri ?
+            m_rightIndex :
+            m_leftIndex);
+}
+
+CMesh::STriangle2D* CMesh::SEdge::GetAnyTriangle() const
+{
+    return (m_left == nullptr ?
+            m_right :
+            m_left);
+}
+
+int CMesh::SEdge::GetAnyTriIndex() const
+{
+    return (m_left == nullptr ?
+            m_rightIndex :
+            m_leftIndex);
+}
+
+CMesh::STriangle2D* CMesh::SEdge::GetTriangle(size_t index) const
+{
+    assert(index < 2);
+    return (index == 0 ?
+            m_left :
+            m_right);
+}
+
+int CMesh::SEdge::GetTriIndex(size_t index) const
+{
+    assert(index < 2);
+    return (index == 0 ?
+            m_leftIndex :
+            m_rightIndex);
+}
+
+bool CMesh::SEdge::IsSnapped() const
+{
+    return m_snapped;
+}
+
+CMesh::SEdge::EFlapPosition CMesh::SEdge::GetFlapPosition() const
+{
+    return m_flapPosition;
+}
+
+CMesh::SEdge::EFoldType CMesh::SEdge::GetFoldType() const
+{
+    return m_foldType;
+}
+
 void CMesh::STriangle2D::GroupHasTransformed(glm::mat3 &parMx)
 {
     glm::mat3 newMx = parMx * m_relativeMx;
@@ -135,6 +194,40 @@ bool CMesh::STriangle2D::PointIsNearEdge(const glm::vec2 &point, const int &i, f
         return true;
     }
     return false;
+}
+
+const glm::vec2& CMesh::STriangle2D::operator[](size_t index) const
+{
+    assert(index < 3);
+    return m_vtxRT[index];
+}
+
+CMesh::STriGroup* CMesh::STriangle2D::GetGroup() const
+{
+    return m_myGroup;
+}
+
+const int& CMesh::STriangle2D::ID() const
+{
+    return m_id;
+}
+
+bool CMesh::STriangle2D::IsFlapSharp(size_t index) const
+{
+    assert(index < 3);
+    return m_flapSharp[index];
+}
+
+CMesh::SEdge* CMesh::STriangle2D::GetEdge(size_t index) const
+{
+    assert(index < 3);
+    return m_edges[index];
+}
+
+const glm::vec2& CMesh::STriangle2D::GetNormal(size_t index) const
+{
+    assert(index < 3);
+    return m_normR[index];
 }
 
 void CMesh::STriangle2D::ComputeNormals()

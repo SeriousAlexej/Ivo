@@ -20,6 +20,7 @@ CRenWin3D::CRenWin3D(QWidget *parent) :
 void CRenWin3D::SetModel(CMesh *mdl)
 {
     m_model = mdl;
+    ZoomFit();
 }
 
 CRenWin3D::~CRenWin3D()
@@ -137,7 +138,7 @@ void CRenWin3D::resizeGL(int w, int h)
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glm::mat4 projMx = glm::perspective(70.0f, (static_cast<float>(w))/(static_cast<float>(h)), 1.0f, 3000.0f);
+    glm::mat4 projMx = glm::perspective(m_fovy, (static_cast<float>(w))/(static_cast<float>(h)), 1.0f, 3000.0f);
     glMultMatrixf(&projMx[0][0]);
 }
 
@@ -273,4 +274,35 @@ void CRenWin3D::ClearTexture()
     m_texture->destroy();
     m_texture.reset(nullptr);
     update();
+}
+
+void CRenWin3D::ZoomFit()
+{
+    if(!m_model)
+        return;
+    float lowestX  = 999999999999.0f,
+          highestX =-999999999999.0f,
+          lowestY  = 999999999999.0f,
+          highestY =-999999999999.0f,
+          fZ       =-999999999999.0f;
+
+    const glm::vec3* m_aabbox = m_model->GetAABBox();
+
+    glm::mat4 viewMxNOPOS = m_viewMatrix;
+    viewMxNOPOS[3] = glm::vec4(0, 0, 0, 1);
+
+    for(int i=0; i<8; ++i)
+    {
+        glm::vec3 v = glm::vec3(viewMxNOPOS * glm::vec4(m_aabbox[i].x, m_aabbox[i].y, m_aabbox[i].z, 1.0f));
+        lowestX = glm::min(lowestX, v.x);
+        highestX = glm::max(highestX, v.x);
+        lowestY = glm::min(lowestY, v.y);
+        highestY = glm::max(highestY, v.y);
+        fZ = glm::max(fZ, v.z);
+    }
+    float oneOverTanHFOVY = 1.0f / glm::tan(glm::radians(m_fovy * 0.5f));
+    m_cameraPosition = glm::vec3((lowestX + highestX) * 0.5f, (lowestY + highestY) * 0.5f, 2.0f*(fZ + (highestX - lowestY) * 0.5f * oneOverTanHFOVY));
+    m_cameraPosition = glm::vec3(glm::inverse(viewMxNOPOS) * glm::vec4(m_cameraPosition.x, m_cameraPosition.y, m_cameraPosition.z, 1.0f));
+
+    UpdateViewMatrix();
 }

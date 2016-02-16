@@ -20,6 +20,7 @@ public:
     CRenWin3D(QWidget *parent = nullptr);
     ~CRenWin3D();
     void SetModel(CMesh *mdl);
+    void ZoomFit();
 
 public slots:
     void LoadTexture(QString path);
@@ -49,6 +50,7 @@ private:
     glm::vec3       m_right = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3       m_front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3       m_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    float           m_fovy = 70.0f;
 };
 
 #endif // RENWIN3D_H

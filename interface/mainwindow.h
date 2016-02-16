@@ -35,10 +35,11 @@ private slots:
     void on_actionModeRemSheet_toggled(bool arg1);
     void on_actionExport_Sheets_triggered();
     void on_actionSettings_triggered();
+    void on_actionZoom_fit_triggered();
 
 private:
-    Ui::MainWindow *ui;
-    CMesh*          m_model;
+    Ui::MainWindow*  ui;
+    CMesh*           m_model;
     CRenWin3D*       m_rw3;
     CRenWin2D*       m_rw2;
 };

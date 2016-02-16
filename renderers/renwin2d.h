@@ -34,6 +34,7 @@ public:
     void SetMode(EditMode m);
     void ExportSheets();
     void UpdateSheetsSize();
+    void ZoomFit();
 
 public slots:
     void LoadTexture(QString path);

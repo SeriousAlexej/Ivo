@@ -38,7 +38,7 @@ void CRenWin2D::SetModel(CMesh *mdl)
     m_currSheet = nullptr;
     m_model = mdl;
     m_sheets.clear();
-    update();
+    ZoomFit();
 }
 
 CRenWin2D::~CRenWin2D()
@@ -234,30 +234,32 @@ void CRenWin2D::RenderGroups() const
     for(auto it=m_model->m_groups.begin(); it!=m_model->m_groups.end(); ++it)
     {
         CMesh::STriGroup &grp = *it;
-        for(auto it2=grp.m_tris.begin(); it2!=grp.m_tris.end(); ++it2)
+        const std::list<CMesh::STriangle2D*>& grpTris = grp.GetTriangles();
+
+        for(auto it2=grpTris.begin(), itEnd = grpTris.end(); it2!=itEnd; ++it2)
         {
-            const CMesh::STriangle2D &tr2D = **it2;
-            const Triangle &t = m_model->m_triangles[tr2D.m_id];
+            const CMesh::STriangle2D& tr2D = **it2;
+            const Triangle &t = m_model->m_triangles[tr2D.ID()];
             const glm::uvec3 &vertexInfo1 = t.vertex[0];
             const glm::uvec3 &vertexInfo2 = t.vertex[1];
             const glm::uvec3 &vertexInfo3 = t.vertex[2];
 
-            glm::vec2 vertex1 = tr2D.m_vtxRT[0];
-            glm::vec2 vertex2 = tr2D.m_vtxRT[1];
-            glm::vec2 vertex3 = tr2D.m_vtxRT[2];
+            const glm::vec2 vertex1 = tr2D[0];
+            const glm::vec2 vertex2 = tr2D[1];
+            const glm::vec2 vertex3 = tr2D[2];
 
             const glm::vec2 &uv1 = uvs[vertexInfo1[1]-1];
             const glm::vec2 &uv2 = uvs[vertexInfo2[1]-1];
             const glm::vec2 &uv3 = uvs[vertexInfo3[1]-1];
 
             glTexCoord2f(uv1[0], uv1[1]);
-            glVertex3f(vertex1[0], vertex1[1], -grp.m_depth);
+            glVertex3f(vertex1[0], vertex1[1], -grp.GetDepth());
 
             glTexCoord2f(uv2[0], uv2[1]);
-            glVertex3f(vertex2[0], vertex2[1], -grp.m_depth);
+            glVertex3f(vertex2[0], vertex2[1], -grp.GetDepth());
 
             glTexCoord2f(uv3[0], uv3[1]);
-            glVertex3f(vertex3[0], vertex3[1], -grp.m_depth);
+            glVertex3f(vertex3[0], vertex3[1], -grp.GetDepth());
 
         }
     }
@@ -271,20 +273,20 @@ void CRenWin2D::RenderFlaps() const
 {
     for(CMesh::SEdge &e : m_model->m_edges)
     {
-        if(!e.m_snapped && e.m_flapPosition != CMesh::SEdge::FP_NONE)
+        if(!e.IsSnapped() && e.GetFlapPosition() != CMesh::SEdge::FP_NONE)
         {
-            if(e.m_flapPosition == CMesh::SEdge::FP_LEFT)
+            if(e.GetFlapPosition() == CMesh::SEdge::FP_LEFT)
             {
-                RenderFlap(e.m_left, e.m_leftIndex);
+                RenderFlap(e.GetTriangle(0), e.GetTriIndex(0));
             } else
-            if(e.m_flapPosition == CMesh::SEdge::FP_RIGHT)
+            if(e.GetFlapPosition() == CMesh::SEdge::FP_RIGHT)
             {
-                RenderFlap(e.m_right, e.m_rightIndex);
+                RenderFlap(e.GetTriangle(1), e.GetTriIndex(1));
             } else
-            if(e.m_flapPosition == CMesh::SEdge::FP_BOTH)
+            if(e.GetFlapPosition() == CMesh::SEdge::FP_BOTH)
             {
-                RenderFlap(e.m_left, e.m_leftIndex);
-                RenderFlap(e.m_right, e.m_rightIndex);
+                RenderFlap(e.GetTriangle(0), e.GetTriIndex(0));
+                RenderFlap(e.GetTriangle(1), e.GetTriIndex(1));
             }
         }
     }
@@ -292,7 +294,7 @@ void CRenWin2D::RenderFlaps() const
 
 void CRenWin2D::RenderEdges()
 {
-    m_model->m_edges.sort([](const CMesh::SEdge &i, const CMesh::SEdge &j){ return i.m_foldType == CMesh::SEdge::FT_VALLEY && j.m_foldType != CMesh::SEdge::FT_VALLEY; });
+    m_model->m_edges.sort([](const CMesh::SEdge &i, const CMesh::SEdge &j){ return i.GetFoldType() == CMesh::SEdge::FT_VALLEY && j.GetFoldType() != CMesh::SEdge::FT_VALLEY; });
 
     const unsigned stippleFactor = CSettings::GetInstance().GetStippleLoop();
 
@@ -302,11 +304,11 @@ void CRenWin2D::RenderEdges()
     glBegin(GL_LINES);
     for(CMesh::SEdge &e : m_model->m_edges)
     {
-     if(e.m_foldType == CMesh::SEdge::FT_FLAT && e.m_snapped)
+     if(e.GetFoldType() == CMesh::SEdge::FT_FLAT && e.IsSnapped())
          continue;
 
-     if((e.m_foldType == CMesh::SEdge::FT_MOUNTAIN && prevFoldValley) ||
-        (e.m_foldType == CMesh::SEdge::FT_VALLEY && !prevFoldValley))
+     if((e.GetFoldType() == CMesh::SEdge::FT_MOUNTAIN && prevFoldValley) ||
+        (e.GetFoldType() == CMesh::SEdge::FT_VALLEY && !prevFoldValley))
      {
          glEnd();
          glLineStipple(stippleFactor, (prevFoldValley ? 0x11FF : 0x01FF));
@@ -316,22 +318,22 @@ void CRenWin2D::RenderEdges()
 
      if(e.HasTwoTriangles())
      {
-         if(e.m_snapped)
+         if(e.IsSnapped())
          {
-             RenderEdge(e.m_left, e.m_leftIndex);
+             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0));
          } else {
              glEnd();
              glDisable(GL_LINE_STIPPLE);
              glBegin(GL_LINES);
-             RenderEdge(e.m_left, e.m_leftIndex);
-             RenderEdge(e.m_right, e.m_rightIndex);
+             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0));
+             RenderEdge(e.GetTriangle(1), e.GetTriIndex(1));
              glEnd();
              glEnable(GL_LINE_STIPPLE);
              glBegin(GL_LINES);
          }
      } else {
-         void *t = static_cast<void*>(e.m_left ? e.m_left : e.m_right);
-         int edge = (e.m_left ? e.m_leftIndex : e.m_rightIndex);
+         void *t = static_cast<void*>(e.GetAnyTriangle());
+         int edge = e.GetAnyTriIndex();
          glEnd();
          glDisable(GL_LINE_STIPPLE);
          glBegin(GL_LINES);
@@ -347,18 +349,18 @@ void CRenWin2D::RenderEdges()
 
 void CRenWin2D::RenderFlap(void *tr, int edge) const
 {
-    CMesh::STriangle2D *t = static_cast<CMesh::STriangle2D*>(tr);
-    CMesh::STriGroup *g = t->m_myGroup;
-    float dep = g->m_depth + CMesh::STriGroup::ms_depthStep*0.3f;
-    const glm::vec2 &v1 = t->m_vtxRT[edge];
-    const glm::vec2 &v2 = t->m_vtxRT[(edge+1)%3];
-    const glm::vec2 &vN = t->m_normR[edge];
+    const CMesh::STriangle2D& t = *static_cast<CMesh::STriangle2D*>(tr);
+    CMesh::STriGroup *g = t.GetGroup();
+    float dep = g->GetDepth() + CMesh::STriGroup::GetDepthStep()*0.3f;
+    const glm::vec2 &v1 = t[edge];
+    const glm::vec2 &v2 = t[(edge+1)%3];
+    const glm::vec2 &vN = t.GetNormal(edge);
 
     glBegin(GL_LINE_STRIP);
 
     for(int i=0; i<2; ++i)
     {
-        if(t->m_flapSharp[edge])
+        if(t.IsFlapSharp(edge))
         {
             glVertex3f(v1.x, v1.y, -dep);
             glVertex3f(0.5f*v1.x+0.5f*v2.x+vN.x, 0.5f*v1.y+0.5f*v2.y+vN.y, -dep);
@@ -374,7 +376,7 @@ void CRenWin2D::RenderFlap(void *tr, int edge) const
 
         if(i==0)
         {
-            dep += CMesh::STriGroup::ms_depthStep*0.15f;
+            dep += CMesh::STriGroup::GetDepthStep()*0.15f;
             glColor3f(1.0f, 1.0f, 1.0f);
             glBegin(GL_POLYGON);
         }
@@ -384,11 +386,11 @@ void CRenWin2D::RenderFlap(void *tr, int edge) const
 
 void CRenWin2D::RenderEdge(void *tr, int edge) const
 {
-    CMesh::STriangle2D *t = static_cast<CMesh::STriangle2D*>(tr);
-    CMesh::STriGroup *g = t->m_myGroup;
-    float dep = g->m_depth - CMesh::STriGroup::ms_depthStep*0.3f;
-    glVertex3f(t->m_vtxRT[edge].x, t->m_vtxRT[edge].y, -dep);
-    glVertex3f(t->m_vtxRT[(edge+1)%3].x, t->m_vtxRT[(edge+1)%3].y, -dep);
+    const CMesh::STriangle2D& t = *static_cast<CMesh::STriangle2D*>(tr);
+    CMesh::STriGroup *g = t.GetGroup();
+    float dep = g->GetDepth() - CMesh::STriGroup::GetDepthStep()*0.3f;
+    glVertex3f(t[edge].x, t[edge].y, -dep);
+    glVertex3f(t[(edge+1)%3].x, t[(edge+1)%3].y, -dep);
 }
 
 void CRenWin2D::RenderSelection()
@@ -403,24 +405,21 @@ void CRenWin2D::RenderSelection()
         m_model->GetStuffUnderCursor(mwp, trUnderCursor, edgeUnderCursor);
 
         //highlight edge under cursor (if it has neighbour)
-        if(trUnderCursor && trUnderCursor->m_edges[edgeUnderCursor]->HasTwoTriangles())
+        if(trUnderCursor && trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles())
         {
-            if(m_editMode == EM_CHANGE_FLAPS && trUnderCursor->m_edges[edgeUnderCursor]->m_snapped)
+            if(m_editMode == EM_CHANGE_FLAPS &&
+               trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                 return;
 
-            CMesh::STriangle2D* tr2 = (trUnderCursor->m_edges[edgeUnderCursor]->m_left == trUnderCursor ?
-                                     trUnderCursor->m_edges[edgeUnderCursor]->m_right :
-                                     trUnderCursor->m_edges[edgeUnderCursor]->m_left);
-            int e2 = (trUnderCursor->m_edges[edgeUnderCursor]->m_leftIndex == edgeUnderCursor ?
-                      trUnderCursor->m_edges[edgeUnderCursor]->m_rightIndex :
-                      trUnderCursor->m_edges[edgeUnderCursor]->m_leftIndex);
-            glm::vec2 &v1 = trUnderCursor->m_vtxRT[0];
-            glm::vec2 &v2 = trUnderCursor->m_vtxRT[1];
-            glm::vec2 &v3 = trUnderCursor->m_vtxRT[2];
+            CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
+            int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
+            const glm::vec2 &v1 = (*trUnderCursor)[0];
+            const glm::vec2 &v2 = (*trUnderCursor)[1];
+            const glm::vec2 &v3 = (*trUnderCursor)[2];
 
-            glm::vec2 &v12 = tr2->m_vtxRT[0];
-            glm::vec2 &v22 = tr2->m_vtxRT[1];
-            glm::vec2 &v32 = tr2->m_vtxRT[2];
+            const glm::vec2 &v12 = (*tr2)[0];
+            const glm::vec2 &v22 = (*tr2)[1];
+            const glm::vec2 &v32 = (*tr2)[2];
 
             glm::vec2 e1Middle;
 
@@ -428,7 +427,7 @@ void CRenWin2D::RenderSelection()
             {
                 glColor3f(0.0f, 0.0f, 1.0f);
             } else {
-                if(trUnderCursor->m_edges[edgeUnderCursor]->m_snapped)
+                if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                     glColor3f(1.0f, 0.0f, 0.0f);
                 else
                     glColor3f(0.0f, 1.0f, 0.0f);
@@ -491,7 +490,7 @@ void CRenWin2D::RenderSelection()
             glColor3f(1.0f, 0.0f, 0.0f);
             glBegin(GL_LINE_LOOP);
             glm::vec2 pos = tGroup->GetPosition();
-            float aabbxh = tGroup->m_aabbHSide;
+            float aabbxh = tGroup->GetAABBHalfSide();
             glVertex2f(pos[0]-aabbxh, pos[1]+aabbxh);
             glVertex2f(pos[0]+aabbxh, pos[1]+aabbxh);
             glVertex2f(pos[0]+aabbxh, pos[1]-aabbxh);
@@ -675,8 +674,8 @@ void CRenWin2D::ModeLMB()
             m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
             if(trUnderCursor)
             {
-                CMesh::STriGroup *grp = trUnderCursor->m_myGroup;
-                if(trUnderCursor->m_edges[edgeUnderCursor]->m_snapped)
+                CMesh::STriGroup* grp = trUnderCursor->GetGroup();
+                if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                 {
                     grp->BreakEdge(trUnderCursor, edgeUnderCursor);
                 } else {
@@ -693,7 +692,7 @@ void CRenWin2D::ModeLMB()
             m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
             if(trUnderCursor)
             {
-                trUnderCursor->m_edges[edgeUnderCursor]->NextFlapPosition();
+                trUnderCursor->GetEdge(edgeUnderCursor)->NextFlapPosition();
             }
             m_cameraMode = CAM_STILL;
             break;
@@ -805,4 +804,28 @@ void CRenWin2D::UpdateSheetsSize()
     {
         sheet.m_widthHeight = papSize;
     }
+}
+
+void CRenWin2D::ZoomFit()
+{
+    if(!m_model)
+        return;
+    float highestY = -99999999999999.0f,
+          lowestY  = 99999999999999.0f,
+          highestX = -99999999999999.0f,
+          lowestX  = 99999999999999.0f;
+    for(const CMesh::STriGroup& grp : m_model->m_groups)
+    {
+        const glm::vec2 grpPos = grp.GetPosition();
+        highestY = glm::max(highestY, grpPos.y + grp.GetAABBHalfSide());
+        lowestY = glm::min(lowestY, grpPos.y - grp.GetAABBHalfSide());
+        highestX = glm::max(highestX, grpPos.x + grp.GetAABBHalfSide());
+        lowestX = glm::min(lowestX, grpPos.x - grp.GetAABBHalfSide());
+    }
+
+    m_cameraPosition = glm::vec3(-((highestX + lowestX) * 0.5f), -((highestY + lowestY) * 0.5f), glm::max((highestY - lowestY) * 0.5f, (highestX - lowestX) * 0.5f));
+
+    makeCurrent();
+    RecalcProjection();
+    update();
 }

@@ -137,3 +137,9 @@ void CMainWindow::on_actionSettings_triggered()
     m_rw2->UpdateSheetsSize();
     update();
 }
+
+void CMainWindow::on_actionZoom_fit_triggered()
+{
+    m_rw2->ZoomFit();
+    m_rw3->ZoomFit();
+}

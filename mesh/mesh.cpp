@@ -48,6 +48,7 @@ bool CMesh::LoadMesh(std::string path)
     FillAdjTri_Gen2DTri();
     GroupTriangles(70.0f);
     PackGroups();
+    CalculateAABBox();
     return true;
 }
 
@@ -486,4 +487,31 @@ void CMesh::UpdateGroupDepth()
         f += 1.0f;
     }
     STriGroup::ms_depthStep = 500.0f/total;
+}
+
+void CMesh::CalculateAABBox()
+{
+    float lowestX  = 999999999999.0f,
+          highestX =-999999999999.0f,
+          lowestY  = 999999999999.0f,
+          highestY =-999999999999.0f,
+          lowestZ  = 999999999999.0f,
+          highestZ =-999999999999.0f;
+    for(const glm::vec3& v : m_vertices)
+    {
+        lowestX = glm::min(lowestX, v.x);
+        highestX = glm::max(highestX, v.x);
+        lowestY = glm::min(lowestY, v.y);
+        highestY = glm::max(highestY, v.y);
+        lowestZ = glm::min(lowestZ, v.z);
+        highestZ = glm::max(highestZ, v.z);
+    }
+    m_aabbox[0] = glm::vec3(lowestX, lowestY, lowestZ);
+    m_aabbox[1] = glm::vec3(lowestX, lowestY, highestZ);
+    m_aabbox[2] = glm::vec3(highestX, lowestY, highestZ);
+    m_aabbox[3] = glm::vec3(highestX, lowestY, lowestZ);
+    m_aabbox[4] = glm::vec3(lowestX, highestY, lowestZ);
+    m_aabbox[5] = glm::vec3(lowestX, highestY, highestZ);
+    m_aabbox[6] = glm::vec3(highestX, highestY, highestZ);
+    m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
 }
