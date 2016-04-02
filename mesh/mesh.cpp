@@ -5,9 +5,11 @@
 #include <glm/trigonometric.hpp>
 #include "mesh/mesh.h"
 #include "modelLoader/objParser.h"
+#include "mesh/command.h"
 
 CMesh::CMesh()
 {
+    m_undoStack.setUndoLimit(100);
 }
 
 CMesh::~CMesh()
@@ -16,6 +18,7 @@ CMesh::~CMesh()
 
 void CMesh::Clear()
 {
+    m_undoStack.clear();
     m_vertices.clear();
     m_normals.clear();
     m_uvCoords.clear();
@@ -514,4 +517,182 @@ void CMesh::CalculateAABBox()
     m_aabbox[5] = glm::vec3(lowestX, highestY, highestZ);
     m_aabbox[6] = glm::vec3(highestX, highestY, highestZ);
     m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
+}
+
+void CMesh::Undo()
+{
+    if(m_undoStack.canUndo())
+    {
+        m_undoStack.undo();
+        UpdateGroupDepth();
+    }
+}
+
+void CMesh::Redo()
+{
+    if(m_undoStack.canRedo())
+    {
+        m_undoStack.redo();
+        UpdateGroupDepth();
+    }
+}
+
+void CMesh::NotifyGroupMovement(STriGroup &grp, const glm::vec2& oldPos)
+{
+    CAtomicCommand cmdMov(CT_MOVE);
+    cmdMov.SetTriangle(grp.m_tris.front());
+    cmdMov.SetTranslation(grp.GetPosition() - oldPos);
+
+    grp.SetPosition(oldPos.x, oldPos.y);
+
+    CIvoCommand* cmd = new CIvoCommand();
+    cmd->AddAction(cmdMov);
+    m_undoStack.push(cmd);
+}
+
+void CMesh::NotifyGroupRotation(STriGroup &grp, float oldRot)
+{
+    CAtomicCommand cmdRot(CT_ROTATE);
+    cmdRot.SetTriangle(grp.m_tris.front());
+    cmdRot.SetRotation(grp.GetRotation() - oldRot);
+
+    grp.SetRotation(oldRot);
+
+    CIvoCommand* cmd = new CIvoCommand();
+    cmd->AddAction(cmdRot);
+    m_undoStack.push(cmd);
+}
+
+void CMesh::Serialize(FILE *f) const
+{
+    int sizeVar = 0;
+
+    sizeVar = m_uvCoords.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    std::fwrite(m_uvCoords.data(), sizeof(glm::vec2), sizeVar, f);
+
+    sizeVar = m_normals.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    std::fwrite(m_normals.data(), sizeof(glm::vec3), sizeVar, f);
+
+    sizeVar = m_vertices.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    std::fwrite(m_vertices.data(), sizeof(glm::vec3), sizeVar, f);
+
+    sizeVar = m_triangles.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    std::fwrite(m_triangles.data(), sizeof(Triangle), sizeVar, f);
+
+    sizeVar = m_tri2D.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    std::fwrite(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
+
+    sizeVar = m_edges.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    for(const SEdge& e : m_edges)
+    {
+        std::fwrite(&e, sizeof(SEdge), 1, f);
+    }
+
+    sizeVar = m_groups.size();
+    std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
+    for(const STriGroup &g : m_groups)
+    {
+        g.Serialize(f);
+    }
+
+    {
+        sizeVar = m_edges.size();
+        std::vector<int> edgptrInd(sizeVar * 2);
+        auto eIter = m_edges.begin();
+        for(int i=0; i<sizeVar*2; i+=2, eIter++)
+        {
+            const SEdge& e = *eIter;
+            if(e.m_left)
+            {
+                edgptrInd[i] = (int)(e.m_left - &m_tri2D[0]);
+            } else {
+                edgptrInd[i] = -1;
+            }
+            if(e.m_right)
+            {
+                edgptrInd[i + 1] = (int)(e.m_right - &m_tri2D[0]);
+            } else {
+                edgptrInd[i + 1] = -1;
+            }
+        }
+        std::fwrite(edgptrInd.data(), sizeof(int), sizeVar * 2, f);
+    }
+}
+
+void CMesh::Deserialize(FILE *f)
+{
+    Clear();
+
+    int sizeVar;
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_uvCoords.resize(sizeVar);
+    std::fread(m_uvCoords.data(), sizeof(glm::vec2), sizeVar, f);
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_normals.resize(sizeVar);
+    std::fread(m_normals.data(), sizeof(glm::vec3), sizeVar, f);
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_vertices.resize(sizeVar);
+    std::fread(m_vertices.data(), sizeof(glm::vec3), sizeVar, f);
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_triangles.resize(sizeVar);
+    std::fread(m_triangles.data(), sizeof(Triangle), sizeVar, f);
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_tri2D.resize(sizeVar);
+    std::fread(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; ++i)
+    {
+        m_edges.push_back(SEdge());
+        SEdge& e = m_edges.back();
+        std::fread(&e, sizeof(SEdge), 1, f);
+    }
+
+    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    m_groups.resize(sizeVar, STriGroup(this));
+    for(STriGroup &g : m_groups)
+    {
+        g.Deserialize(f);
+    }
+
+    {
+        sizeVar = m_edges.size();
+        std::vector<int> edgptrInd(sizeVar * 2);
+        std::fread(edgptrInd.data(), sizeof(int), sizeVar * 2, f);
+        auto eIter = m_edges.begin();
+        for(int i=0; i<sizeVar; ++i, eIter++)
+        {
+            SEdge &e = *eIter;
+
+            if(edgptrInd[i*2] >= 0)
+            {
+                e.m_left = &m_tri2D[edgptrInd[i*2]];
+                e.m_left->m_edges[e.m_leftIndex] = &e;
+            } else {
+                e.m_left = nullptr;
+            }
+            if(edgptrInd[i*2 + 1] >= 0)
+            {
+                e.m_right = &m_tri2D[edgptrInd[i*2 + 1]];
+                e.m_right->m_edges[e.m_rightIndex] = &e;
+            } else {
+                e.m_right = nullptr;
+            }
+        }
+    }
+
+    CalculateFlatNormals();
+    CalculateAABBox();
+    UpdateGroupDepth();
 }

@@ -25,6 +25,11 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
 
 void CRenWin2D::SetMode(EditMode m)
 {
+    if(m_cameraMode == CAM_MODE)
+    {
+        ModeEnd();
+    }
+
     m_editMode = m;
     m_cameraMode = CAM_STILL;
     m_currGroup = nullptr;
@@ -93,7 +98,7 @@ void CRenWin2D::paintGL()
     }
 }
 
-void CRenWin2D::ExportSheets()
+void CRenWin2D::ExportSheets(const QString baseName)
 {
     if(m_sheets.empty()) return;
 
@@ -172,7 +177,7 @@ void CRenWin2D::ExportSheets()
 
         QImage img(fbo.toImage());
 
-        if(!img.save(dstFolder + "render_" + QString::number(sheetNum++) + "." + imgFormat.toLower(), imgFormat.toStdString().c_str(), imgQuality))
+        if(!img.save(dstFolder + baseName + "_" + QString::number(sheetNum++) + "." + imgFormat.toLower(), imgFormat.toStdString().c_str(), imgQuality))
         {
             QMessageBox::information(this, "Export Error", "Failed to save image file!");
         }
@@ -193,6 +198,35 @@ void CRenWin2D::ExportSheets()
     doneCurrent();
 
     QMessageBox::information(this, "Export", "Images have been exported successfully!");
+}
+
+void CRenWin2D::SerializeSheets(FILE *f) const
+{
+    int sheetsNum = m_sheets.size();
+    std::fwrite(&sheetsNum, sizeof(sheetsNum), 1, f);
+    for(const SPaperSheet& sh : m_sheets)
+    {
+        std::fwrite(&(sh.m_position), sizeof(glm::vec2), 1, f);
+        std::fwrite(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
+    }
+}
+
+void CRenWin2D::DeserializeSheets(FILE *f)
+{
+    m_sheets.clear();
+    m_currSheet = nullptr;
+
+    int sheetsNum;
+    std::fread(&sheetsNum, sizeof(sheetsNum), 1, f);
+
+    for(int i=0; i<sheetsNum; ++i)
+    {
+        m_sheets.push_back(SPaperSheet());
+        SPaperSheet &sh = m_sheets.back();
+
+        std::fread(&(sh.m_position), sizeof(glm::vec2), 1, f);
+        std::fread(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
+    }
 }
 
 void CRenWin2D::RenderPaperSheets()
@@ -517,9 +551,17 @@ bool CRenWin2D::event(QEvent *e)
     {
         case QEvent::MouseButtonPress :
         {
-            if(m_cameraMode != CAM_STILL)
-                break;
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
+
+            if(m_cameraMode != CAM_STILL)
+            {
+                if(m_cameraMode == CAM_ZOOM && me->button() == Qt::LeftButton)
+                {
+                    m_cameraMode = CAM_TRANSLATE;
+                }
+                break;
+            }
+
             m_mousePressPoint = me->pos();
             oldPos = m_cameraPosition;
             switch(me->button())
@@ -547,6 +589,10 @@ bool CRenWin2D::event(QEvent *e)
         }
         case QEvent::MouseButtonRelease :
         {
+            if(m_cameraMode == CAM_MODE)
+            {
+                ModeEnd();
+            }
             m_cameraMode = CAM_STILL;
             break;
         }
@@ -653,6 +699,7 @@ void CRenWin2D::ModeLMB()
             }
             m_fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
             m_currGroupLastRot = tGroup->GetRotation();
+            m_currGroupOldRot = tGroup->GetRotation();
             break;
         }
         case EM_MOVE :
@@ -665,6 +712,7 @@ void CRenWin2D::ModeLMB()
                 return;
             }
             m_fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
+            m_currGroupOldPos = tGroup->GetPosition();
             break;
         }
         case EM_SNAP :
@@ -772,13 +820,17 @@ void CRenWin2D::ModeUpdate(QPointF &mpos)
             CMesh::STriGroup *tGroup = static_cast<CMesh::STriGroup*>(m_currGroup);
 
             glm::vec2 mNewPos = PointToWorldCoords(mpos) - tGroup->GetPosition();
-            float newAngle = glm::dot(mNewPos, m_fromCurrGroupCenter)/(glm::length(mNewPos)*glm::length(m_fromCurrGroupCenter));
+            float newAngle = glm::dot(mNewPos, m_fromCurrGroupCenter) / (glm::length(mNewPos) * glm::length(m_fromCurrGroupCenter));
             newAngle = glm::degrees(glm::acos(newAngle));
 
             glm::vec2 &vA = m_fromCurrGroupCenter,
                       &vB = mNewPos;
+
             if(vA[0]*vB[1] - vB[0]*vA[1] < 0.0f)
+            {
                 newAngle *= -1.0f;
+            }
+
             tGroup->SetRotation(newAngle + m_currGroupLastRot);
             break;
         }
@@ -789,6 +841,28 @@ void CRenWin2D::ModeUpdate(QPointF &mpos)
             mNewPos.y = static_cast<float>(static_cast<int>(mNewPos.y));
             if(m_currSheet)
                 m_currSheet->m_position = mNewPos;
+            break;
+        }
+    default : break;
+    }
+}
+
+void CRenWin2D::ModeEnd()
+{
+    if(!m_model || !m_currGroup)
+        return;
+    CMesh::STriGroup *tGroup = static_cast<CMesh::STriGroup*>(m_currGroup);
+
+    switch(m_editMode)
+    {
+        case EM_MOVE :
+        {
+            m_model->NotifyGroupMovement(*tGroup, m_currGroupOldPos);
+            break;
+        }
+        case EM_ROTATE :
+        {
+            m_model->NotifyGroupRotation(*tGroup, m_currGroupOldRot);
             break;
         }
     default : break;

@@ -8,6 +8,8 @@
 #include <QMutex>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
+#include <QString>
+#include <cstdio>
 
 class CMesh;
 
@@ -32,8 +34,10 @@ public:
 
     void SetModel(CMesh *mdl);
     void SetMode(EditMode m);
-    void ExportSheets();
+    void ExportSheets(const QString baseName);
     void UpdateSheetsSize();
+    void SerializeSheets(FILE* f) const;
+    void DeserializeSheets(FILE* f);
     void ZoomFit();
 
 public slots:
@@ -58,6 +62,7 @@ private:
     void RecalcProjection();
     void ModeLMB();
     void ModeUpdate(QPointF &mpos);
+    void ModeEnd();
     glm::vec2 PointToWorldCoords(QPointF &pt) const;
 
 private:
@@ -80,6 +85,8 @@ private:
       CAM_MODE }                    m_cameraMode = CAM_STILL;
     EditMode                        m_editMode = EM_MOVE;
     void*                           m_currGroup = nullptr;
+    glm::vec2                       m_currGroupOldPos = glm::vec2(0.0f, 0.0f);
+    float                           m_currGroupOldRot = 0.0f;
     glm::vec2                       m_fromCurrGroupCenter = glm::vec2(0.0f,0.0f);
     float                           m_currGroupLastRot = 0.0f;
     QPointF                         m_mousePosition;

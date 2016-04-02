@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     renderers/renwin2d.cpp \
     renderers/renwin3d.cpp \
     interface/settingswindow.cpp \
-    settings/settings.cpp
+    settings/settings.cpp \
+    mesh/command.cpp
 
 HEADERS  += \
     modelLoader/objParser.base.h \
@@ -41,7 +42,8 @@ HEADERS  += \
     renderers/renwin2d.h \
     renderers/renwin3d.h \
     interface/settingswindow.h \
-    settings/settings.h
+    settings/settings.h \
+    mesh/command.h
 
 FORMS    += interface/mainwindow.ui \
     interface/settingswindow.ui

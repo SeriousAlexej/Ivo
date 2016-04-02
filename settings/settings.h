@@ -6,7 +6,7 @@ class CSettings
 public:
     enum ImageFormat
     {
-        IF_BMP,
+        IF_BMP = 0,
         IF_JPG,
         IF_PNG
     };

@@ -1,6 +1,10 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/48px-Edit-redo.png</file>
+    <file>icons/48px-Edit-undo.png</file>
     <file>icons/48px-System-log-out.png</file>
+    <file>icons/Scale.png</file>
+    <file>icons/48px-View-zoom-fit.png</file>
     <file>icons/Help-browser.png</file>
     <file>icons/Sheet-Rem.png</file>
     <file>icons/Sheet-Move.png</file>

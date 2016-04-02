@@ -151,9 +151,17 @@ bool CRenWin3D::event(QEvent *e)
     {
         case QEvent::MouseButtonPress :
         {
-            if(m_cameraMode != CAM_STILL)
-                break;
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
+
+            if(m_cameraMode != CAM_STILL)
+            {
+                if(m_cameraMode == CAM_ZOOM && me->button() == Qt::LeftButton)
+                {
+                    m_cameraMode = CAM_TRANSLATE;
+                }
+                break;
+            }
+
             m_mousePressPoint = me->pos();
             switch(me->button())
             {

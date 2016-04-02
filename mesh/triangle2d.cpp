@@ -29,6 +29,11 @@ CMesh::STriangle2D* CMesh::SEdge::GetOtherTriangle(const STriangle2D *aFirstTri)
             m_left);
 }
 
+void CMesh::SEdge::SetSnapped(bool snapped)
+{
+    m_snapped = snapped;
+}
+
 int CMesh::SEdge::GetOtherTriIndex(const STriangle2D *aFirstTri) const
 {
     return (m_left == aFirstTri ?
@@ -81,21 +86,22 @@ CMesh::SEdge::EFoldType CMesh::SEdge::GetFoldType() const
     return m_foldType;
 }
 
-void CMesh::STriangle2D::GroupHasTransformed(glm::mat3 &parMx)
+void CMesh::STriangle2D::GroupHasTransformed(const glm::mat3 &parMx)
 {
-    glm::mat3 newMx = parMx * m_relativeMx;
+    using namespace glm;
+    mat3 newMx = parMx * m_relativeMx;
 
     //glm::acos(1.000000012f) == nan!       x_x 5+ hours of debugging
-    newMx[0][0] = glm::clamp(newMx[0][0], -1.0f, 1.0f);
-    newMx[1][0] = glm::clamp(newMx[1][0], -1.0f, 1.0f);
-    newMx[1][1] = glm::clamp(newMx[1][1], -1.0f, 1.0f);
-    newMx[0][1] = glm::clamp(newMx[0][1], -1.0f, 1.0f);
+    newMx[0][0] = clamp(newMx[0][0], -1.0f, 1.0f);
+    newMx[1][0] = clamp(newMx[1][0], -1.0f, 1.0f);
+    newMx[1][1] = clamp(newMx[1][1], -1.0f, 1.0f);
+    newMx[0][1] = clamp(newMx[0][1], -1.0f, 1.0f);
 
-    m_position = glm::vec2(newMx[2][0], newMx[2][1]);
-    glm::mat2 rotMx;
-    rotMx[0] = glm::vec2(newMx[0][0], newMx[0][1]);
-    rotMx[1] = glm::vec2(newMx[1][0], newMx[1][1]);
-    m_rotation = glm::degrees(glm::acos(newMx[0][0])*glm::sign(glm::asin(newMx[0][1])));
+    m_position = vec2(newMx[2][0], newMx[2][1]);
+    mat2 rotMx;
+    rotMx[0] = vec2(newMx[0][0], newMx[0][1]);
+    rotMx[1] = vec2(newMx[1][0], newMx[1][1]);
+    m_rotation = degrees(acos(newMx[0][0])*sign(asin(newMx[0][1])));
     for(int i=0; i<3; ++i)
     {
         m_normR[i] = rotMx*m_norm[i];
