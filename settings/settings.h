@@ -48,6 +48,9 @@ public:
     const unsigned      GetStippleLoop() const;
     void                SetStippleLoop(unsigned aStippleLoop);
 
+    const unsigned char GetDetachAngle() const;
+    void                SetDetachAngle(unsigned char aDetachAngle);
+
 private:
     CSettings();
 
@@ -59,6 +62,7 @@ private:
     unsigned char m_imgQuality;
     float         m_lineWidth;
     unsigned      m_stippleLoop;
+    unsigned char m_detachAngle;
 };
 
 #endif // SETTINGS_H

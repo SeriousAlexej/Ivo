@@ -6,6 +6,7 @@
 #include "mesh/mesh.h"
 #include "modelLoader/objParser.h"
 #include "mesh/command.h"
+#include "settings/settings.h"
 
 CMesh::CMesh()
 {
@@ -49,7 +50,7 @@ bool CMesh::LoadMesh(std::string path)
     in.close();
     CalculateFlatNormals(); //this function goes first!
     FillAdjTri_Gen2DTri();
-    GroupTriangles(70.0f);
+    GroupTriangles((float)CSettings::GetInstance().GetDetachAngle());
     PackGroups();
     CalculateAABBox();
     return true;

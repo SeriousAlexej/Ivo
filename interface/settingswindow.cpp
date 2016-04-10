@@ -32,6 +32,8 @@ void CSettingsWindow::LoadSettings()
     ui->doubleSpinBoxLineW->setValue(s.GetLineWidth());
     ui->spinBoxStippleLoop->setValue(s.GetStippleLoop());
 
+    ui->spinBoxDetachAngle->setValue(s.GetDetachAngle());
+
     switch(s.GetImageFormat())
     {
         case CSettings::IF_BMP :
@@ -61,6 +63,7 @@ void CSettingsWindow::SaveSettings() const
     unsigned papH = (unsigned)ui->spinBoxH->value();
     float resScale = (float)ui->doubleSpinBoxMultiplier->value();
     unsigned char imgQuality = (unsigned char)ui->horizontalSliderQuality->value();
+    unsigned char detachAngle = (unsigned char)ui->spinBoxDetachAngle->value();
     CSettings::ImageFormat imgFormat = CSettings::IF_PNG;
 
     if(ui->checkBoxEdges->isChecked())
@@ -103,6 +106,7 @@ void CSettingsWindow::SaveSettings() const
     s.SetImageFormat(imgFormat);
     s.SetStippleLoop(stippleLoop);
     s.SetLineWidth(lineWidth);
+    s.SetDetachAngle(detachAngle);
 }
 
 void CSettingsWindow::on_pushButtonOK_clicked()

@@ -9,7 +9,8 @@ CSettings::CSettings() :
     m_imgFormat(IF_PNG),
     m_imgQuality(100),
     m_lineWidth(1.3f),
-    m_stippleLoop(2)
+    m_stippleLoop(2),
+    m_detachAngle(70)
 {
 }
 
@@ -103,4 +104,15 @@ void CSettings::SetStippleLoop(unsigned aStippleLoop)
 {
     assert(aStippleLoop > 0);
     m_stippleLoop = aStippleLoop;
+}
+
+const unsigned char CSettings::GetDetachAngle() const
+{
+    return m_detachAngle;
+}
+
+void CSettings::SetDetachAngle(unsigned char aDetachAngle)
+{
+    assert(aDetachAngle > 0 && aDetachAngle < 360);
+    m_detachAngle = aDetachAngle;
 }
