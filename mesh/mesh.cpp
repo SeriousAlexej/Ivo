@@ -68,12 +68,13 @@ void CMesh::FillAdjTri_Gen2DTri()
         const glm::vec3 *v1[3] = { &m_vertices[t.vertex[0][0]-1], &m_vertices[t.vertex[1][0]-1], &m_vertices[t.vertex[2][0]-1] };
         const glm::vec3 *n1[3] = { &m_normals[t.vertex[0][2]-1],  &m_normals[t.vertex[1][2]-1],  &m_normals[t.vertex[2][2]-1]  };
 
-        float v1v2cos = glm::dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(glm::distance(*v1[2], *v1[0])*glm::distance(*v1[1], *v1[0]));
+        float v1v2cos = glm::clamp(glm::dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(glm::distance(*v1[2], *v1[0])*glm::distance(*v1[1], *v1[0])), -1.0f, 1.0f);
         m_tri2D[i].m_vtx[0] = glm::vec2(0.0f, 0.0f);
         m_tri2D[i].m_vtx[1] = glm::vec2(glm::sin(glm::acos(v1v2cos)), v1v2cos)*glm::distance(*v1[1], *v1[0]);
         m_tri2D[i].m_vtx[2] = glm::vec2(0.0f, glm::distance(*v1[0], *v1[2]));
+
         m_tri2D[i].m_angleOY[0] = glm::degrees(glm::acos(v1v2cos));
-        m_tri2D[i].m_angleOY[1] = -glm::degrees(glm::acos(glm::dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(glm::distance(*v1[2],*v1[0])*glm::distance(*v1[2],*v1[1]))));
+        m_tri2D[i].m_angleOY[1] = -glm::degrees(glm::acos(glm::clamp(glm::dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(glm::distance(*v1[2],*v1[0])*glm::distance(*v1[2],*v1[1])), -1.0f, 1.0f) ));
         m_tri2D[i].m_angleOY[2] = 180.0f;
         m_tri2D[i].Init();
         m_tri2D[i].m_id = i;
@@ -136,7 +137,7 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     m_tri2D[i].m_edges[e1] = &edg;
     m_tri2D[j].m_edges[e2] = &edg;
 
-    float angle = glm::degrees(glm::acos(glm::dot(m_flatNormals[i], m_flatNormals[j]))); //length of normal = 1, skip division...
+    float angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
     edg.m_angle = angle;
 
     glm::vec3 &v0 = m_vertices[m_triangles[i].vertex[0][0]-1];
@@ -204,8 +205,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
         if(m_tri2D[i].m_myGroup != nullptr)
             continue;
         //we found first ungrouped triangle! Create new group
-        STriGroup t(this);
-        m_groups.push_back(t);
+        m_groups.push_back(STriGroup(this));
         //list of candidates contains triangles that might get in group
         std::list<std::pair<int, int>> candidates;
         std::list<int> candNoRefls;
@@ -227,9 +227,8 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                 {
                     if(!tr.m_edges[n]->HasTwoTriangles())
                         continue;
-                    tr2 = (tr.m_edges[n]->m_left == &tr ?
-                           tr.m_edges[n]->m_right :
-                           tr.m_edges[n]->m_left);
+
+                    tr2 = tr.m_edges[n]->GetOtherTriangle(&tr);
 
                     if(tr2) //if edge n has neighbour...
                     if(tr.m_edges[n]->m_angle <= maxAngleDeg) //angle between neighbour is in valid range
@@ -237,8 +236,53 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                     //and not already in the list of candidates, then
                     if(std::find(candNoRefls.begin(), candNoRefls.end(), tr2->m_id) == candNoRefls.end())
                     {
-                        candidates.push_back(std::make_pair(tr2->m_id, c.first)); //it's a candidate!
-                        candNoRefls.push_back(tr2->m_id);
+                        //skip first iterator, because it is to be removed from list
+                        auto itNextLargerAngle = candidates.begin();
+                        auto itNLA_NoRefls = candNoRefls.begin();
+                        itNextLargerAngle++;
+                        itNLA_NoRefls++;
+
+                        const float myAngle = tr.m_edges[n]->m_angle;
+
+                        bool inserted = false;
+                        do
+                        {
+                            float otherAngle = -999.0f;
+
+                            if(itNextLargerAngle != candidates.end())
+                            {
+                                const STriangle2D &othTr = m_tri2D[(*itNextLargerAngle).first];
+
+                                if((*itNextLargerAngle).second > -1)
+                                {
+                                    for(int oInd=0; oInd<3; ++oInd)
+                                    {
+                                        const STriangle2D *othTr2 = othTr.m_edges[oInd]->GetOtherTriangle(&othTr);
+                                        if(othTr2 && othTr2->ID() == (*itNextLargerAngle).second)
+                                        {
+                                            otherAngle = othTr.m_edges[oInd]->m_angle;
+                                            break;
+                                        }
+                                    }
+
+                                    inserted = myAngle <= otherAngle;
+                                } else {
+                                    inserted = true;
+                                }
+                            } else {
+                                inserted = true;
+                            }
+
+                            if(inserted)
+                            {
+                                candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, c.first));
+                                candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
+                            } else {
+                                itNextLargerAngle++;
+                                itNLA_NoRefls++;
+                            }
+
+                        } while(!inserted);
                     }
                 }
             }
@@ -261,15 +305,12 @@ void CMesh::PackGroups()
         float area;
         float width;
         float height;
-        STriGroup *grp;
+        CMesh::STriGroup *grp;
 
         void ApplyPosition(glm::vec2 offset)
         {
             const float groupGap1x = 0.75f;//grp->aabbHSide*0.1f;
             position += offset;
-            //because origin is in left down corner and TriGroup is initially at (0,0),
-            //sub the vector to the leftmost and downmost position (coords of this vec are <= 0)
-            position -= glm::vec2(topLeft[0], rightDown[1]);
             grp->SetPosition(position[0]+groupGap1x, position[1]+groupGap1x);
         }
         void FillArea()
@@ -344,6 +385,7 @@ void CMesh::PackGroups()
         for(auto &lvl : levels)
         {
             SGroupBBox *rmost_fl = lvl.floor.back();
+
             float x = rmost_fl->position[0] + rmost_fl->width;
 
             if(binWidth - x >= bbx.width)
