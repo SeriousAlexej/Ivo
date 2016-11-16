@@ -41,7 +41,7 @@ public:
     void ZoomFit();
 
 public slots:
-    void LoadTexture(QString path);
+    void LoadTexture(QImage* img);
     void ClearTexture();
 
 protected:

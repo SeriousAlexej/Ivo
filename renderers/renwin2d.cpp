@@ -652,10 +652,11 @@ void CRenWin2D::RecalcProjection()
     glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
 }
 
-void CRenWin2D::LoadTexture(QString path)
+void CRenWin2D::LoadTexture(QImage* img)
 {
+    assert(img);
     makeCurrent();
-    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(QImage(path)));
+    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(*img));
     m_texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
     m_texture->setWrapMode(QOpenGLTexture::Repeat);

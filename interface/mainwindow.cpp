@@ -15,7 +15,8 @@
 CMainWindow::CMainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_model(nullptr)
+    m_model(nullptr),
+    m_textureImg(nullptr)
 {
     ui->setupUi(this);
     m_rw3 = new CRenWin3D(ui->frameLeft);
@@ -44,10 +45,11 @@ CMainWindow::CMainWindow(QWidget *parent) :
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionOpen_obj, SIGNAL(triggered()), this, SLOT(LoadModel()));
     connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(LoadTexture()));
-    connect(this, SIGNAL(ApplyTexture(QString)), m_rw3, SLOT(LoadTexture(QString)));
-    connect(this, SIGNAL(ApplyTexture(QString)), m_rw2, SLOT(LoadTexture(QString)));
+    connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw3, SLOT(LoadTexture(QImage*)));
+    connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw2, SLOT(LoadTexture(QImage*)));
     connect(ui->actionRemove_Texture, SIGNAL(triggered()), m_rw2, SLOT(ClearTexture()));
     connect(ui->actionRemove_Texture, SIGNAL(triggered()), m_rw3, SLOT(ClearTexture()));
+    connect(ui->actionRemove_Texture, SIGNAL(triggered()), this, SLOT(ClearTexture()));
 }
 
 CMainWindow::~CMainWindow()
@@ -65,7 +67,9 @@ void CMainWindow::LoadTexture()
                                                        "Image file (*.png *.bmp *.jpg)");
     if(texturePath.isEmpty())
         return;
-    emit ApplyTexture(texturePath);
+    m_textureImg.reset(new QImage(texturePath));
+    (*m_textureImg) = m_textureImg->convertToFormat(QImage::Format_RGB32);
+    emit ApplyTexture(m_textureImg.get());
 }
 
 void CMainWindow::LoadModel()
@@ -91,6 +95,11 @@ void CMainWindow::LoadModel()
         m_model = newModel;
         UpdateView();
     }
+}
+
+void CMainWindow::ClearTexture()
+{
+    m_textureImg.reset(nullptr);
 }
 
 void CMainWindow::on_actionModeRotate_triggered()
@@ -217,6 +226,23 @@ void CMainWindow::Serialize(const char* filename)
 
     m_rw2->SerializeSheets(f);
 
+    char hasTexture = (m_textureImg != nullptr ? '1' : '0');
+    std::fwrite(&hasTexture, sizeof(hasTexture), 1, f);
+
+    if(m_textureImg)
+    {
+        int texWidth = m_textureImg->width();
+        int texHeight = m_textureImg->height();
+        int texByteCount = m_textureImg->byteCount();
+        int texFormat = (int)m_textureImg->format();
+
+        std::fwrite(&texWidth, sizeof(texWidth), 1, f);
+        std::fwrite(&texHeight, sizeof(texHeight), 1, f);
+        std::fwrite(&texByteCount, sizeof(texByteCount), 1, f);
+        std::fwrite(&texFormat, sizeof(texFormat), 1, f);
+        std::fwrite(m_textureImg->constBits(), sizeof(unsigned char), texByteCount, f);
+    }
+
     m_openedModel = filename;
 
     std::fclose(f);
@@ -287,6 +313,35 @@ void CMainWindow::Deserialize(const char* filename)
 
             m_rw2->DeserializeSheets(f);
             m_rw2->UpdateSheetsSize();
+
+            char hasTexture = '0';
+            std::fread(&hasTexture, sizeof(hasTexture), 1, f);
+
+            if(hasTexture == '1')
+            {
+                int texWidth = 0;
+                int texHeight = 0;
+                int texByteCount = 0;
+                int texFormat = 0;
+
+                std::fread(&texWidth, sizeof(texWidth), 1, f);
+                std::fread(&texHeight, sizeof(texHeight), 1, f);
+                std::fread(&texByteCount, sizeof(texByteCount), 1, f);
+                std::fread(&texFormat, sizeof(texFormat), 1, f);
+
+                unsigned char* imgBits = new unsigned char[texByteCount];
+                std::fread(imgBits, sizeof(unsigned char), texByteCount, f);
+
+                m_textureImg.reset(new QImage(imgBits, texWidth, texHeight, (QImage::Format)texFormat));
+                (*m_textureImg) = m_textureImg->copy();
+
+                delete[] imgBits;
+            }
+
+            if(m_textureImg)
+            {
+                emit ApplyTexture(m_textureImg.get());
+            }
 
             UpdateView();
 

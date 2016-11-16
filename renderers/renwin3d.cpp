@@ -263,10 +263,11 @@ void CRenWin3D::UpdateViewMatrix()
     update();
 }
 
-void CRenWin3D::LoadTexture(QString path)
+void CRenWin3D::LoadTexture(QImage* img)
 {
+    assert(img);
     makeCurrent();
-    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(QImage(path)));
+    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(*img));
     m_texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
     m_texture->setWrapMode(QOpenGLTexture::Repeat);
