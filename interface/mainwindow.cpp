@@ -10,6 +10,7 @@
 #include "mesh/mesh.h"
 #include "settingswindow.h"
 #include "settings/settings.h"
+#include "scalewindow.h"
 
 CMainWindow::CMainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -88,41 +89,41 @@ void CMainWindow::LoadModel()
         if(m_model)
             delete m_model;
         m_model = newModel;
-        update();
+        UpdateView();
     }
 }
 
-void CMainWindow::on_actionModeRotate_toggled(bool arg1)
+void CMainWindow::on_actionModeRotate_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_ROTATE);
 }
 
-void CMainWindow::on_actionModeSnap_toggled(bool arg1)
+void CMainWindow::on_actionModeSnap_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_SNAP);
 }
 
-void CMainWindow::on_actionModeMove_toggled(bool arg1)
+void CMainWindow::on_actionModeMove_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_MOVE);
 }
 
-void CMainWindow::on_actionModeFlaps_toggled(bool arg1)
+void CMainWindow::on_actionModeFlaps_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_CHANGE_FLAPS);
 }
 
-void CMainWindow::on_actionModeAddSheet_toggled(bool arg1)
+void CMainWindow::on_actionModeAddSheet_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_ADD_SHEET);
 }
 
-void CMainWindow::on_actionModeMoveSheet_toggled(bool arg1)
+void CMainWindow::on_actionModeMoveSheet_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_MOVE_SHEET);
 }
 
-void CMainWindow::on_actionModeRemSheet_toggled(bool arg1)
+void CMainWindow::on_actionModeRemSheet_triggered()
 {
     m_rw2->SetMode(CRenWin2D::EM_REM_SHEET);
 }
@@ -143,7 +144,7 @@ void CMainWindow::on_actionSettings_triggered()
     sw.LoadSettings();
     sw.exec();
     m_rw2->UpdateSheetsSize();
-    update();
+    UpdateView();
 }
 
 void CMainWindow::on_actionZoom_fit_triggered()
@@ -167,7 +168,7 @@ void CMainWindow::on_actionUndo_triggered()
     if(m_model)
     {
         m_model->Undo();
-        update();
+        UpdateView();
     }
 }
 
@@ -176,7 +177,7 @@ void CMainWindow::on_actionRedo_triggered()
     if(m_model)
     {
         m_model->Redo();
-        update();
+        UpdateView();
     }
 }
 
@@ -287,7 +288,7 @@ void CMainWindow::Deserialize(const char* filename)
             m_rw2->DeserializeSheets(f);
             m_rw2->UpdateSheetsSize();
 
-            update();
+            UpdateView();
 
             break;
         }
@@ -335,4 +336,30 @@ void CMainWindow::on_actionLoad_Model_triggered()
         return;
 
     Deserialize(ivoModelPath.c_str());
+}
+
+void CMainWindow::on_actionScale_triggered()
+{
+    if(m_model)
+    {
+        float outScale = 1.0f;
+
+        CScaleWindow scaleWnd(this);
+        scaleWnd.SetOutputScalePtr(&outScale);
+        scaleWnd.SetInitialScale(m_model->GetSizeCentimeters());
+        scaleWnd.exec();
+
+        if(outScale != 1.0f)
+        {
+            m_model->Scale(outScale);
+        }
+        UpdateView();
+    }
+}
+
+void CMainWindow::UpdateView()
+{
+    m_rw2->update();
+    m_rw3->update();
+    update();
 }

@@ -313,9 +313,11 @@ void ObjScannerBase::switchOstream(std::ostream &out)
     d_out.reset(new std::ostream(out.rdbuf()));
 }
 
+/*
 // $insert debugFunctions
 void ObjScannerBase::setDebug(bool onOff)
 {}
+*/
 
 bool ObjScannerBase::debug() const
 {
@@ -806,7 +808,7 @@ int ObjScanner::lex__()
                 if (return__())
                 {
                     print();
-                    postCode(PostEnum__::RETURN);
+                    //postCode(PostEnum__::RETURN);
                     return d_token__;
                 }
                 break;
@@ -823,14 +825,14 @@ int ObjScanner::lex__()
             case ActionType__::RETURN:
                 if (!popStream())
                 {
-                     postCode(PostEnum__::END);
+                     //postCode(PostEnum__::END);
                      return 0;
                 }
-                postCode(PostEnum__::POP);
+                //postCode(PostEnum__::POP);
              continue;
         } // switch
 
-        postCode(PostEnum__::WIP);
+        //postCode(PostEnum__::WIP);
 
         reset__();
         preCode();

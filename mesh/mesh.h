@@ -38,6 +38,9 @@ public:
     void                      NotifyGroupRotation(STriGroup& grp, float oldRot);
     void                      Serialize(FILE* f) const;
     void                      Deserialize(FILE* f);
+    void                      Scale(float scale);
+    void                      ApplyScale(float scale);
+    glm::vec3                 GetSizeCentimeters() const;
 
 private:
     void CalculateFlatNormals();
@@ -85,6 +88,7 @@ public:
 
     private:
         void        Init();
+        void        Scale(float scale);
         void        ComputeNormals();
         void        GroupHasTransformed(const glm::mat3 &parMx);
         static bool EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2);
@@ -105,6 +109,7 @@ public:
         SEdge*      m_edges[3] = {nullptr, nullptr, nullptr};
 
         friend class CMesh;
+        friend struct CMesh::STriGroup;
     };
 
     struct SEdge
@@ -166,6 +171,7 @@ public:
         inline float        GetRotation() const { return m_rotation; }
         const float&        GetDepth() const;
         const float&        GetAABBHalfSide() const;
+        CMesh*              GetMesh() const;
 
         const std::list<STriangle2D*>& GetTriangles() const;
 
@@ -174,6 +180,7 @@ public:
     private:
         void                Serialize(FILE *f) const;
         void                Deserialize(FILE *f);
+        void                Scale(float scale);
 
         std::list<STriangle2D*> m_tris;
         glm::vec2               m_toTopLeft;

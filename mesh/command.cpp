@@ -4,6 +4,7 @@
 CAtomicCommand::CAtomicCommand(ECommandType actionType) :
     m_translation(0.0f, 0.0f),
     m_rotation(0.0f),
+    m_scale(1.0f),
     m_triangle(nullptr),
     m_edge(-1),
     m_type(actionType)
@@ -25,6 +26,11 @@ void CAtomicCommand::SetRotation(float rot)
     m_rotation = rot;
 }
 
+void CAtomicCommand::SetScale(float sca)
+{
+    m_scale = sca;
+}
+
 void CAtomicCommand::SetTriangle(void *tr)
 {
     m_triangle = tr;
@@ -36,9 +42,15 @@ void CAtomicCommand::Redo() const
 
     CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
+    CMesh* msh = grp->GetMesh();
 
     switch(m_type)
     {
+        case CT_SCALE :
+        {
+            msh->ApplyScale(m_scale);
+            break;
+        }
         case CT_ROTATE :
         {
             grp->SetRotation(grp->GetRotation() + m_rotation);
@@ -88,9 +100,15 @@ void CAtomicCommand::Undo() const
 
     CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
+    CMesh* msh = grp->GetMesh();
 
     switch(m_type)
     {
+        case CT_SCALE :
+        {
+            msh->ApplyScale(1.0f / m_scale);
+            break;
+        }
         case CT_ROTATE :
         {
             grp->SetRotation(grp->GetRotation() - m_rotation);

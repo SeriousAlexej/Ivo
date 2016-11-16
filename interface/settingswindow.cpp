@@ -162,17 +162,17 @@ void CSettingsWindow::on_pushButtonApplyPreset_clicked()
     }
 }
 
-void CSettingsWindow::on_spinBoxW_valueChanged(int arg1)
+void CSettingsWindow::on_spinBoxW_editingFinished()
 {
     UpdateResolution();
 }
 
-void CSettingsWindow::on_spinBoxH_valueChanged(int arg1)
+void CSettingsWindow::on_spinBoxH_editingFinished()
 {
     UpdateResolution();
 }
 
-void CSettingsWindow::on_doubleSpinBoxMultiplier_valueChanged(double arg1)
+void CSettingsWindow::on_doubleSpinBoxMultiplier_editingFinished()
 {
     UpdateResolution();
 }

@@ -27,7 +27,7 @@ class ObjScanner: public ObjScannerBase
         void preCode();     // re-implement this function for code that must
                             // be exec'ed before the patternmatching starts
 
-        void postCode(PostEnum__ type);
+        //void postCode(PostEnum__ type);
                             // re-implement this function for code that must
                             // be exec'ed after the rules's actions.
 };
@@ -54,10 +54,12 @@ inline void ObjScanner::preCode()
     // optionally replace by your own code
 }
 
+/*
 inline void ObjScanner::postCode(PostEnum__ type)
 {
     // optionally replace by your own code
 }
+*/
 
 inline void ObjScanner::print()
 {

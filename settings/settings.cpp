@@ -20,7 +20,7 @@ CSettings& CSettings::GetInstance()
     return s;
 }
 
-const unsigned char CSettings::GetRenderFlags() const
+unsigned char CSettings::GetRenderFlags() const
 {
     return m_renFlags;
 }
@@ -30,12 +30,12 @@ void CSettings::SetRenderFlags(unsigned char aFlags)
     m_renFlags = aFlags;
 }
 
-const unsigned CSettings::GetPaperWidth() const
+unsigned CSettings::GetPaperWidth() const
 {
     return m_papWidth;
 }
 
-const unsigned CSettings::GetPaperHeight() const
+unsigned CSettings::GetPaperHeight() const
 {
     return m_papHeight;
 }
@@ -52,7 +52,7 @@ void CSettings::SetPaperHeight(unsigned aHeight)
     m_papHeight = aHeight;
 }
 
-const float CSettings::GetResolutionScale() const
+float CSettings::GetResolutionScale() const
 {
     return m_resScale;
 }
@@ -63,7 +63,7 @@ void CSettings::SetResolutionScale(float aScale)
     m_resScale = aScale;
 }
 
-const CSettings::ImageFormat CSettings::GetImageFormat() const
+CSettings::ImageFormat CSettings::GetImageFormat() const
 {
     return m_imgFormat;
 }
@@ -73,7 +73,7 @@ void CSettings::SetImageFormat(CSettings::ImageFormat aFormat)
     m_imgFormat = aFormat;
 }
 
-const unsigned char CSettings::GetImageQuality() const
+unsigned char CSettings::GetImageQuality() const
 {
     return m_imgQuality;
 }
@@ -84,7 +84,7 @@ void CSettings::SetImageQuality(unsigned char aQuality)
     m_imgQuality = aQuality;
 }
 
-const float CSettings::GetLineWidth() const
+float CSettings::GetLineWidth() const
 {
     return m_lineWidth;
 }
@@ -95,7 +95,7 @@ void CSettings::SetLineWidth(float aLineW)
     m_lineWidth = aLineW;
 }
 
-const unsigned CSettings::GetStippleLoop() const
+unsigned CSettings::GetStippleLoop() const
 {
     return m_stippleLoop;
 }
@@ -106,13 +106,12 @@ void CSettings::SetStippleLoop(unsigned aStippleLoop)
     m_stippleLoop = aStippleLoop;
 }
 
-const unsigned char CSettings::GetDetachAngle() const
+unsigned char CSettings::GetDetachAngle() const
 {
     return m_detachAngle;
 }
 
 void CSettings::SetDetachAngle(unsigned char aDetachAngle)
 {
-    assert(aDetachAngle > 0 && aDetachAngle < 360);
     m_detachAngle = aDetachAngle;
 }

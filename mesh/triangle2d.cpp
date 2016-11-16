@@ -125,6 +125,15 @@ glm::mat3 CMesh::STriangle2D::GetMatrix() const
     return mx;
 }
 
+void CMesh::STriangle2D::Scale(float scale)
+{
+    for(int i=0; i<3; ++i)
+        m_vtx[i] *= scale;
+
+    m_position *= scale;
+    SetRotation(m_rotation);
+}
+
 void CMesh::STriangle2D::Init()
 {
     for(int i=0; i<3; ++i)

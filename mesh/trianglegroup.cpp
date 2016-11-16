@@ -147,6 +147,7 @@ void CMesh::STriGroup::CentrateOrigin()
     m_matrix[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
     m_matrix[2] = glm::vec3(m_position[0], m_position[1], 1.0f);
     glm::mat3 pinv = glm::inverse(m_matrix);
+
     for(STriangle2D *t : m_tris)
         t->SetRelMx(pinv);
 }
@@ -444,6 +445,19 @@ void CMesh::STriGroup::Deserialize(FILE *f)
     std::fread(&m_position, sizeof(glm::vec2), 1, f);
     std::fread(&m_rotation, sizeof(float), 1, f);
     std::fread(&m_matrix, sizeof(glm::mat3), 1, f);
+}
+
+CMesh* CMesh::STriGroup::GetMesh() const
+{
+    return m_msh;
+}
+
+void CMesh::STriGroup::Scale(float scale)
+{
+    for(STriangle2D* tri : m_tris)
+        tri->Scale(scale);
+
+    CentrateOrigin();
 }
 
 const float& CMesh::STriGroup::GetDepth() const

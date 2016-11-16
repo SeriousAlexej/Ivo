@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>951</width>
-     <height>30</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -455,7 +455,7 @@
      <normaloff>:/icons/icons/Scale.png</normaloff>:/icons/icons/Scale.png</iconset>
    </property>
    <property name="text">
-    <string>Scale</string>
+    <string>&amp;Scale</string>
    </property>
   </action>
  </widget>

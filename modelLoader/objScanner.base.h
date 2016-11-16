@@ -181,7 +181,7 @@ public:
     size_t              length()    const;
     size_t              lineNr()    const;
 
-    void                setDebug(bool onOff);
+    //void                setDebug(bool onOff);
 
     void                switchOstream(std::ostream &out);
     void                switchOstream(std::string const &outfilename);

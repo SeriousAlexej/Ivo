@@ -562,6 +562,16 @@ void CMesh::CalculateAABBox()
     m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
 }
 
+glm::vec3 CMesh::GetSizeCentimeters() const
+{
+    glm::vec3 sizeCm;
+    sizeCm.x = m_aabbox[6].x - m_aabbox[0].x;
+    sizeCm.y = m_aabbox[6].y - m_aabbox[0].y;
+    sizeCm.z = m_aabbox[6].z - m_aabbox[0].z;
+    sizeCm *= 10.0f;
+    return sizeCm;
+}
+
 void CMesh::Undo()
 {
     if(m_undoStack.canUndo())
@@ -738,4 +748,26 @@ void CMesh::Deserialize(FILE *f)
     CalculateFlatNormals();
     CalculateAABBox();
     UpdateGroupDepth();
+}
+
+void CMesh::ApplyScale(float scale)
+{
+    for(glm::vec3& vtx : m_vertices)
+        vtx *= scale;
+    for(STriGroup& grp : m_groups)
+        grp.Scale(scale);
+
+    CalculateAABBox();
+    UpdateGroupDepth();
+}
+
+void CMesh::Scale(float scale)
+{
+    CAtomicCommand cmdSca(CT_SCALE);
+    cmdSca.SetScale(scale);
+    cmdSca.SetTriangle(m_groups.front().m_tris.front());
+
+    CIvoCommand* cmd = new CIvoCommand();
+    cmd->AddAction(cmdSca);
+    m_undoStack.push(cmd);
 }

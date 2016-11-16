@@ -29,13 +29,13 @@ private slots:
     void Deserialize(const char* filename);
     void LoadModel();
     void LoadTexture();
-    void on_actionModeRotate_toggled(bool arg1);
-    void on_actionModeSnap_toggled(bool arg1);
-    void on_actionModeMove_toggled(bool arg1);
-    void on_actionModeFlaps_toggled(bool arg1);
-    void on_actionModeAddSheet_toggled(bool arg1);
-    void on_actionModeMoveSheet_toggled(bool arg1);
-    void on_actionModeRemSheet_toggled(bool arg1);
+    void on_actionModeRotate_triggered();
+    void on_actionModeSnap_triggered();
+    void on_actionModeMove_triggered();
+    void on_actionModeFlaps_triggered();
+    void on_actionModeAddSheet_triggered();
+    void on_actionModeMoveSheet_triggered();
+    void on_actionModeRemSheet_triggered();
     void on_actionExport_Sheets_triggered();
     void on_actionSettings_triggered();
     void on_actionZoom_fit_triggered();
@@ -46,8 +46,11 @@ private slots:
     void on_actionSave_As_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_Model_triggered();
+    void on_actionScale_triggered();
 
 private:
+    void UpdateView();
+
     Ui::MainWindow*  ui;
     CMesh*           m_model;
     CRenWin3D*       m_rw3;

@@ -102,7 +102,12 @@ void CRenWin2D::ExportSheets(const QString baseName)
 {
     if(m_sheets.empty()) return;
 
-    const QString dstFolder = QFileDialog::getExistingDirectory(this, "Save directory") + "/";
+    QString dstFolder = QFileDialog::getExistingDirectory(this, "Save directory");
+
+    if(dstFolder.isEmpty()) return;
+
+    if(!(dstFolder.endsWith("/") || dstFolder.endsWith("\\")))
+        dstFolder += "/";
 
     makeCurrent();
 
@@ -179,7 +184,8 @@ void CRenWin2D::ExportSheets(const QString baseName)
 
         if(!img.save(dstFolder + baseName + "_" + QString::number(sheetNum++) + "." + imgFormat.toLower(), imgFormat.toStdString().c_str(), imgQuality))
         {
-            QMessageBox::information(this, "Export Error", "Failed to save image file!");
+            QMessageBox::information(this, "Export Error", "Failed to save one of image files!");
+            break;
         }
     }
 

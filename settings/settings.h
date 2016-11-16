@@ -24,31 +24,31 @@ public:
 
     static CSettings& GetInstance();
 
-    const unsigned char GetRenderFlags() const;
+    unsigned char       GetRenderFlags() const;
     void                SetRenderFlags(unsigned char aFlags);
 
-    const unsigned      GetPaperWidth() const;
+    unsigned            GetPaperWidth() const;
     void                SetPaperWidth(unsigned aWidth);
 
-    const unsigned      GetPaperHeight() const;
+    unsigned            GetPaperHeight() const;
     void                SetPaperHeight(unsigned aHeight);
 
-    const float         GetResolutionScale() const;
+    float               GetResolutionScale() const;
     void                SetResolutionScale(float aScale);
 
-    const ImageFormat   GetImageFormat() const;
+    ImageFormat         GetImageFormat() const;
     void                SetImageFormat(ImageFormat aFormat);
 
-    const unsigned char GetImageQuality() const;
+    unsigned char       GetImageQuality() const;
     void                SetImageQuality(unsigned char aQuality);
 
-    const float         GetLineWidth() const;
+    float               GetLineWidth() const;
     void                SetLineWidth(float aLineW);
 
-    const unsigned      GetStippleLoop() const;
+    unsigned            GetStippleLoop() const;
     void                SetStippleLoop(unsigned aStippleLoop);
 
-    const unsigned char GetDetachAngle() const;
+    unsigned char       GetDetachAngle() const;
     void                SetDetachAngle(unsigned char aDetachAngle);
 
 private:

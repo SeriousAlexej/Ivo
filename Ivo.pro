@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     renderers/renwin3d.cpp \
     interface/settingswindow.cpp \
     settings/settings.cpp \
-    mesh/command.cpp
+    mesh/command.cpp \
+    interface/scalewindow.cpp
 
 HEADERS  += \
     modelLoader/objParser.base.h \
@@ -43,10 +44,12 @@ HEADERS  += \
     renderers/renwin3d.h \
     interface/settingswindow.h \
     settings/settings.h \
-    mesh/command.h
+    mesh/command.h \
+    interface/scalewindow.h
 
 FORMS    += interface/mainwindow.ui \
-    interface/settingswindow.ui
+    interface/settingswindow.ui \
+    interface/scalewindow.ui
 
 RESOURCES += \
     res.qrc

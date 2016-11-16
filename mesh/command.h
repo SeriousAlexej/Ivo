@@ -11,7 +11,8 @@ enum ECommandType
     CT_JOIN_GROUPS,
     CT_BREAK_GROUP,
     CT_SNAP_EDGE,
-    CT_BREAK_EDGE
+    CT_BREAK_EDGE,
+    CT_SCALE
 };
 
 class CAtomicCommand
@@ -23,6 +24,7 @@ public:
     void SetEdge(int e);
     void SetTranslation(const glm::vec2& trans);
     void SetRotation(float rot);
+    void SetScale(float sca);
 
     void Redo() const;
     void Undo() const;
@@ -30,6 +32,7 @@ public:
 private:
     glm::vec2    m_translation;
     float        m_rotation;
+    float        m_scale;
     void*        m_triangle;
     int          m_edge;
     ECommandType m_type;

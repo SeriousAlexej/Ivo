@@ -118,10 +118,10 @@ class ObjParser: public ObjParserBase
     // support functions for parse():
         void executeAction(int ruleNr);
         void errorRecovery();
-        int lookup(bool recovery);
+        int lookup(/*bool recovery*/);
         void nextToken();
         void print__();
-        void exceptionHandler__(std::exception const &exc);
+        //void exceptionHandler__(std::exception const &exc);
 };
 
 

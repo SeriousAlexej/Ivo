@@ -22,10 +22,12 @@ inline void ObjParser::print()
     print__();           // displays tokens if --print was specified
 }
 
+/*
 inline void ObjParser::exceptionHandler__(std::exception const &exc)
 {
     throw;              // re-implement to handle exceptions thrown by actions
 }
+*/
 
 
     // Add here includes that are only required for the compilation

@@ -829,7 +829,8 @@ try
 }
 catch (std::exception const &exc)
 {
-    exceptionHandler__(exc);
+    throw;
+    //exceptionHandler__(exc);
 }
 
 inline void ObjParserBase::reduce__(PI__ const &pi)
@@ -864,7 +865,7 @@ void ObjParser::nextToken()
 // if the final transition is negative, then we should reduce by the rule
 // given by its positive value. Note that the `recovery' parameter is only
 // used with the --debug option
-int ObjParser::lookup(bool recovery)
+int ObjParser::lookup(/*bool recovery*/)
 {
     // $insert threading
     SR__ *sr = s_state[d_state__];        // get the appropriate state-table
@@ -934,7 +935,7 @@ try
                                                 // again.
 
     pushToken__(_error_);                       // specify _error_ as next token
-    push__(lookup(true));                       // push the error state
+    push__(lookup(/*true*/));                       // push the error state
 
     d_token__ = lastToken;                      // reactivate the unexpected
                                                 // token (we're now in an
@@ -952,7 +953,7 @@ try
                 nextToken();                    // obtain next token
             }
             
-            int action = lookup(true);
+            int action = lookup(/*true*/);
 
             if (action > 0)                 // push a new state
             {
@@ -1036,7 +1037,7 @@ try
                 nextToken();                // obtain next token
 
 
-            int action = lookup(false);     // lookup d_token__ in d_state__
+            int action = lookup(/*false*/);     // lookup d_token__ in d_state__
 
             if (action > 0)                 // SHIFT: push a new state
             {
