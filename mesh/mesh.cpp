@@ -638,13 +638,18 @@ void CMesh::Serialize(FILE *f) const
 
     sizeVar = m_tri2D.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
+    for(const STriangle2D& tr2d : m_tri2D)
+    {
+        tr2d.Serialize(f);
+    }
+    //std::fwrite(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
 
     sizeVar = m_edges.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
     for(const SEdge& e : m_edges)
     {
-        std::fwrite(&e, sizeof(SEdge), 1, f);
+        e.Serialize(f);
+        //std::fwrite(&e, sizeof(SEdge), 1, f);
     }
 
     sizeVar = m_groups.size();
@@ -702,14 +707,19 @@ void CMesh::Deserialize(FILE *f)
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);
     m_tri2D.resize(sizeVar);
-    std::fread(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
+    for(STriangle2D& tr2d : m_tri2D)
+    {
+        tr2d.Deserialize(f);
+    }
+    //std::fread(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; ++i)
     {
         m_edges.push_back(SEdge());
         SEdge& e = m_edges.back();
-        std::fread(&e, sizeof(SEdge), 1, f);
+        e.Deserialize(f);
+        //std::fread(&e, sizeof(SEdge), 1, f);
     }
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);

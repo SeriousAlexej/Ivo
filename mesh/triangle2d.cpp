@@ -283,3 +283,55 @@ bool CMesh::STriangle2D::EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &
     return (b1 || b2) && !(b1 && b2) &&
            (b3 || b4) && !(b3 && b4);
 }
+
+void CMesh::STriangle2D::Serialize(FILE *f) const
+{
+    std::fwrite(&m_id, sizeof(int), 1, f);
+    std::fwrite(m_vtx, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_vtxR, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_vtxRT, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_norm, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_normR, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_flapSharp, sizeof(bool), 3, f);
+    std::fwrite(m_edgeLen, sizeof(float), 3, f);
+    std::fwrite(&m_position, sizeof(glm::vec2), 1, f);
+    std::fwrite(&m_rotation, sizeof(float), 1, f);
+    std::fwrite(m_angleOY, sizeof(float), 3, f);
+    std::fwrite(&m_relativeMx, sizeof(glm::mat3), 1, f);
+}
+
+void CMesh::STriangle2D::Deserialize(FILE *f)
+{
+    std::fread(&m_id, sizeof(int), 1, f);
+    std::fread(m_vtx, sizeof(glm::vec2), 3, f);
+    std::fread(m_vtxR, sizeof(glm::vec2), 3, f);
+    std::fread(m_vtxRT, sizeof(glm::vec2), 3, f);
+    std::fread(m_norm, sizeof(glm::vec2), 3, f);
+    std::fread(m_normR, sizeof(glm::vec2), 3, f);
+    std::fread(m_flapSharp, sizeof(bool), 3, f);
+    std::fread(m_edgeLen, sizeof(float), 3, f);
+    std::fread(&m_position, sizeof(glm::vec2), 1, f);
+    std::fread(&m_rotation, sizeof(float), 1, f);
+    std::fread(m_angleOY, sizeof(float), 3, f);
+    std::fread(&m_relativeMx, sizeof(glm::mat3), 1, f);
+}
+
+void CMesh::SEdge::Serialize(FILE *f) const
+{
+    std::fwrite(&m_leftIndex, sizeof(int), 1, f);
+    std::fwrite(&m_rightIndex, sizeof(int), 1, f);
+    std::fwrite(&m_angle, sizeof(float), 1, f);
+    std::fwrite(&m_snapped, sizeof(bool), 1, f);
+    std::fwrite(&m_flapPosition, sizeof(EFlapPosition), 1, f);
+    std::fwrite(&m_foldType, sizeof(EFoldType), 1, f);
+}
+
+void CMesh::SEdge::Deserialize(FILE *f)
+{
+    std::fread(&m_leftIndex, sizeof(int), 1, f);
+    std::fread(&m_rightIndex, sizeof(int), 1, f);
+    std::fread(&m_angle, sizeof(float), 1, f);
+    std::fread(&m_snapped, sizeof(bool), 1, f);
+    std::fread(&m_flapPosition, sizeof(EFlapPosition), 1, f);
+    std::fread(&m_foldType, sizeof(EFoldType), 1, f);
+}

@@ -93,6 +93,9 @@ public:
         void        GroupHasTransformed(const glm::mat3 &parMx);
         static bool EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2);
 
+        void        Serialize(FILE *f) const;
+        void        Deserialize(FILE *f);
+
         int         m_id;
         glm::vec2   m_vtx[3]; //initial position (imagine this is constant)
         glm::vec2   m_vtxR[3]; //rotated only
@@ -142,6 +145,9 @@ public:
         EFoldType     GetFoldType() const;
 
     private:
+        void            Serialize(FILE *f) const;
+        void            Deserialize(FILE *f);
+
         STriangle2D*    m_left = nullptr;
         STriangle2D*    m_right = nullptr;
         int             m_leftIndex;
