@@ -78,6 +78,37 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
         m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
         m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
     }
+
+    //check if other edges can be snapped
+    for(int i=0; i<3; i++)
+    {
+        if(e1 == i)
+            continue;
+        if(!tr->m_edges[i]->HasTwoTriangles())
+            continue;
+
+        STriangle2D* otherTri = tr->m_edges[i]->GetOtherTriangle(tr);
+
+        if(tr->GetGroup() != otherTri->GetGroup())
+            continue;
+
+        int i2 = tr->m_edges[i]->GetOtherTriIndex(tr);
+
+        const glm::vec2& tr1V2 = tr->m_vtxRT[i];
+        const glm::vec2& tr1V1 = tr->m_vtxRT[(i+1)%3];
+        const glm::vec2& tr2V1 = otherTri->m_vtxRT[i2];
+        const glm::vec2& tr2V2 = otherTri->m_vtxRT[(i2+1)%3];
+
+        static const float epsilon = 0.0001f;
+
+        if(fabs(tr1V1.x - tr2V1.x) < epsilon &&
+           fabs(tr1V1.y - tr2V1.y) < epsilon &&
+           fabs(tr1V2.x - tr2V2.x) < epsilon &&
+           fabs(tr1V2.y - tr2V2.y) < epsilon)
+        {
+            tr->m_edges[i]->SetSnapped(true);
+        }
+    }
     return true;
 }
 
@@ -202,7 +233,30 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     assert(e2 > -1);
 
     if(tr->GetGroup() == tr2->GetGroup())
-        return; //can't join group to itself
+    {
+        const glm::vec2& tr1V2 = tr->m_vtxRT[e];
+        const glm::vec2& tr1V1 = tr->m_vtxRT[(e+1)%3];
+        const glm::vec2& tr2V1 = tr2->m_vtxRT[e2];
+        const glm::vec2& tr2V2 = tr2->m_vtxRT[(e2+1)%3];
+
+        static const float epsilon = 0.0001f;
+
+        if(fabs(tr1V1.x - tr2V1.x) < epsilon &&
+           fabs(tr1V1.y - tr2V1.y) < epsilon &&
+           fabs(tr1V2.x - tr2V2.x) < epsilon &&
+           fabs(tr1V2.y - tr2V2.y) < epsilon)
+        {
+            CAtomicCommand cmdSnp(CT_SNAP_EDGE);
+            cmdSnp.SetEdge(e2);
+            cmdSnp.SetTriangle(tr2);
+
+            CIvoCommand* cmd = new CIvoCommand();
+            cmd->AddAction(cmdSnp);
+
+            m_msh->m_undoStack.push(cmd);
+        }
+        return;
+    }
 
     STriGroup *grp = tr2->m_myGroup;
 
