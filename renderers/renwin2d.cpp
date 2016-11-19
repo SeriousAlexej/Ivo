@@ -139,7 +139,7 @@ void CRenWin2D::ExportSheets(const QString baseName)
     const unsigned char renFlags = sett.GetRenderFlags();
     const unsigned char imgQuality = sett.GetImageQuality();
 
-    QOpenGLFramebufferObject fbo(fboW, fboH, GL_TEXTURE_2D);
+    QOpenGLFramebufferObject fbo(fboW, fboH, QOpenGLFramebufferObject::Depth, GL_TEXTURE_2D);
     if(!fbo.isValid())
     {
         QMessageBox::information(this, "Export Error", "Failed to create framebuffer object!");

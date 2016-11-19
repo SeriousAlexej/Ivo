@@ -57,6 +57,7 @@ void CScaleWindow::on_buttonBox_rejected()
 
 void CScaleWindow::on_spinPrecent_valueChanged(int i)
 {
+    Q_UNUSED(i);
     if(m_likeAMutex)
         return;
     m_likeAMutex = true;
@@ -70,6 +71,7 @@ void CScaleWindow::on_spinPrecent_valueChanged(int i)
 
 void CScaleWindow::on_spinWidth_valueChanged(double i)
 {
+    Q_UNUSED(i);
     if(m_likeAMutex)
         return;
     m_likeAMutex = true;
@@ -83,6 +85,7 @@ void CScaleWindow::on_spinWidth_valueChanged(double i)
 
 void CScaleWindow::on_spinHeight_valueChanged(double i)
 {
+    Q_UNUSED(i);
     if(m_likeAMutex)
         return;
     m_likeAMutex = true;
@@ -96,6 +99,7 @@ void CScaleWindow::on_spinHeight_valueChanged(double i)
 
 void CScaleWindow::on_spinLength_valueChanged(double i)
 {
+    Q_UNUSED(i);
     if(m_likeAMutex)
         return;
     m_likeAMutex = true;
