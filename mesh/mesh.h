@@ -40,6 +40,7 @@ public:
     void                      Deserialize(FILE* f);
     void                      Scale(float scale);
     void                      ApplyScale(float scale);
+    void                      PackGroups(bool undoable=true);
     glm::vec3                 GetSizeCentimeters() const;
 
 private:
@@ -47,7 +48,6 @@ private:
     void FillAdjTri_Gen2DTri();
     void DetermineFoldParams(int i, int j, int e1, int e2);
     void GroupTriangles(float maxAngleDeg);
-    void PackGroups();
     void UpdateGroupDepth();
     void CalculateAABBox();
 

@@ -122,14 +122,29 @@ void CMesh::STriGroup::SetRotation(float angle)
     float rotRAD = glm::radians(m_rotation);
     m_matrix[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
     m_matrix[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
+
+    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
     for(STriangle2D *t : m_tris)
     {
         t->GroupHasTransformed(m_matrix);
+        for(int v=0; v<3; ++v)
+        {
+            const glm::vec2 &vert = t->m_vtxRT[v];
+            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+        }
     }
 }
 
 void CMesh::STriGroup::SetPosition(float x, float y)
 {
+    m_toRightDown.x += x - m_position.x;
+    m_toRightDown.y += y - m_position.y;
+    m_toTopLeft.x += x - m_position.x;
+    m_toTopLeft.y += y - m_position.y;
     m_matrix[2][0] = m_position[0] = x;
     m_matrix[2][1] = m_position[1] = y;
     for(STriangle2D *t : m_tris)
@@ -169,8 +184,8 @@ void CMesh::STriGroup::CentrateOrigin()
         }
     }
     m_aabbHSide = glm::sqrt(aabbHSideSQR);
-    m_toTopLeft = m_position + glm::vec2(-m_aabbHSide, m_aabbHSide);
-    m_toRightDown = m_position + glm::vec2(m_aabbHSide, -m_aabbHSide);
+    //m_toTopLeft = m_position + glm::vec2(-m_aabbHSide, m_aabbHSide);
+    //m_toRightDown = m_position + glm::vec2(m_aabbHSide, -m_aabbHSide);
     //m_aabbHSide = glm::sqrt(hw*hw+hh*hh);
 
     float rotRAD = glm::radians(m_rotation);
@@ -508,8 +523,21 @@ CMesh* CMesh::STriGroup::GetMesh() const
 
 void CMesh::STriGroup::Scale(float scale)
 {
+    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+
     for(STriangle2D* tri : m_tris)
+    {
         tri->Scale(scale);
+        for(int v=0; v<3; ++v)
+        {
+            const glm::vec2 &vert = tri->m_vtxRT[v];
+            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+        }
+    }
 
     CentrateOrigin();
 }

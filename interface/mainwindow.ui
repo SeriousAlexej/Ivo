@@ -94,6 +94,7 @@
     </property>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
+    <addaction name="actionAutoPack"/>
     <addaction name="actionScale"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -456,6 +457,18 @@
    </property>
    <property name="text">
     <string>&amp;Scale</string>
+   </property>
+  </action>
+  <action name="actionAutoPack">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Package-x-generic.svg.png</normaloff>:/icons/icons/48px-Package-x-generic.svg.png</iconset>
+   </property>
+   <property name="text">
+    <string>Auto Pack</string>
+   </property>
+   <property name="toolTip">
+    <string>Automatically arrange groups in 2D window</string>
    </property>
   </action>
  </widget>

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/48px-Package-x-generic.svg.png</file>
     <file>icons/48px-Edit-redo.png</file>
     <file>icons/48px-Edit-undo.png</file>
     <file>icons/48px-System-log-out.png</file>

@@ -21,6 +21,7 @@ public:
     static const unsigned char R_FLAPS = (1u << 0);
     static const unsigned char R_EDGES = (1u << 1);
     static const unsigned char R_TEXTR = (1u << 2);
+    static const unsigned char R_FOLDS = (1u << 3);
 
     static CSettings& GetInstance();
 

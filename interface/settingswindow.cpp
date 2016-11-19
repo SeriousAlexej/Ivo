@@ -22,6 +22,7 @@ void CSettingsWindow::LoadSettings()
     ui->checkBoxEdges->setChecked(renFlags & CSettings::R_EDGES);
     ui->checkBoxFlaps->setChecked(renFlags & CSettings::R_FLAPS);
     ui->checkBoxTexture->setChecked(renFlags & CSettings::R_TEXTR);
+    ui->checkBoxFolds->setChecked(renFlags & CSettings::R_FOLDS);
 
     ui->spinBoxW->setValue(s.GetPaperWidth());
     ui->spinBoxH->setValue(s.GetPaperHeight());
@@ -77,6 +78,10 @@ void CSettingsWindow::SaveSettings() const
     if(ui->checkBoxTexture->isChecked())
     {
         renFlags |= CSettings::R_TEXTR;
+    }
+    if(ui->checkBoxFolds->isChecked())
+    {
+        renFlags |= CSettings::R_FOLDS;
     }
 
     QString format = ui->comboBoxFormat->currentText();

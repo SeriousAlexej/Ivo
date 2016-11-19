@@ -86,7 +86,7 @@ void CRenWin2D::paintGL()
         {
             RenderFlaps();
         }
-        if(renFlags & CSettings::R_EDGES)
+        if(renFlags & (CSettings::R_EDGES | CSettings::R_FOLDS))
         {
             RenderEdges();
         }
@@ -175,7 +175,7 @@ void CRenWin2D::ExportSheets(const QString baseName)
         {
             RenderFlaps();
         }
-        if(renFlags & CSettings::R_EDGES)
+        if(renFlags & (CSettings::R_EDGES | CSettings::R_FOLDS))
         {
             RenderEdges();
         }
@@ -337,6 +337,7 @@ void CRenWin2D::RenderEdges()
     m_model->m_edges.sort([](const CMesh::SEdge &i, const CMesh::SEdge &j){ return i.GetFoldType() == CMesh::SEdge::FT_VALLEY && j.GetFoldType() != CMesh::SEdge::FT_VALLEY; });
 
     const unsigned stippleFactor = CSettings::GetInstance().GetStippleLoop();
+    const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
 
     glEnable(GL_LINE_STIPPLE);
     glLineStipple(stippleFactor, 0x1FFF); //valley fold
@@ -358,10 +359,10 @@ void CRenWin2D::RenderEdges()
 
      if(e.HasTwoTriangles())
      {
-         if(e.IsSnapped())
+         if(e.IsSnapped() && (renFlags & CSettings::R_FOLDS))
          {
              RenderEdge(e.GetTriangle(0), e.GetTriIndex(0));
-         } else {
+         } else if(!e.IsSnapped() && (renFlags & CSettings::R_EDGES)) {
              glEnd();
              glDisable(GL_LINE_STIPPLE);
              glBegin(GL_LINES);
@@ -371,7 +372,7 @@ void CRenWin2D::RenderEdges()
              glEnable(GL_LINE_STIPPLE);
              glBegin(GL_LINES);
          }
-     } else {
+     } else if(renFlags & CSettings::R_EDGES) {
          void *t = static_cast<void*>(e.GetAnyTriangle());
          int edge = e.GetAnyTriIndex();
          glEnd();

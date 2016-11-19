@@ -418,3 +418,12 @@ void CMainWindow::UpdateView()
     m_rw3->update();
     update();
 }
+
+void CMainWindow::on_actionAutoPack_triggered()
+{
+    if(m_model)
+    {
+        m_model->PackGroups();
+        UpdateView();
+    }
+}

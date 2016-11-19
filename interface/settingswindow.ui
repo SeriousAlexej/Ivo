@@ -39,6 +39,16 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="checkBoxFolds">
+             <property name="text">
+              <string>Show Folds</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCheckBox" name="checkBoxEdges">
              <property name="text">
               <string>Show Edges</string>

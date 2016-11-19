@@ -49,6 +49,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionLoad_Model_triggered();
     void on_actionScale_triggered();
+    void on_actionAutoPack_triggered();
 
 private:
     void UpdateView();

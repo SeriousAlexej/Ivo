@@ -51,7 +51,7 @@ bool CMesh::LoadMesh(std::string path)
     CalculateFlatNormals(); //this function goes first!
     FillAdjTri_Gen2DTri();
     GroupTriangles((float)CSettings::GetInstance().GetDetachAngle());
-    PackGroups();
+    PackGroups(false);
     CalculateAABBox();
     return true;
 }
@@ -295,7 +295,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
     UpdateGroupDepth();
 }
 
-void CMesh::PackGroups()
+void CMesh::PackGroups(bool undoable)
 {
     struct SGroupBBox
     {
@@ -307,11 +307,12 @@ void CMesh::PackGroups()
         float height;
         CMesh::STriGroup *grp;
 
-        void ApplyPosition(glm::vec2 offset)
+        glm::vec2 GetFinalPosition(glm::vec2 offset)
         {
             const float groupGap1x = 0.75f;//grp->aabbHSide*0.1f;
             position += offset;
-            grp->SetPosition(position[0]+groupGap1x, position[1]+groupGap1x);
+            glm::vec2 grpCenterOffset(grp->GetPosition().x - topLeft.x, grp->GetPosition().y - rightDown.y);
+            return grpCenterOffset + glm::vec2(position[0]+groupGap1x, position[1]+groupGap1x);
         }
         void FillArea()
         {
@@ -349,6 +350,7 @@ void CMesh::PackGroups()
     dummy.topLeft = dummy.rightDown = dummy.position = glm::vec2(0.0f, 0.0f);
     std::vector<SGroupBBox> bboxes(m_groups.size(), dummy);
     float binWidth = 0.0f;
+    float binHeight = 0.0f;
     float maxWidth = 0.0f;
 
     int i=0;
@@ -377,85 +379,113 @@ void CMesh::PackGroups()
         float floorHeight;
     };
 
-    std::list<FCNR_level> levels;
-    for(int i=bboxes.size()-1; i>=0; --i)
+    //make a few passes of FCNR for better results
+    for(int pass=0; pass<2; ++pass)
     {
-        SGroupBBox &bbx = bboxes[i];
-        bool added = false;
-        for(auto &lvl : levels)
+        std::list<FCNR_level> levels;
+        for(int i=bboxes.size()-1; i>=0; --i)
         {
-            SGroupBBox *rmost_fl = lvl.floor.back();
-
-            float x = rmost_fl->position[0] + rmost_fl->width;
-
-            if(binWidth - x >= bbx.width)
+            SGroupBBox &bbx = bboxes[i];
+            bool added = false;
+            for(auto &lvl : levels)
             {
-                bbx.position = glm::vec2(x, lvl.floorHeight);
-                bool intersects = false;
-                for(auto &ceilBBX : lvl.ceiling)
+                SGroupBBox *rmost_fl = lvl.floor.back();
+
+                float x = rmost_fl->position[0] + rmost_fl->width;
+
+                if(binWidth - x >= bbx.width)
                 {
-                    if(ceilBBX->Intersect(bbx))
+                    bbx.position = glm::vec2(x, lvl.floorHeight);
+                    bool intersects = false;
+                    for(auto &ceilBBX : lvl.ceiling)
                     {
-                        intersects = true;
+                        if(ceilBBX->Intersect(bbx))
+                        {
+                            intersects = true;
+                            break;
+                        }
+                    }
+                    if(!intersects)
+                    {
+                        lvl.floor.push_back(&bbx);
+                        added = true;
                         break;
                     }
                 }
-                if(!intersects)
+
+                if(!lvl.ceiling.empty())
                 {
-                    lvl.floor.push_back(&bbx);
-                    added = true;
-                    break;
+                    SGroupBBox *lmost_cl = lvl.ceiling.back();
+                    x = lmost_cl->position[0];
+                } else {
+                    x = binWidth;
                 }
-            }
 
-            if(!lvl.ceiling.empty())
-            {
-                SGroupBBox *lmost_cl = lvl.ceiling.back();
-                x = lmost_cl->position[0];
-            } else {
-                x = binWidth;
-            }
-
-            if(x >= bbx.width)
-            {
-                bbx.position = glm::vec2(x - bbx.width, lvl.floorHeight + lvl.ceilHeight - bbx.height);
-                bool intersects = false;
-                for(auto &floorBBX : lvl.floor)
+                if(x >= bbx.width)
                 {
-                    if(floorBBX->Intersect(bbx))
+                    bbx.position = glm::vec2(x - bbx.width, lvl.floorHeight + lvl.ceilHeight - bbx.height);
+                    bool intersects = false;
+                    for(auto &floorBBX : lvl.floor)
                     {
-                        intersects = true;
+                        if(floorBBX->Intersect(bbx))
+                        {
+                            intersects = true;
+                            break;
+                        }
+                    }
+                    if(!intersects)
+                    {
+                        lvl.ceiling.push_back(&bbx);
+                        added = true;
                         break;
                     }
                 }
-                if(!intersects)
-                {
-                    lvl.ceiling.push_back(&bbx);
-                    added = true;
-                    break;
-                }
+            }
+
+            if(!added)
+            {
+                FCNR_level *prev = nullptr;
+                if(!levels.empty())
+                    prev = &levels.back();
+                levels.push_back(FCNR_level());
+                FCNR_level &lvl = levels.back();
+
+                lvl.ceilHeight = bbx.height;
+                lvl.floorHeight = (prev ? prev->ceilHeight + prev->floorHeight : 0.0f);
+                lvl.floor.push_front(&bbx);
+                bbx.position = glm::vec2(0.0f, lvl.floorHeight);
             }
         }
 
-        if(!added)
-        {
-            FCNR_level *prev = nullptr;
-            if(!levels.empty())
-                prev = &levels.back();
-            levels.push_back(FCNR_level());
-            FCNR_level &lvl = levels.back();
+        binHeight = levels.back().floorHeight + levels.back().ceilHeight;
+        //adjust width for the next pass of FCNR
+        binWidth = glm::max(maxWidth, (binWidth + binHeight) * 0.5f);
+    }
 
-            lvl.ceilHeight = bbx.height;
-            lvl.floorHeight = (prev ? prev->ceilHeight + prev->floorHeight : 0.0f);
-            lvl.floor.push_front(&bbx);
-            bbx.position = glm::vec2(0.0f, lvl.floorHeight);
+    CIvoCommand* cmd = nullptr;
+    if(undoable)
+    {
+        cmd = new CIvoCommand();
+    }
+
+    for(SGroupBBox &b : bboxes)
+    {
+        glm::vec2 finalPos = b.GetFinalPosition(glm::vec2(-binWidth*0.5f, -binHeight*0.5f));
+        if(undoable)
+        {
+            CAtomicCommand cmdMov(CT_MOVE);
+            cmdMov.SetTriangle(b.grp->m_tris.front());
+            cmdMov.SetTranslation(finalPos - b.grp->GetPosition());
+            cmd->AddAction(cmdMov);
+        } else {
+            b.grp->SetPosition(finalPos.x, finalPos.y);
         }
     }
 
-    float binHeight = levels.back().floorHeight + levels.back().ceilHeight;
-
-    for(SGroupBBox &b : bboxes)
-        b.ApplyPosition(glm::vec2(-binWidth*0.5f, -binHeight*0.5f));
+    if(undoable)
+    {
+        m_undoStack.push(cmd);
+    }
 }
 
 const CMesh::STriGroup* CMesh::GroupUnderCursor(glm::vec2 &curPos) const
