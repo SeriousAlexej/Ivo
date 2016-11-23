@@ -183,7 +183,7 @@ void CRenWin3D::paintGL()
         if(renTexture && m_texture)
             m_texture->release();
     }
-    if(CSettings::GetInstance().GetRenderFlags() & CSettings::R_GRID)
+    if(CSettings::RenderGrid)
         DrawGrid();
     DrawAxis();
 }

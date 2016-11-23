@@ -1,8 +1,10 @@
 #include "settings.h"
 #include <cassert>
 
+bool CSettings::RenderGrid = true;
+
 CSettings::CSettings() :
-    m_renFlags(R_FLAPS | R_EDGES | R_TEXTR | R_FOLDS | R_GRID),
+    m_renFlags(R_FLAPS | R_EDGES | R_TEXTR | R_FOLDS),
     m_papWidth(297u),
     m_papHeight(210u),
     m_resScale(6.0f),
