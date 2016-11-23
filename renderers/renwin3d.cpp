@@ -2,6 +2,7 @@
 #include <QOpenGLWidget>
 #include <QEvent>
 #include <QMouseEvent>
+#include "settings/settings.h"
 #include "renwin3d.h"
 #include "mesh/mesh.h"
 
@@ -48,6 +49,83 @@ void CRenWin3D::initializeGL()
     glLightfv(GL_LIGHT1, GL_AMBIENT, &ambi[0]);
 }
 
+void CRenWin3D::DrawAxis()
+{
+    glDisable(GL_LIGHTING);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(-2.0f, 2.0f, -1.5f, 1.5f, 0.1f, 100.0f);
+
+    glm::mat4 rotMx = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), m_front, m_up);
+
+    glm::vec4 vecX(0.1f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 vecY(0.0f, 0.1f, 0.0f, 1.0f);
+    glm::vec4 vecZ(0.0f, 0.0f, 0.1f, 1.0f);
+    vecX = rotMx * vecX;
+    vecY = rotMx * vecY;
+    vecZ = rotMx * vecZ;
+
+    glTranslatef(-1.9f, -1.4f, -20.0f);
+
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glBegin(GL_LINES);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(vecX.x, vecX.y, vecX.z);
+    glEnd();
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glBegin(GL_LINES);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(vecY.x, vecY.y, vecY.z);
+    glEnd();
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glBegin(GL_LINES);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glVertex3f(vecZ.x, vecZ.y, vecZ.z);
+    glEnd();
+
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    glEnable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+}
+
+void CRenWin3D::DrawGrid()
+{
+    glDisable(GL_LIGHTING);
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_LINES);
+        glVertex3f(m_cameraPosition.x + 100.0f, 0.0f, 0.0f);
+        glVertex3f(m_cameraPosition.x - 100.0f, 0.0f, 0.0f);
+
+        glVertex3f(0.0f, 0.0f, m_cameraPosition.z + 100.0f);
+        glVertex3f(0.0f, 0.0f, m_cameraPosition.z - 100.0f);
+    glEnd();
+
+    int baseX = (int)m_cameraPosition.x;
+    int baseZ = (int)m_cameraPosition.z;
+
+    glColor3f(0.4f, 0.4f, 0.4f);
+    glBegin(GL_LINES);
+        for(int i=-100; i<100; ++i)
+        {
+            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z + 100.0f);
+            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z - 100.0f);
+        }
+        for(int i=-100; i<100; ++i)
+        {
+            glVertex3f(m_cameraPosition.x + 100.0f, 0.0f, baseZ+i);
+            glVertex3f(m_cameraPosition.x - 100.0f, 0.0f, baseZ+i);
+        }
+    glEnd();
+}
+
 void CRenWin3D::paintGL()
 {
     if(m_model)
@@ -58,7 +136,8 @@ void CRenWin3D::paintGL()
         glLoadIdentity();
         glMultMatrixf(&m_viewMatrix[0][0]);
 
-        if(m_texture)
+        const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
+        if(renTexture && m_texture)
             m_texture->bind();
         glBegin(GL_TRIANGLES);
 
@@ -101,36 +180,12 @@ void CRenWin3D::paintGL()
 
         glEnd();
 
-        /*
-        glEnable(GL_LINE_STIPPLE);
-        glLineWidth(5.0f);
-
-        int ti = model->triangles.size() / 2;
-        for(int i=0; i<3; ++i)
-        {
-            if(model->adjacentTriangles[ti].foldType[i] == Mesh::AdjacentInfo::FT_MOUNTAIN)
-            {
-                glLineStipple(2, 0x11FF);
-            } else
-            if(model->adjacentTriangles[ti].foldType[i] == Mesh::AdjacentInfo::FT_VALLEY)
-            {
-                glLineStipple(2, 0x1FFF);
-            } else
-            {
-                glLineStipple(1, 0);
-            }
-            const glm::vec3 &v1 = model->vertices[model->triangles[ti].vertex[i][0]-1];
-            const glm::vec3 &v2 = model->vertices[model->triangles[ti].vertex[(i+1)%3][0]-1];
-            glBegin(GL_LINES);
-            glVertex3f(v1[0], v1[1], v1[2]);
-            glVertex3f(v2[0], v2[1], v2[2]);
-            glEnd();
-        }
-        */
-
-        if(m_texture)
+        if(renTexture && m_texture)
             m_texture->release();
     }
+    if(CSettings::GetInstance().GetRenderFlags() & CSettings::R_GRID)
+        DrawGrid();
+    DrawAxis();
 }
 
 void CRenWin3D::resizeGL(int w, int h)

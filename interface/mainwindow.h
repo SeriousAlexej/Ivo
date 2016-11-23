@@ -50,6 +50,7 @@ private slots:
     void on_actionLoad_Model_triggered();
     void on_actionScale_triggered();
     void on_actionAutoPack_triggered();
+    void on_actionShow_Grid_triggered(bool checked);
 
 private:
     void UpdateView();

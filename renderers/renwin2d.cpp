@@ -46,11 +46,49 @@ void CRenWin2D::SetModel(CMesh *mdl)
     ZoomFit();
 }
 
+void CRenWin2D::CreateFoldTextures()
+{
+    QImage imgBlack(1, 1, QImage::Format_ARGB32);
+    QImage imgValley(16, 1, QImage::Format_ARGB32);
+    QImage imgMountain(16, 1, QImage::Format_ARGB32);
+    imgBlack.fill(QColor(0,0,0,255));
+    imgValley.fill(QColor(0,0,0,255));
+    imgMountain.fill(QColor(0,0,0,255));
+
+    for(int i=0; i<6; ++i)
+    {
+        imgValley.setPixelColor(i, 0, QColor(0,0,0,0));
+        imgMountain.setPixelColor(i, 0, QColor(0,0,0,0));
+    }
+    imgMountain.setPixelColor(3, 0, QColor(0,0,0,255));
+
+    m_texValleyFold.reset(new QOpenGLTexture(imgValley));
+    m_texValleyFold->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    m_texValleyFold->setWrapMode(QOpenGLTexture::Repeat);
+
+    m_texMountainFold.reset(new QOpenGLTexture(imgMountain));
+    m_texMountainFold->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    m_texMountainFold->setWrapMode(QOpenGLTexture::Repeat);
+
+    m_texPitchBlack.reset(new QOpenGLTexture(imgBlack));
+    m_texPitchBlack->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    m_texPitchBlack->setWrapMode(QOpenGLTexture::Repeat);
+}
+
 CRenWin2D::~CRenWin2D()
 {
     makeCurrent();
     if(m_texture)
         m_texture->destroy();
+
+    if(m_texValleyFold)
+        m_texValleyFold->destroy();
+
+    if(m_texMountainFold)
+        m_texMountainFold->destroy();
+
+    if(m_texPitchBlack)
+        m_texPitchBlack->destroy();
     doneCurrent();
 }
 
@@ -61,6 +99,7 @@ void CRenWin2D::initializeGL()
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_2D);
     glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
+    CreateFoldTextures();
 }
 
 void CRenWin2D::paintGL()
@@ -334,58 +373,43 @@ void CRenWin2D::RenderFlaps() const
 
 void CRenWin2D::RenderEdges()
 {
-    m_model->m_edges.sort([](const CMesh::SEdge &i, const CMesh::SEdge &j){ return i.GetFoldType() == CMesh::SEdge::FT_VALLEY && j.GetFoldType() != CMesh::SEdge::FT_VALLEY; });
-
-    const unsigned stippleFactor = CSettings::GetInstance().GetStippleLoop();
     const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
 
-    glEnable(GL_LINE_STIPPLE);
-    glLineStipple(stippleFactor, 0x1FFF); //valley fold
-    bool prevFoldValley = true;
-    glBegin(GL_LINES);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBegin(GL_QUADS);
     for(CMesh::SEdge &e : m_model->m_edges)
     {
-     if(e.GetFoldType() == CMesh::SEdge::FT_FLAT && e.IsSnapped())
-         continue;
-
-     if((e.GetFoldType() == CMesh::SEdge::FT_MOUNTAIN && prevFoldValley) ||
-        (e.GetFoldType() == CMesh::SEdge::FT_VALLEY && !prevFoldValley))
-     {
-         glEnd();
-         glLineStipple(stippleFactor, (prevFoldValley ? 0x11FF : 0x01FF));
-         glBegin(GL_LINES);
-         prevFoldValley = !prevFoldValley;
-     }
+        int foldType = (int)e.GetFoldType();
+        if(foldType == CMesh::SEdge::FT_FLAT && e.IsSnapped())
+            continue;
 
      if(e.HasTwoTriangles())
      {
          if(e.IsSnapped() && (renFlags & CSettings::R_FOLDS))
          {
-             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0));
+             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0), foldType);
          } else if(!e.IsSnapped() && (renFlags & CSettings::R_EDGES)) {
-             glEnd();
-             glDisable(GL_LINE_STIPPLE);
-             glBegin(GL_LINES);
-             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0));
-             RenderEdge(e.GetTriangle(1), e.GetTriIndex(1));
-             glEnd();
-             glEnable(GL_LINE_STIPPLE);
-             glBegin(GL_LINES);
+             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0), CMesh::SEdge::FT_FLAT);
+             RenderEdge(e.GetTriangle(1), e.GetTriIndex(1), CMesh::SEdge::FT_FLAT);
          }
      } else if(renFlags & CSettings::R_EDGES) {
          void *t = static_cast<void*>(e.GetAnyTriangle());
          int edge = e.GetAnyTriIndex();
-         glEnd();
-         glDisable(GL_LINE_STIPPLE);
-         glBegin(GL_LINES);
-         RenderEdge(t, edge);
-         glEnd();
-         glEnable(GL_LINE_STIPPLE);
-         glBegin(GL_LINES);
+         RenderEdge(t, edge, CMesh::SEdge::FT_FLAT);
      }
     }
     glEnd();
-    glDisable(GL_LINE_STIPPLE);
+    glDisable(GL_BLEND);
+
+    if(m_texMountainFold && m_texMountainFold->isBound())
+        m_texMountainFold->release();
+
+    if(m_texValleyFold && m_texValleyFold->isBound())
+        m_texValleyFold->release();
+
+    if(m_texPitchBlack && m_texPitchBlack->isBound())
+        m_texPitchBlack->release();
 }
 
 void CRenWin2D::RenderFlap(void *tr, int edge) const
@@ -425,13 +449,56 @@ void CRenWin2D::RenderFlap(void *tr, int edge) const
     glColor3f(0.0f, 0.0f, 0.0f);
 }
 
-void CRenWin2D::RenderEdge(void *tr, int edge) const
+void CRenWin2D::RenderEdge(void *tr, int edge, int foldType) const
 {
     const CMesh::STriangle2D& t = *static_cast<CMesh::STriangle2D*>(tr);
     CMesh::STriGroup *g = t.GetGroup();
+    const glm::vec2 &v1 = t[edge];
+    const glm::vec2 &v2 = t[(edge+1)%3];
+    const glm::vec2 vN = t.GetNormal(edge) * 0.04f * CSettings::GetInstance().GetLineWidth();
+    float len = glm::length(v2 - v1) * 0.5f * (float)CSettings::GetInstance().GetStippleLoop();
     float dep = g->GetDepth() - CMesh::STriGroup::GetDepthStep()*0.3f;
-    glVertex3f(t[edge].x, t[edge].y, -dep);
-    glVertex3f(t[(edge+1)%3].x, t[(edge+1)%3].y, -dep);
+
+    switch(foldType)
+    {
+    case CMesh::SEdge::FT_FLAT:
+        if(m_texPitchBlack && !m_texPitchBlack->isBound())
+        {
+            glEnd();
+            m_texPitchBlack->bind();
+            glBegin(GL_QUADS);
+        }
+        break;
+    case CMesh::SEdge::FT_VALLEY:
+        if(m_texValleyFold && !m_texValleyFold->isBound())
+        {
+            glEnd();
+            m_texValleyFold->bind();
+            glBegin(GL_QUADS);
+        }
+        break;
+    case CMesh::SEdge::FT_MOUNTAIN:
+        if(m_texMountainFold && !m_texMountainFold->isBound())
+        {
+            glEnd();
+            m_texMountainFold->bind();
+            glBegin(GL_QUADS);
+        }
+        break;
+    default: assert(false);
+    }
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(v1.x - vN.x, v1.y - vN.y, -dep);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(v1.x + vN.x, v1.y + vN.y, -dep);
+
+    glTexCoord2f(len, 1.0f);
+    glVertex3f(v2.x + vN.x, v2.y + vN.y, -dep);
+
+    glTexCoord2f(len, 0.0f);
+    glVertex3f(v2.x - vN.x, v2.y - vN.y, -dep);
 }
 
 void CRenWin2D::RenderSelection()

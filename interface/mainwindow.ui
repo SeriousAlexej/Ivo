@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>951</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -84,6 +84,7 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <addaction name="actionShow_Grid"/>
     <addaction name="actionZoom_fit"/>
     <addaction name="actionZoom_2D"/>
     <addaction name="actionZoom_3D"/>
@@ -469,6 +470,27 @@
    </property>
    <property name="toolTip">
     <string>Automatically arrange groups in 2D window</string>
+   </property>
+  </action>
+  <action name="actionShow_Grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Show grid in 3D view window</string>
+   </property>
+   <property name="shortcut">
+    <string>G</string>
    </property>
   </action>
  </widget>

@@ -294,6 +294,12 @@ void CMainWindow::Deserialize(const char* filename)
 
             CSettings& sett = CSettings::GetInstance();
 
+            if(renFlags & CSettings::R_GRID)
+            {
+                ui->actionShow_Grid->setChecked(true);
+            } else {
+                ui->actionShow_Grid->setChecked(false);
+            }
             sett.SetRenderFlags( renFlags );
             sett.SetPaperWidth( paperWid );
             sett.SetPaperHeight( paperHei );
@@ -426,4 +432,16 @@ void CMainWindow::on_actionAutoPack_triggered()
         m_model->PackGroups();
         UpdateView();
     }
+}
+
+void CMainWindow::on_actionShow_Grid_triggered(bool checked)
+{
+    CSettings& s = CSettings::GetInstance();
+    if(checked)
+    {
+        s.SetRenderFlags(s.GetRenderFlags() | CSettings::R_GRID);
+    } else {
+        s.SetRenderFlags(s.GetRenderFlags() & ~CSettings::R_GRID);
+    }
+    UpdateView();
 }

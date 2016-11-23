@@ -51,13 +51,14 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
+    void CreateFoldTextures();
     void RenderPaperSheets();
     void RenderSelection();
     void RenderGroups() const;
     void RenderFlaps() const;
     void RenderEdges();
     void RenderFlap(void *tr, int edge) const;
-    void RenderEdge(void *tr, int edge) const;
+    void RenderEdge(void *tr, int edge, int foldType) const;
 
     void RecalcProjection();
     void ModeLMB();
@@ -74,6 +75,9 @@ private:
 
     CMesh*                          m_model;
     std::unique_ptr<QOpenGLTexture> m_texture;
+    std::unique_ptr<QOpenGLTexture> m_texValleyFold;
+    std::unique_ptr<QOpenGLTexture> m_texMountainFold;
+    std::unique_ptr<QOpenGLTexture> m_texPitchBlack;
     glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
     float                           m_w;
     float                           m_h;

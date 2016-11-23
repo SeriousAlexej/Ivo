@@ -22,6 +22,7 @@ public:
     static const unsigned char R_EDGES = (1u << 1);
     static const unsigned char R_TEXTR = (1u << 2);
     static const unsigned char R_FOLDS = (1u << 3);
+    static const unsigned char R_GRID  = (1u << 4);
 
     static CSettings& GetInstance();
 

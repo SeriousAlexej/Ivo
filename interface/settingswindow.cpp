@@ -103,6 +103,8 @@ void CSettingsWindow::SaveSettings() const
     }
 
     CSettings& s = CSettings::GetInstance();
+    if(s.GetRenderFlags() & CSettings::R_GRID)
+        renFlags |= CSettings::R_GRID;
     s.SetRenderFlags(renFlags);
     s.SetPaperWidth(papW);
     s.SetPaperHeight(papH);

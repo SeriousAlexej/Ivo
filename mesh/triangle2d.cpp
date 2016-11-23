@@ -128,7 +128,10 @@ glm::mat3 CMesh::STriangle2D::GetMatrix() const
 void CMesh::STriangle2D::Scale(float scale)
 {
     for(int i=0; i<3; ++i)
+    {
         m_vtx[i] *= scale;
+        m_edgeLen[i] *= scale;
+    }
 
     m_position *= scale;
     SetRotation(m_rotation);

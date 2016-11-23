@@ -33,6 +33,8 @@ protected:
     bool event(QEvent *e) override final;
 
 private:
+    void DrawGrid();
+    void DrawAxis();
     void UpdateViewAngles();
     void UpdateViewMatrix();
 
