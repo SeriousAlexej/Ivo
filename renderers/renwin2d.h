@@ -89,6 +89,9 @@ private:
       CAM_MODE }                    m_cameraMode = CAM_STILL;
     EditMode                        m_editMode = EM_MOVE;
     void*                           m_currGroup = nullptr;
+    void*                           m_currTri = nullptr;
+    int                             m_currEdge = -1;
+    glm::vec2                       m_currEdgeVec;
     glm::vec2                       m_currGroupOldPos = glm::vec2(0.0f, 0.0f);
     float                           m_currGroupOldRot = 0.0f;
     glm::vec2                       m_fromCurrGroupCenter = glm::vec2(0.0f,0.0f);

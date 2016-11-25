@@ -505,40 +505,42 @@ void CRenWin2D::RenderSelection()
 {
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    if(m_editMode == EM_SNAP || m_editMode == EM_CHANGE_FLAPS)
+    if(m_editMode == EM_SNAP || m_editMode == EM_CHANGE_FLAPS || m_editMode == EM_ROTATE)
     {
         CMesh::STriangle2D *trUnderCursor = nullptr;
         int edgeUnderCursor = 0;
         glm::vec2 mwp = PointToWorldCoords(m_mousePosition);
         m_model->GetStuffUnderCursor(mwp, trUnderCursor, edgeUnderCursor);
 
+        if(m_editMode == EM_ROTATE && m_currTri)
+        {
+            trUnderCursor = (CMesh::STriangle2D*)m_currTri;
+            edgeUnderCursor = m_currEdge;
+        }
+
         //highlight edge under cursor (if it has neighbour)
-        if(trUnderCursor && trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles())
+        if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() || m_editMode == EM_ROTATE))
         {
             if(m_editMode == EM_CHANGE_FLAPS &&
                trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                 return;
 
-            CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
-            int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
             const glm::vec2 &v1 = (*trUnderCursor)[0];
             const glm::vec2 &v2 = (*trUnderCursor)[1];
             const glm::vec2 &v3 = (*trUnderCursor)[2];
-
-            const glm::vec2 &v12 = (*tr2)[0];
-            const glm::vec2 &v22 = (*tr2)[1];
-            const glm::vec2 &v32 = (*tr2)[2];
 
             glm::vec2 e1Middle;
 
             if(m_editMode == EM_CHANGE_FLAPS)
             {
                 glColor3f(0.0f, 0.0f, 1.0f);
-            } else {
+            } else if(m_editMode == EM_SNAP) {
                 if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                     glColor3f(1.0f, 0.0f, 0.0f);
                 else
                     glColor3f(0.0f, 1.0f, 0.0f);
+            } else {
+                glColor3f(0.0f, 1.0f, 1.0f);
             }
             glLineWidth(3.0f);
             glBegin(GL_LINES);
@@ -561,30 +563,40 @@ void CRenWin2D::RenderSelection()
                     break;
                 default : break;
             }
-            switch(e2)
+
+            if(m_editMode != EM_ROTATE)
             {
-                case 0:
-                    glVertex2f(v12[0], v12[1]);
-                    glVertex2f(v22[0], v22[1]);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    e1Middle = 0.5f*(v12+v22);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    break;
-                case 1:
-                    glVertex2f(v32[0], v32[1]);
-                    glVertex2f(v22[0], v22[1]);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    e1Middle = 0.5f*(v32+v22);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    break;
-                case 2:
-                    glVertex2f(v12[0], v12[1]);
-                    glVertex2f(v32[0], v32[1]);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    e1Middle = 0.5f*(v12+v32);
-                    glVertex2f(e1Middle[0], e1Middle[1]);
-                    break;
-                default : break;
+                CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
+                int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
+                const glm::vec2 &v12 = (*tr2)[0];
+                const glm::vec2 &v22 = (*tr2)[1];
+                const glm::vec2 &v32 = (*tr2)[2];
+
+                switch(e2)
+                {
+                    case 0:
+                        glVertex2f(v12[0], v12[1]);
+                        glVertex2f(v22[0], v22[1]);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v12+v22);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        break;
+                    case 1:
+                        glVertex2f(v32[0], v32[1]);
+                        glVertex2f(v22[0], v22[1]);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v32+v22);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        break;
+                    case 2:
+                        glVertex2f(v12[0], v12[1]);
+                        glVertex2f(v32[0], v32[1]);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v12+v32);
+                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        break;
+                    default : break;
+                }
             }
             glEnd();
             glLineWidth(1.0f);
@@ -675,7 +687,7 @@ bool CRenWin2D::event(QEvent *e)
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
             QPointF newPos = me->pos();
             bool shouldUpdate = false;
-            if(m_mousePosition != newPos && (m_editMode == EM_SNAP || m_editMode == EM_CHANGE_FLAPS))
+            if(m_mousePosition != newPos && (m_editMode == EM_SNAP || m_editMode == EM_CHANGE_FLAPS || m_editMode == EM_ROTATE))
                 shouldUpdate = true;
             m_mousePosition = newPos;
             switch(m_cameraMode)
@@ -765,12 +777,21 @@ void CRenWin2D::ModeLMB()
     {
         case EM_ROTATE :
         {
+            CMesh::STriangle2D *trUnderCursor = nullptr;
+            m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, m_currEdge);
+
             const CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
             m_currGroup = static_cast<void*>(const_cast<CMesh::STriGroup*>(tGroup));
             if(!tGroup)
             {
                 m_cameraMode = CAM_STILL;
                 break;
+            }
+            m_currTri = (void*)trUnderCursor;
+            if(trUnderCursor)
+            {
+                CMesh::STriangle2D& trRef = *trUnderCursor;
+                m_currEdgeVec = glm::normalize(trRef[(m_currEdge+1)%3] - trRef[m_currEdge]);
             }
             m_fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
             m_currGroupLastRot = tGroup->GetRotation();
@@ -906,6 +927,39 @@ void CRenWin2D::ModeUpdate(QPointF &mpos)
                 newAngle *= -1.0f;
             }
 
+            static const float snapDelta = 5.0f;
+            if(m_currTri)
+            {
+                const CMesh::STriangle2D& tri = *(CMesh::STriangle2D*)m_currTri;
+                const glm::vec2& triV1 = tri[m_currEdge];
+                const glm::vec2& triV2 = tri[(m_currEdge+1)%3];
+                glm::vec2 edgeVec = glm::normalize(triV2 - triV1);
+                float angleOX = glm::acos(glm::clamp(edgeVec.x, -1.0f, 1.0f));
+                if(edgeVec.y < 0.0f)
+                {
+                    angleOX *= -1.0f;
+                }
+                angleOX = glm::degrees(angleOX);
+
+                const glm::mat2 rotMx(glm::vec2(glm::cos(glm::radians(newAngle)), glm::sin(glm::radians(newAngle))),
+                                      glm::vec2(-glm::sin(glm::radians(newAngle)), glm::cos(glm::radians(newAngle))));
+                glm::vec2 edgeVecRotated = rotMx * m_currEdgeVec;
+                float currAngleOX = glm::acos(glm::clamp(edgeVecRotated.x, -1.0f, 1.0f));
+                if(edgeVecRotated.y < 0.0f)
+                {
+                    currAngleOX *= -1.0f;
+                }
+                currAngleOX = glm::degrees(currAngleOX);
+                for(float snapAngle = -180.0f; snapAngle < 200.0f; snapAngle += 45.0f)
+                {
+                    if(glm::abs(snapAngle - currAngleOX) < snapDelta)
+                    {
+                        newAngle = tGroup->GetRotation() + snapAngle - angleOX - m_currGroupLastRot;
+                        break;
+                    }
+                }
+            }
+
             tGroup->SetRotation(newAngle + m_currGroupLastRot);
             break;
         }
@@ -938,6 +992,7 @@ void CRenWin2D::ModeEnd()
         case EM_ROTATE :
         {
             m_model->NotifyGroupRotation(*tGroup, m_currGroupOldRot);
+            m_currTri = nullptr;
             break;
         }
     default : break;
