@@ -2,6 +2,7 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QActionGroup>
+#include <QCloseEvent>
 #include <cstdio>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -47,8 +48,6 @@ CMainWindow::CMainWindow(QWidget *parent) :
     connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(LoadTexture()));
     connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw3, SLOT(LoadTexture(QImage*)));
     connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw2, SLOT(LoadTexture(QImage*)));
-    connect(ui->actionRemove_Texture, SIGNAL(triggered()), m_rw2, SLOT(ClearTexture()));
-    connect(ui->actionRemove_Texture, SIGNAL(triggered()), m_rw3, SLOT(ClearTexture()));
     connect(ui->actionRemove_Texture, SIGNAL(triggered()), this, SLOT(ClearTexture()));
 }
 
@@ -57,6 +56,12 @@ CMainWindow::~CMainWindow()
     delete ui;
     if(m_model)
         delete m_model;
+}
+
+void CMainWindow::closeEvent(QCloseEvent *event)
+{
+    AskToSaveChanges();
+    event->accept();
 }
 
 void CMainWindow::LoadTexture()
@@ -77,7 +82,7 @@ void CMainWindow::LoadModel()
     std::string modelPath = QFileDialog::getOpenFileName(this,
                                                          "Open Model",
                                                          "",
-                                                         "3D Mesh (*.obj)").toStdString();
+                                                         "Wavefront (*.obj)").toStdString();
     if(modelPath.empty())
         return;
 
@@ -87,7 +92,9 @@ void CMainWindow::LoadModel()
         delete newModel;
         QMessageBox::information(this, "Error", "Could not open model!");
     } else {
+        AskToSaveChanges();
         m_openedModel = "";
+        ClearTexture();
         m_rw2->SetModel(newModel);
         m_rw3->SetModel(newModel);
         if(m_model)
@@ -97,9 +104,27 @@ void CMainWindow::LoadModel()
     }
 }
 
+void CMainWindow::AskToSaveChanges()
+{
+    if(m_model)
+    {
+        if(m_model->IsModified() || m_openedModel == "")
+        {
+            auto result = QMessageBox::question(this, "Save changes", "Do you want to save changes to current model?",
+                                                QMessageBox::Yes | QMessageBox::No);
+            if(result == QMessageBox::Yes)
+            {
+                on_actionSave_triggered();
+            }
+        }
+    }
+}
+
 void CMainWindow::ClearTexture()
 {
     m_textureImg.reset(nullptr);
+    m_rw2->ClearTexture();
+    m_rw3->ClearTexture();
 }
 
 void CMainWindow::on_actionModeRotate_triggered()
@@ -254,6 +279,8 @@ void CMainWindow::Deserialize(const char* filename)
     if(!f)
         return;
 
+    AskToSaveChanges();
+
     char ivo[4];
     int version = -1;
 
@@ -305,6 +332,7 @@ void CMainWindow::Deserialize(const char* filename)
 
             m_openedModel = filename;
 
+            ClearTexture();
             m_rw2->SetModel(newModel);
             m_rw3->SetModel(newModel);
             if(m_model)
@@ -367,6 +395,11 @@ void CMainWindow::on_actionSave_As_triggered()
                                                          "Ivo model (*.ivo)").toStdString();
     if(filePath.empty())
         return;
+
+    if(filePath.length() < 4 || filePath.substr(filePath.length()-4) != ".ivo")
+    {
+        filePath += ".ivo";
+    }
 
     Serialize(filePath.c_str());
 }

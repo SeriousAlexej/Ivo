@@ -34,6 +34,7 @@ public:
     void                      GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
     void                      Undo();
     void                      Redo();
+    bool                      IsModified() const;
     void                      NotifyGroupMovement(STriGroup& grp, const glm::vec2& oldPos);
     void                      NotifyGroupRotation(STriGroup& grp, float oldRot);
     void                      Serialize(FILE* f) const;

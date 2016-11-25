@@ -53,7 +53,9 @@ private slots:
     void on_actionShow_Grid_triggered(bool checked);
 
 private:
+    void closeEvent(QCloseEvent *event) override;
     void UpdateView();
+    void AskToSaveChanges();
 
     Ui::MainWindow*         ui;
     CMesh*                  m_model;

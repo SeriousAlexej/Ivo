@@ -17,6 +17,11 @@ CMesh::~CMesh()
 {
 }
 
+bool CMesh::IsModified() const
+{
+    return m_undoStack.canRedo() || m_undoStack.canUndo();
+}
+
 void CMesh::Clear()
 {
     m_undoStack.clear();
