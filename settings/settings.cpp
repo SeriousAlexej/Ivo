@@ -10,7 +10,7 @@ CSettings::CSettings() :
     m_resScale(6.0f),
     m_imgFormat(IF_PNG),
     m_imgQuality(100),
-    m_lineWidth(1.3f),
+    m_lineWidth(1.0f),
     m_stippleLoop(2),
     m_detachAngle(70)
 {

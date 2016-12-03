@@ -8,11 +8,10 @@
 
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
-CMesh::STriGroup::STriGroup(CMesh *m) :
+CMesh::STriGroup::STriGroup() :
     m_position(glm::vec2(0.0f,0.0f)),
     m_rotation(0.0f),
-    m_matrix(1),
-    m_msh(m)
+    m_matrix(1)
 {
 }
 
@@ -221,15 +220,15 @@ void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
     }
     CentrateOrigin();
 
-    for(auto it = m_msh->m_groups.begin(); it != m_msh->m_groups.end(); ++it)
+    for(auto it = CMesh::g_Mesh->m_groups.begin(); it != CMesh::g_Mesh->m_groups.end(); ++it)
     {
         if(&(*it) == grp)
         {
-            m_msh->m_groups.erase(it);
+            CMesh::g_Mesh->m_groups.erase(it);
             break;
         }
     }
-    m_msh->UpdateGroupDepth();
+    CMesh::g_Mesh->UpdateGroupDepth();
 }
 
 void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
@@ -268,7 +267,7 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
             CIvoCommand* cmd = new CIvoCommand();
             cmd->AddAction(cmdSnp);
 
-            m_msh->m_undoStack.push(cmd);
+            CMesh::g_Mesh->m_undoStack.push(cmd);
         }
         return;
     }
@@ -308,8 +307,8 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     cmd->AddAction(cmdSnp);
     cmd->AddAction(cmdAtt);
 
-    m_msh->m_undoStack.push(cmd);
-    m_msh->UpdateGroupDepth();
+    CMesh::g_Mesh->m_undoStack.push(cmd);
+    CMesh::g_Mesh->UpdateGroupDepth();
 }
 
 void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
@@ -354,8 +353,8 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
         currLevel = nextLevel;
     }
 
-    m_msh->m_groups.push_back(STriGroup(m_msh));
-    STriGroup &newGroup = m_msh->m_groups.back();
+    CMesh::g_Mesh->m_groups.push_back(STriGroup());
+    STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
 
     newGroup.m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
     newGroup.m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
@@ -457,7 +456,7 @@ void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
         glm::vec2 oldTR2V0 = tr2->m_vtxRT[0];
         glm::vec2 oldTRV0 = tr->m_vtxRT[0];
 
-        STriGroup &newGroup = m_msh->m_groups.back();
+        STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
         glm::vec2 newPos = newGroup.m_position + oldTRN + oldTR2V0 - tr2->m_vtxRT[0];
         cmdMv2.SetTranslation(newPos - newGroup.GetPosition());
 
@@ -469,13 +468,13 @@ void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
         cmd->AddAction(cmdMv2);
     }
 
-    m_msh->m_undoStack.push(cmd);
-    m_msh->UpdateGroupDepth();
+    CMesh::g_Mesh->m_undoStack.push(cmd);
+    CMesh::g_Mesh->UpdateGroupDepth();
 }
 
 void CMesh::STriGroup::Serialize(FILE *f) const
 {
-    assert(m_msh);
+    assert(CMesh::g_Mesh);
     const int triSize = m_tris.size();
     std::fwrite(&triSize, sizeof(int), 1, f);
 
@@ -483,7 +482,7 @@ void CMesh::STriGroup::Serialize(FILE *f) const
     int i = 0;
     for(const STriangle2D* tr : m_tris)
     {
-        trInds[i++] = (int)(tr - &(m_msh->m_tri2D[0]));
+        trInds[i++] = (int)(tr - &(CMesh::g_Mesh->m_tri2D[0]));
     }
     std::fwrite(trInds.data(), sizeof(int), triSize, f);
 
@@ -504,7 +503,7 @@ void CMesh::STriGroup::Deserialize(FILE *f)
 
     for(int ind : tris)
     {
-        m_tris.push_back(&(m_msh->m_tri2D[ind]));
+        m_tris.push_back(&(CMesh::g_Mesh->m_tri2D[ind]));
         m_tris.back()->m_myGroup = this;
     }
 
@@ -514,11 +513,6 @@ void CMesh::STriGroup::Deserialize(FILE *f)
     std::fread(&m_position, sizeof(glm::vec2), 1, f);
     std::fread(&m_rotation, sizeof(float), 1, f);
     std::fread(&m_matrix, sizeof(glm::mat3), 1, f);
-}
-
-CMesh* CMesh::STriGroup::GetMesh() const
-{
-    return m_msh;
 }
 
 void CMesh::STriGroup::Scale(float scale)

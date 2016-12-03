@@ -1,12 +1,18 @@
 #include <fstream>
 #include <algorithm>
 #include <list>
+#include <unordered_map>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/mesh.h>
 #include "mesh/mesh.h"
-#include "modelLoader/objParser.h"
 #include "mesh/command.h"
 #include "settings/settings.h"
+
+CMesh* CMesh::g_Mesh = nullptr;
 
 CMesh::CMesh()
 {
@@ -32,33 +38,105 @@ void CMesh::Clear()
     m_flatNormals.clear();
     m_tri2D.clear();
     m_groups.clear();
+    m_materials.clear();
 }
 
-bool CMesh::LoadMesh(std::string path)
+void CMesh::AddMeshesFromAIScene(const aiScene* scene, const aiNode* node)
 {
-    std::ifstream in;
-    in.open(path.c_str(), std::ios::in);
-
-    if(!in.is_open())
-        return false;
-
-    Clear();
-    ObjParser p(in, &m_vertices, &m_normals, &m_uvCoords, &m_triangles);
-
-    if(!p.load())
+    static unsigned unnamedMatIndex = 1u;
+    for(unsigned n=0; n<node->mNumMeshes; ++n)
     {
-        Clear();
-        in.close();
-        return false;
+        const aiMesh* mesh = scene->mMeshes[node->mMeshes[n]];
+
+        unsigned matIndex = mesh->mMaterialIndex;
+        if(m_materials.find(matIndex) == m_materials.end())
+        {
+            aiMaterial& mat = *(scene->mMaterials[matIndex]);
+            aiString matName;
+            mat.Get(AI_MATKEY_NAME, matName);
+            std::string matNameStdStr = matName.C_Str();
+            if(matNameStdStr.empty())
+            {
+                matNameStdStr = std::string("<unnamed_material_") + std::to_string(unnamedMatIndex++) + ">";
+            }
+            m_materials[matIndex] = matNameStdStr;
+        }
+
+        std::unordered_map<unsigned, unsigned> indicesRemap;
+
+        for(unsigned f=0; f<mesh->mNumFaces; ++f)
+        {
+            const aiFace* face = &mesh->mFaces[f];
+
+            assert(face->mNumIndices == 3);
+
+            glm::uvec4 tr;
+            for(int i=0; i<3; ++i)
+            {
+                unsigned newIndex = m_uvCoords.size();
+                unsigned vertexIndex = face->mIndices[i];
+
+                if(indicesRemap.find(vertexIndex) == indicesRemap.end())
+                {
+                    if(mesh->HasTextureCoords(0))
+                    {
+                        m_uvCoords.push_back(glm::vec2(mesh->mTextureCoords[0][vertexIndex].x, mesh->mTextureCoords[0][vertexIndex].y));
+                    } else {
+                        m_uvCoords.push_back(glm::vec2(0.0f, 0.0f));
+                    }
+                    m_normals.push_back(glm::vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z));
+                    m_vertices.push_back(glm::vec3(mesh->mVertices[vertexIndex].x, mesh->mVertices[vertexIndex].y, mesh->mVertices[vertexIndex].z));
+
+                    indicesRemap[vertexIndex] = newIndex;
+                } else {
+                    newIndex = indicesRemap[vertexIndex];
+                }
+
+                tr[i] = newIndex;
+            }
+            tr[3] = matIndex;
+            m_triangles.push_back(tr);
+        }
     }
 
-    in.close();
+    for(unsigned n=0; n<node->mNumChildren; ++n)
+    {
+        AddMeshesFromAIScene(scene, node->mChildren[n]);
+    }
+    unnamedMatIndex = 1u;
+}
+
+std::string CMesh::LoadMesh(const std::string& path)
+{
+    Clear();
+
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(path,   aiProcess_JoinIdenticalVertices |
+                                                     aiProcess_Triangulate |
+                                                     aiProcess_GenSmoothNormals |
+                                                     aiProcess_PreTransformVertices |
+                                                     aiProcess_GenUVCoords |
+                                                     aiProcess_FlipUVs);
+    if(!scene)
+    {
+        return importer.GetErrorString();
+    }
+
+    AddMeshesFromAIScene(scene, scene->mRootNode);
+
+    if(m_vertices.size() == 0)
+    {
+        return "File contains no 3D geometry";
+    }
+
     CalculateFlatNormals(); //this function goes first!
     FillAdjTri_Gen2DTri();
     GroupTriangles((float)CSettings::GetInstance().GetDetachAngle());
     PackGroups(false);
     CalculateAABBox();
-    return true;
+    g_Mesh = this;
+    return "";
 }
 
 void CMesh::FillAdjTri_Gen2DTri()
@@ -69,9 +147,9 @@ void CMesh::FillAdjTri_Gen2DTri()
 
     for(int i = m_triangles.size()-1; i>=0; --i)
     {
-        const Triangle &t = m_triangles[i];
-        const glm::vec3 *v1[3] = { &m_vertices[t.vertex[0][0]-1], &m_vertices[t.vertex[1][0]-1], &m_vertices[t.vertex[2][0]-1] };
-        const glm::vec3 *n1[3] = { &m_normals[t.vertex[0][2]-1],  &m_normals[t.vertex[1][2]-1],  &m_normals[t.vertex[2][2]-1]  };
+        const glm::uvec4 &t = m_triangles[i];
+        const glm::vec3 *v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
+        const glm::vec3 *n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
 
         float v1v2cos = glm::clamp(glm::dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(glm::distance(*v1[2], *v1[0])*glm::distance(*v1[1], *v1[0])), -1.0f, 1.0f);
         m_tri2D[i].m_vtx[0] = glm::vec2(0.0f, 0.0f);
@@ -94,9 +172,9 @@ void CMesh::FillAdjTri_Gen2DTri()
                m_tri2D[i].m_edges[2] != nullptr)
                 break;
 
-            const Triangle &t2 = m_triangles[j];
-            const glm::vec3 *v2[3] = { &m_vertices[t2.vertex[0][0]-1], &m_vertices[t2.vertex[1][0]-1], &m_vertices[t2.vertex[2][0]-1] };
-            const glm::vec3 *n2[3] = { &m_normals[t2.vertex[0][2]-1], &m_normals[t2.vertex[1][2]-1], &m_normals[t2.vertex[2][2]-1]  };
+            const glm::uvec4 &t2 = m_triangles[j];
+            const glm::vec3 *v2[3] = { &m_vertices[t2[0]], &m_vertices[t2[1]], &m_vertices[t2[2]] };
+            const glm::vec3 *n2[3] = { &m_normals[t2[0]], &m_normals[t2[1]], &m_normals[t2[2]] };
 
             //9 cases edges of 2 triangles can be adjacent:
             for(int e1=0; e1<3; ++e1)
@@ -145,8 +223,8 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     float angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
     edg.m_angle = angle;
 
-    glm::vec3 &v0 = m_vertices[m_triangles[i].vertex[0][0]-1];
-    glm::vec3 &v1 = m_vertices[m_triangles[i].vertex[1][0]-1];
+    glm::vec3 &v0 = m_vertices[m_triangles[i][0]];
+    glm::vec3 &v1 = m_vertices[m_triangles[i][1]];
     glm::vec3 &up = m_flatNormals[i];
     glm::vec3 front = glm::normalize(v0 - v1);
     glm::vec3 right = glm::cross(front, up);
@@ -160,13 +238,13 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     switch(e2)
     {
         case 0: //edge with vtx 1 and 2
-            toCheck = &m_vertices[m_triangles[j].vertex[2][0]-1]; //choose 3
+            toCheck = &m_vertices[m_triangles[j][2]]; //choose 3
             break;
         case 1: //2 and 3
-            toCheck = &m_vertices[m_triangles[j].vertex[0][0]-1]; //choose 1
+            toCheck = &m_vertices[m_triangles[j][0]]; //choose 1
             break;
         case 2: //3 and 1
-            toCheck = &m_vertices[m_triangles[j].vertex[1][0]-1]; //choose 2
+            toCheck = &m_vertices[m_triangles[j][1]]; //choose 2
             break;
         default: exit(42);
     }
@@ -188,15 +266,11 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
 
 void CMesh::CalculateFlatNormals()
 {
-    for(Triangle &t : m_triangles)
+    for(const glm::uvec4 &t : m_triangles)
     {
-        const glm::uvec3 &vertexInfo1 = t.vertex[0];
-        const glm::uvec3 &vertexInfo2 = t.vertex[1];
-        const glm::uvec3 &vertexInfo3 = t.vertex[2];
-
-        const glm::vec3 &vertex1 = m_vertices[vertexInfo1[0]-1];
-        const glm::vec3 &vertex2 = m_vertices[vertexInfo2[0]-1];
-        const glm::vec3 &vertex3 = m_vertices[vertexInfo3[0]-1];
+        const glm::vec3 &vertex1 = m_vertices[t[0]];
+        const glm::vec3 &vertex2 = m_vertices[t[1]];
+        const glm::vec3 &vertex3 = m_vertices[t[2]];
 
         glm::vec3 faceNormal = glm::normalize(glm::cross((vertex2-vertex1), (vertex3-vertex1)));
         m_flatNormals.push_back(faceNormal);
@@ -210,7 +284,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
         if(m_tri2D[i].m_myGroup != nullptr)
             continue;
         //we found first ungrouped triangle! Create new group
-        m_groups.push_back(STriGroup(this));
+        m_groups.push_back(STriGroup());
         //list of candidates contains triangles that might get in group
         std::list<std::pair<int, int>> candidates;
         std::list<int> candNoRefls;
@@ -597,14 +671,14 @@ void CMesh::CalculateAABBox()
     m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
 }
 
-glm::vec3 CMesh::GetSizeCentimeters() const
+glm::vec3 CMesh::GetSizeMillimeters() const
 {
-    glm::vec3 sizeCm;
-    sizeCm.x = m_aabbox[6].x - m_aabbox[0].x;
-    sizeCm.y = m_aabbox[6].y - m_aabbox[0].y;
-    sizeCm.z = m_aabbox[6].z - m_aabbox[0].z;
-    sizeCm *= 10.0f;
-    return sizeCm;
+    glm::vec3 sizeMm;
+    sizeMm.x = m_aabbox[6].x - m_aabbox[0].x;
+    sizeMm.y = m_aabbox[6].y - m_aabbox[0].y;
+    sizeMm.z = m_aabbox[6].z - m_aabbox[0].z;
+    sizeMm *= 10.0f;
+    return sizeMm;
 }
 
 void CMesh::Undo()
@@ -669,7 +743,7 @@ void CMesh::Serialize(FILE *f) const
 
     sizeVar = m_triangles.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_triangles.data(), sizeof(Triangle), sizeVar, f);
+    std::fwrite(m_triangles.data(), sizeof(glm::uvec4), sizeVar, f);
 
     sizeVar = m_tri2D.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
@@ -738,7 +812,7 @@ void CMesh::Deserialize(FILE *f)
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);
     m_triangles.resize(sizeVar);
-    std::fread(m_triangles.data(), sizeof(Triangle), sizeVar, f);
+    std::fread(m_triangles.data(), sizeof(glm::uvec4), sizeVar, f);
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);
     m_tri2D.resize(sizeVar);
@@ -758,7 +832,7 @@ void CMesh::Deserialize(FILE *f)
     }
 
     std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_groups.resize(sizeVar, STriGroup(this));
+    m_groups.resize(sizeVar, STriGroup());
     for(STriGroup &g : m_groups)
     {
         g.Deserialize(f);

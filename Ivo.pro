@@ -13,16 +13,17 @@ CONFIG += c++11
 win32 {
 LIBS += -lOpengl32
 }
+LIBS += -L$$PWD/../assimp-3.3.1/build/code/ -lassimp
 
 INCLUDEPATH += $$PWD/../glm
+INCLUDEPATH += $$PWD/../assimp-3.3.1/include
+DEPENDPATH += $$PWD/../assimp-3.3.1/include
 
 TARGET = Ivo
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-    modelLoader/objParser.cpp \
-    modelLoader/objScanner.cpp \
     mesh/trianglegroup.cpp \
     mesh/triangle2d.cpp \
     mesh/mesh.cpp \
@@ -32,16 +33,11 @@ SOURCES += main.cpp\
     interface/settingswindow.cpp \
     settings/settings.cpp \
     mesh/command.cpp \
-    interface/scalewindow.cpp
+    interface/scalewindow.cpp \
+    interface/materialmanager.cpp \
+    formats3d.cpp
 
 HEADERS  += \
-    modelLoader/objParser.base.h \
-    modelLoader/objParser.h \
-    modelLoader/objParser.impl.h \
-    modelLoader/objScanner.base.h \
-    modelLoader/objScanner.h \
-    modelLoader/objScanner.impl.h \
-    modelLoader/structure.h \
     mesh/mesh.h \
     interface/mainwindow.h \
     renderers/renwin2d.h \
@@ -49,11 +45,13 @@ HEADERS  += \
     interface/settingswindow.h \
     settings/settings.h \
     mesh/command.h \
-    interface/scalewindow.h
+    interface/scalewindow.h \
+    interface/materialmanager.h
 
 FORMS    += interface/mainwindow.ui \
     interface/settingswindow.ui \
-    interface/scalewindow.ui
+    interface/scalewindow.ui \
+    interface/materialmanager.ui
 
 RESOURCES += \
     res.qrc

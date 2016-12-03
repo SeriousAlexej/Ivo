@@ -3,12 +3,13 @@
 #include <QUndoStack>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <list>
 #include <cstdio>
-#include "modelLoader/structure.h"
+#include <assimp/scene.h>
 
 #define IVO_VERSION 1
 
@@ -19,16 +20,18 @@ public:
     struct STriangle2D;
     struct STriGroup;
 
+
     CMesh();
     ~CMesh();
-    bool LoadMesh(std::string path);
-    void Clear();
+    std::string LoadMesh(const std::string& path);
+    void        Clear();
 
-    inline const std::vector<glm::vec3>& GetNormals()   const { return m_flatNormals; }
-    inline const std::vector<glm::vec2>& GetUVCoords()  const { return m_uvCoords; }
-    inline const std::vector<glm::vec3>& GetVertices()  const { return m_vertices; }
-    inline const std::vector<Triangle>&  GetTriangles() const { return m_triangles; }
-    inline const glm::vec3*              GetAABBox()    const { return m_aabbox; }
+    inline const std::vector<glm::vec3>&    GetNormals()   const { return m_flatNormals; }
+    inline const std::vector<glm::vec2>&    GetUVCoords()  const { return m_uvCoords; }
+    inline const std::vector<glm::vec3>&    GetVertices()  const { return m_vertices; }
+    inline const std::vector<glm::uvec4>&   GetTriangles() const { return m_triangles; }
+    inline const glm::vec3*                 GetAABBox()    const { return m_aabbox; }
+    inline const std::unordered_map<unsigned, std::string> GetMaterials() const { return m_materials; }
 
     const CMesh::STriGroup*   GroupUnderCursor(glm::vec2 &curPos) const;
     void                      GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
@@ -42,9 +45,11 @@ public:
     void                      Scale(float scale);
     void                      ApplyScale(float scale);
     void                      PackGroups(bool undoable=true);
-    glm::vec3                 GetSizeCentimeters() const;
+    glm::vec3                 GetSizeMillimeters() const;
+    static inline CMesh*      GetMesh() { return g_Mesh; }
 
 private:
+    void AddMeshesFromAIScene(const aiScene* scene, const aiNode* node);
     void CalculateFlatNormals();
     void FillAdjTri_Gen2DTri();
     void DetermineFoldParams(int i, int j, int e1, int e2);
@@ -52,10 +57,12 @@ private:
     void UpdateGroupDepth();
     void CalculateAABBox();
 
+    static CMesh*               g_Mesh;
     std::vector<glm::vec2>      m_uvCoords;
     std::vector<glm::vec3>      m_normals;
     std::vector<glm::vec3>      m_vertices;
-    std::vector<Triangle>       m_triangles;
+    std::vector<glm::uvec4>     m_triangles; //vtx1 index, vtx2 index, vtx3 index, mtl index
+    std::unordered_map<unsigned, std::string> m_materials;
     //generated stuff
     std::vector<glm::vec3>      m_flatNormals;
     std::vector<STriangle2D>    m_tri2D;
@@ -163,7 +170,7 @@ public:
 
     struct STriGroup
     {
-        STriGroup(CMesh *m);
+        STriGroup();
 
         void                AttachGroup(STriangle2D* tr2, int e2);
         void                BreakGroup(STriangle2D* tr2, int e2);
@@ -178,7 +185,6 @@ public:
         inline float        GetRotation() const { return m_rotation; }
         const float&        GetDepth() const;
         const float&        GetAABBHalfSide() const;
-        CMesh*              GetMesh() const;
 
         const std::list<STriangle2D*>& GetTriangles() const;
 
@@ -197,7 +203,6 @@ public:
         glm::vec2               m_position;
         float                   m_rotation;
         glm::mat3               m_matrix;
-        CMesh*                  m_msh = nullptr;
 
         static float            ms_depthStep;
 

@@ -5,7 +5,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLTexture>
 #include <memory>
-#include <QMutex>
+#include <unordered_map>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <QString>
@@ -39,10 +39,11 @@ public:
     void SerializeSheets(FILE* f) const;
     void DeserializeSheets(FILE* f);
     void ZoomFit();
+    void ReserveTextureID(unsigned id);
 
 public slots:
-    void LoadTexture(QImage* img);
-    void ClearTexture();
+    void LoadTexture(QImage* img, unsigned index);
+    void ClearTextures();
 
 protected:
     virtual void initializeGL() override final;
@@ -54,7 +55,7 @@ private:
     void CreateFoldTextures();
     void RenderPaperSheets();
     void RenderSelection();
-    void RenderGroups() const;
+    void RenderGroups();
     void RenderFlaps() const;
     void RenderEdges();
     void RenderFlap(void *tr, int edge) const;
@@ -73,8 +74,10 @@ private:
         glm::vec2 m_widthHeight;
     };
 
+    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
+    int                             m_boundTextureID;
+
     CMesh*                          m_model;
-    std::unique_ptr<QOpenGLTexture> m_texture;
     std::unique_ptr<QOpenGLTexture> m_texValleyFold;
     std::unique_ptr<QOpenGLTexture> m_texMountainFold;
     std::unique_ptr<QOpenGLTexture> m_texPitchBlack;

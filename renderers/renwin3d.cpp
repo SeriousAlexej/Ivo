@@ -15,6 +15,7 @@ CRenWin3D::CRenWin3D(QWidget *parent) :
     format.setMinorVersion(0);
     format.setSamples(2);
     setFormat(format);
+    m_boundTextureID = -1;
     UpdateViewAngles();
 }
 
@@ -27,8 +28,13 @@ void CRenWin3D::SetModel(CMesh *mdl)
 CRenWin3D::~CRenWin3D()
 {
     makeCurrent();
-    if(m_texture)
-        m_texture->destroy();
+    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+    {
+        if(it->second)
+        {
+            it->second->destroy();
+        }
+    }
     doneCurrent();
 }
 
@@ -137,8 +143,7 @@ void CRenWin3D::paintGL()
         glMultMatrixf(&m_viewMatrix[0][0]);
 
         const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
-        if(renTexture && m_texture)
-            m_texture->bind();
+
         glBegin(GL_TRIANGLES);
 
         glLightfv(GL_LIGHT1, GL_POSITION, &m_cameraPosition[0]);
@@ -148,21 +153,29 @@ void CRenWin3D::paintGL()
         const std::vector<glm::vec3> &norms = m_model->GetNormals();
 
         int i = 0;
-        for(const Triangle &t : m_model->GetTriangles())
+        for(const glm::uvec4 &t : m_model->GetTriangles())
         {
-            //triangle stores info about 3 vertices.
-            //vertex info stores 3 indices. 1st - index of position component. 2nd - uv coord index. 3rd - index of normal.
-            const glm::uvec3 &vertexInfo1 = t.vertex[0];
-            const glm::uvec3 &vertexInfo2 = t.vertex[1];
-            const glm::uvec3 &vertexInfo3 = t.vertex[2];
+            if(renTexture && m_boundTextureID != (int)t[3])
+            {
+                glEnd();
+                if(m_textures[t[3]])
+                {
+                    m_textures[t[3]]->bind();
+                } else if(m_boundTextureID >= 0 && m_textures[m_boundTextureID])
+                {
+                    m_textures[m_boundTextureID]->release();
+                }
+                glBegin(GL_TRIANGLES);
+                m_boundTextureID = t[3];
+            }
 
-            const glm::vec3 &vertex1 = vert[vertexInfo1[0]-1]; // Indices start from 1!
-            const glm::vec3 &vertex2 = vert[vertexInfo2[0]-1];
-            const glm::vec3 &vertex3 = vert[vertexInfo3[0]-1];
+            const glm::vec3 &vertex1 = vert[t[0]];
+            const glm::vec3 &vertex2 = vert[t[1]];
+            const glm::vec3 &vertex3 = vert[t[2]];
 
-            const glm::vec2 &uv1 = uvs[vertexInfo1[1]-1];
-            const glm::vec2 &uv2 = uvs[vertexInfo2[1]-1];
-            const glm::vec2 &uv3 = uvs[vertexInfo3[1]-1];
+            const glm::vec2 &uv1 = uvs[t[0]];
+            const glm::vec2 &uv2 = uvs[t[1]];
+            const glm::vec2 &uv3 = uvs[t[2]];
 
             const glm::vec3 &faceNormal = norms[i++];
 
@@ -180,8 +193,18 @@ void CRenWin3D::paintGL()
 
         glEnd();
 
-        if(renTexture && m_texture)
-            m_texture->release();
+        if(renTexture)
+        {
+            for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+            {
+                if(m_textures[it->first] && m_textures[it->first]->isBound())
+                {
+                    m_textures[it->first]->release();
+                    break;
+                }
+            }
+            m_boundTextureID = -1;
+        }
     }
     if(CSettings::RenderGrid)
         DrawGrid();
@@ -318,25 +341,44 @@ void CRenWin3D::UpdateViewMatrix()
     update();
 }
 
-void CRenWin3D::LoadTexture(QImage* img)
+void CRenWin3D::ReserveTextureID(unsigned id)
 {
-    assert(img);
-    makeCurrent();
-    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(*img));
-    m_texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
-    m_texture->setWrapMode(QOpenGLTexture::Repeat);
+    if(m_textures.find(id) == m_textures.end())
+    {
+        m_textures[id] = nullptr;
+    }
+}
 
+void CRenWin3D::LoadTexture(QImage* img, unsigned index)
+{
+    makeCurrent();
+    if(!img)
+    {
+        m_textures[index].reset(nullptr);
+    } else {
+        if(m_textures[index])
+            m_textures[index]->destroy();
+        m_textures[index].reset(new QOpenGLTexture(*img));
+        m_textures[index]->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+        m_textures[index]->setMagnificationFilter(QOpenGLTexture::Linear);
+        m_textures[index]->setWrapMode(QOpenGLTexture::Repeat);
+    }
     update();
 }
 
-void CRenWin3D::ClearTexture()
+void CRenWin3D::ClearTextures()
 {
-    if(!m_texture)
-        return;
     makeCurrent();
-    m_texture->destroy();
-    m_texture.reset(nullptr);
+    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+    {
+        if(it->second)
+        {
+            it->second->destroy();
+            it->second.reset(nullptr);
+        }
+    }
+    m_textures.clear();
+    m_boundTextureID = -1;
     update();
 }
 

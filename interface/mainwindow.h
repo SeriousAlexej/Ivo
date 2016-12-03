@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 class CMesh;
 
@@ -23,14 +24,14 @@ public:
     ~CMainWindow();
 
 signals:
-    void ApplyTexture(QImage* img);
+    void UpdateTexture(QImage* img, unsigned index);
 
 private slots:
     void Serialize(const char* filename);
     void Deserialize(const char* filename);
     void LoadModel();
-    void LoadTexture();
-    void ClearTexture();
+    void OpenMaterialManager();
+    void ClearTextures();
     void on_actionModeRotate_triggered();
     void on_actionModeSnap_triggered();
     void on_actionModeMove_triggered();
@@ -57,12 +58,13 @@ private:
     void UpdateView();
     void AskToSaveChanges();
 
-    Ui::MainWindow*         ui;
-    CMesh*                  m_model;
-    CRenWin3D*              m_rw3;
-    CRenWin2D*              m_rw2;
-    std::string             m_openedModel = "";
-    std::unique_ptr<QImage> m_textureImg;
+    Ui::MainWindow*                             ui;
+    CMesh*                                      m_model;
+    CRenWin3D*                                  m_rw3;
+    CRenWin2D*                                  m_rw2;
+    std::string                                 m_openedModel = "";
+    std::unordered_map<unsigned, std::string>   m_textures;
+    std::unordered_map<unsigned, std::unique_ptr<QImage>> m_textureImages;
 };
 
 #endif // MAINWINDOW_H

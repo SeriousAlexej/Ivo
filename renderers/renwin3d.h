@@ -5,6 +5,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLTexture>
 #include <memory>
+#include <unordered_map>
 #include <QMutex>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
@@ -21,10 +22,11 @@ public:
     ~CRenWin3D();
     void SetModel(CMesh *mdl);
     void ZoomFit();
+    void ReserveTextureID(unsigned id);
 
 public slots:
-    void LoadTexture(QImage* img);
-    void ClearTexture();
+    void LoadTexture(QImage* img, unsigned index);
+    void ClearTextures();
 
 protected:
     virtual void initializeGL() override final;
@@ -38,8 +40,10 @@ private:
     void UpdateViewAngles();
     void UpdateViewMatrix();
 
+    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
+    int                             m_boundTextureID;
+
     CMesh*                          m_model;
-    std::unique_ptr<QOpenGLTexture> m_texture;
     QPointF                         m_mousePressPoint;
     enum
     { CAM_TRANSLATE,

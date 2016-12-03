@@ -20,6 +20,7 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
     setFormat(format);
     m_cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f);
     m_w = m_h = 100.0f;
+    m_boundTextureID = -1;
     setMouseTracking(true);
 }
 
@@ -78,8 +79,13 @@ void CRenWin2D::CreateFoldTextures()
 CRenWin2D::~CRenWin2D()
 {
     makeCurrent();
-    if(m_texture)
-        m_texture->destroy();
+    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+    {
+        if(it->second)
+        {
+            it->second->destroy();
+        }
+    }
 
     if(m_texValleyFold)
         m_texValleyFold->destroy();
@@ -301,11 +307,9 @@ void CRenWin2D::RenderPaperSheets()
     }
 }
 
-void CRenWin2D::RenderGroups() const
+void CRenWin2D::RenderGroups()
 {
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
-    if(renTexture && m_texture)
-        m_texture->bind();
 
     const std::vector<glm::vec2> &uvs = m_model->GetUVCoords();
 
@@ -318,18 +322,29 @@ void CRenWin2D::RenderGroups() const
         for(auto it2=grpTris.begin(), itEnd = grpTris.end(); it2!=itEnd; ++it2)
         {
             const CMesh::STriangle2D& tr2D = **it2;
-            const Triangle &t = m_model->m_triangles[tr2D.ID()];
-            const glm::uvec3 &vertexInfo1 = t.vertex[0];
-            const glm::uvec3 &vertexInfo2 = t.vertex[1];
-            const glm::uvec3 &vertexInfo3 = t.vertex[2];
+            const glm::uvec4 &t = m_model->GetTriangles()[tr2D.ID()];
+
+            if(renTexture && m_boundTextureID != (int)t[3])
+            {
+                glEnd();
+                if(m_textures[t[3]])
+                {
+                    m_textures[t[3]]->bind();
+                } else if(m_boundTextureID >= 0 && m_textures[m_boundTextureID])
+                {
+                    m_textures[m_boundTextureID]->release();
+                }
+                glBegin(GL_TRIANGLES);
+                m_boundTextureID = t[3];
+            }
 
             const glm::vec2 vertex1 = tr2D[0];
             const glm::vec2 vertex2 = tr2D[1];
             const glm::vec2 vertex3 = tr2D[2];
 
-            const glm::vec2 &uv1 = uvs[vertexInfo1[1]-1];
-            const glm::vec2 &uv2 = uvs[vertexInfo2[1]-1];
-            const glm::vec2 &uv3 = uvs[vertexInfo3[1]-1];
+            const glm::vec2 &uv1 = uvs[t[0]];
+            const glm::vec2 &uv2 = uvs[t[1]];
+            const glm::vec2 &uv3 = uvs[t[2]];
 
             glTexCoord2f(uv1[0], uv1[1]);
             glVertex3f(vertex1[0], vertex1[1], -grp.GetDepth());
@@ -344,8 +359,18 @@ void CRenWin2D::RenderGroups() const
     }
     glEnd();
 
-    if(renTexture && m_texture)
-        m_texture->release();
+    if(renTexture)
+    {
+        for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+        {
+            if(m_textures[it->first] && m_textures[it->first]->isBound())
+            {
+                m_textures[it->first]->release();
+                break;
+            }
+        }
+        m_boundTextureID = -1;
+    }
 }
 
 void CRenWin2D::RenderFlaps() const
@@ -732,26 +757,46 @@ void CRenWin2D::RecalcProjection()
     glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
 }
 
-void CRenWin2D::LoadTexture(QImage* img)
+void CRenWin2D::ReserveTextureID(unsigned id)
 {
-    assert(img);
-    makeCurrent();
-    m_texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(*img));
-    m_texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
-    m_texture->setWrapMode(QOpenGLTexture::Repeat);
+    if(m_textures.find(id) == m_textures.end())
+    {
+        m_textures[id] = nullptr;
+    }
+}
 
+void CRenWin2D::LoadTexture(QImage* img, unsigned index)
+{
+    makeCurrent();
+    if(!img)
+    {
+        m_textures[index].reset(nullptr);
+    } else {
+        if(m_textures[index])
+            m_textures[index]->destroy();
+        m_textures[index].reset(new QOpenGLTexture(*img));
+        m_textures[index]->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+        m_textures[index]->setMagnificationFilter(QOpenGLTexture::Linear);
+        m_textures[index]->setWrapMode(QOpenGLTexture::Repeat);
+    }
     update();
 }
 
-void CRenWin2D::ClearTexture()
+void CRenWin2D::ClearTextures()
 {
-    if(!m_texture)
-        return;
     makeCurrent();
-    m_texture->destroy();
-    m_texture.reset(nullptr);
+    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
+    {
+        if(it->second)
+        {
+            it->second->destroy();
+            it->second.reset(nullptr);
+        }
+    }
+    m_textures.clear();
+    m_boundTextureID = -1;
     update();
+
 }
 
 glm::vec2 CRenWin2D::PointToWorldCoords(QPointF &pt) const

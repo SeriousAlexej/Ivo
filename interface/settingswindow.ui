@@ -143,14 +143,14 @@
              <item>
               <widget class="QLabel" name="label">
                <property name="text">
-                <string>Width (cm)</string>
+                <string>Width (mm)</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="label_2">
                <property name="text">
-                <string>Height (cm)</string>
+                <string>Height (mm)</string>
                </property>
               </widget>
              </item>

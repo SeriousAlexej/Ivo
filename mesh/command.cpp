@@ -42,7 +42,7 @@ void CAtomicCommand::Redo() const
 
     CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
-    CMesh* msh = grp->GetMesh();
+    CMesh* msh = CMesh::GetMesh();
 
     switch(m_type)
     {
@@ -100,7 +100,7 @@ void CAtomicCommand::Undo() const
 
     CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
-    CMesh* msh = grp->GetMesh();
+    CMesh* msh = CMesh::GetMesh();
 
     switch(m_type)
     {

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/48px-AddTexture.png</file>
     <file>icons/48px-Antialias_Icon.svg.png</file>
     <file>icons/48px-Package-x-generic.svg.png</file>
     <file>icons/48px-Edit-redo.png</file>

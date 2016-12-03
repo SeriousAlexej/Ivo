@@ -12,12 +12,14 @@
 #include "settingswindow.h"
 #include "settings/settings.h"
 #include "scalewindow.h"
+#include "interface/materialmanager.h"
+
+extern QString g_GetSupported3DFormats();
 
 CMainWindow::CMainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_model(nullptr),
-    m_textureImg(nullptr)
+    m_model(nullptr)
 {
     ui->setupUi(this);
     m_rw3 = new CRenWin3D(ui->frameLeft);
@@ -45,10 +47,9 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionOpen_obj, SIGNAL(triggered()), this, SLOT(LoadModel()));
-    connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(LoadTexture()));
-    connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw3, SLOT(LoadTexture(QImage*)));
-    connect(this, SIGNAL(ApplyTexture(QImage*)), m_rw2, SLOT(LoadTexture(QImage*)));
-    connect(ui->actionRemove_Texture, SIGNAL(triggered()), this, SLOT(ClearTexture()));
+    connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(OpenMaterialManager()));
+    connect(this, SIGNAL(UpdateTexture(QImage*, unsigned)), m_rw3, SLOT(LoadTexture(QImage*, unsigned)));
+    connect(this, SIGNAL(UpdateTexture(QImage*, unsigned)), m_rw2, SLOT(LoadTexture(QImage*, unsigned)));
 }
 
 CMainWindow::~CMainWindow()
@@ -64,17 +65,50 @@ void CMainWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-void CMainWindow::LoadTexture()
+void CMainWindow::OpenMaterialManager()
 {
-    QString texturePath = QFileDialog::getOpenFileName(this,
-                                                       "Load Texture",
-                                                       "",
-                                                       "Image file (*.png *.bmp *.jpg)");
-    if(texturePath.isEmpty())
+    if(!m_model)
         return;
-    m_textureImg.reset(new QImage(texturePath));
-    (*m_textureImg) = m_textureImg->convertToFormat(QImage::Format_RGB32);
-    emit ApplyTexture(m_textureImg.get());
+    CMaterialManager matMngr(this);
+    matMngr.SetMaterials(m_model->GetMaterials(), m_textures);
+    matMngr.exec();
+
+    auto newTextures = matMngr.GetTextures();
+    for(auto it=newTextures.begin(); it!=newTextures.end(); it++)
+    {
+        if(m_textures[it->first] != it->second)
+        {
+            m_textures[it->first] = it->second;
+            if(!it->second.empty())
+            {
+                m_textureImages[it->first].reset(new QImage(it->second.c_str()));
+                (*(m_textureImages[it->first])) = m_textureImages[it->first]->convertToFormat(QImage::Format_RGB32);
+            } else {
+                m_textureImages[it->first].reset(nullptr);
+            }
+            emit UpdateTexture(m_textureImages[it->first].get(), it->first);
+        }
+    }
+}
+
+void CMainWindow::ClearTextures()
+{
+    m_textures.clear();
+    m_textureImages.clear();
+    m_rw2->ClearTextures();
+    m_rw3->ClearTextures();
+
+    if(m_model)
+    {
+        auto& materials = m_model->GetMaterials();
+        for(auto it=materials.begin(); it!=materials.end(); it++)
+        {
+            m_textures[it->first] = "";
+            m_textureImages[it->first] = nullptr;
+            m_rw2->ReserveTextureID(it->first);
+            m_rw3->ReserveTextureID(it->first);
+        }
+    }
 }
 
 void CMainWindow::LoadModel()
@@ -82,24 +116,26 @@ void CMainWindow::LoadModel()
     std::string modelPath = QFileDialog::getOpenFileName(this,
                                                          "Open Model",
                                                          "",
-                                                         "Wavefront (*.obj)").toStdString();
+                                                         g_GetSupported3DFormats()).toStdString();
     if(modelPath.empty())
         return;
 
     CMesh *newModel = new CMesh();
-    if(!newModel->LoadMesh(modelPath))
+    std::string errorString = newModel->LoadMesh(modelPath);
+    if(!errorString.empty())
     {
         delete newModel;
-        QMessageBox::information(this, "Error", "Could not open model!");
+        QMessageBox::information(this, "Error", errorString.c_str());
     } else {
         AskToSaveChanges();
         m_openedModel = "";
-        ClearTexture();
         m_rw2->SetModel(newModel);
         m_rw3->SetModel(newModel);
         if(m_model)
             delete m_model;
         m_model = newModel;
+        ClearTextures();
+
         UpdateView();
     }
 }
@@ -118,13 +154,6 @@ void CMainWindow::AskToSaveChanges()
             }
         }
     }
-}
-
-void CMainWindow::ClearTexture()
-{
-    m_textureImg.reset(nullptr);
-    m_rw2->ClearTexture();
-    m_rw3->ClearTexture();
 }
 
 void CMainWindow::on_actionModeRotate_triggered()
@@ -251,6 +280,7 @@ void CMainWindow::Serialize(const char* filename)
 
     m_rw2->SerializeSheets(f);
 
+    /*
     char hasTexture = (m_textureImg != nullptr ? '1' : '0');
     std::fwrite(&hasTexture, sizeof(hasTexture), 1, f);
 
@@ -267,6 +297,7 @@ void CMainWindow::Serialize(const char* filename)
         std::fwrite(&texFormat, sizeof(texFormat), 1, f);
         std::fwrite(m_textureImg->constBits(), sizeof(unsigned char), texByteCount, f);
     }
+    */
 
     m_openedModel = filename;
 
@@ -332,16 +363,17 @@ void CMainWindow::Deserialize(const char* filename)
 
             m_openedModel = filename;
 
-            ClearTexture();
             m_rw2->SetModel(newModel);
             m_rw3->SetModel(newModel);
             if(m_model)
                 delete m_model;
             m_model = newModel;
+            ClearTextures();
 
             m_rw2->DeserializeSheets(f);
             m_rw2->UpdateSheetsSize();
 
+            /*
             char hasTexture = '0';
             std::fread(&hasTexture, sizeof(hasTexture), 1, f);
 
@@ -370,6 +402,7 @@ void CMainWindow::Deserialize(const char* filename)
             {
                 emit ApplyTexture(m_textureImg.get());
             }
+            */
 
             UpdateView();
 
@@ -434,7 +467,7 @@ void CMainWindow::on_actionScale_triggered()
 
         CScaleWindow scaleWnd(this);
         scaleWnd.SetOutputScalePtr(&outScale);
-        scaleWnd.SetInitialScale(m_model->GetSizeCentimeters());
+        scaleWnd.SetInitialScale(m_model->GetSizeMillimeters());
         scaleWnd.exec();
 
         if(outScale != 1.0f)
