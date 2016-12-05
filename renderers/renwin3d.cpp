@@ -7,15 +7,8 @@
 #include "mesh/mesh.h"
 
 CRenWin3D::CRenWin3D(QWidget *parent) :
-    QOpenGLWidget(parent), m_model(nullptr)
+    IRenWin(parent)
 {
-    QSurfaceFormat format;
-    format.setDepthBufferSize(16);
-    format.setMajorVersion(2);
-    format.setMinorVersion(0);
-    format.setSamples(2);
-    setFormat(format);
-    m_boundTextureID = -1;
     UpdateViewAngles();
 }
 
@@ -27,15 +20,6 @@ void CRenWin3D::SetModel(CMesh *mdl)
 
 CRenWin3D::~CRenWin3D()
 {
-    makeCurrent();
-    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-    {
-        if(it->second)
-        {
-            it->second->destroy();
-        }
-    }
-    doneCurrent();
 }
 
 void CRenWin3D::initializeGL()
@@ -142,8 +126,6 @@ void CRenWin3D::paintGL()
         glLoadIdentity();
         glMultMatrixf(&m_viewMatrix[0][0]);
 
-        const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
-
         glBegin(GL_TRIANGLES);
 
         glLightfv(GL_LIGHT1, GL_POSITION, &m_cameraPosition[0]);
@@ -155,19 +137,7 @@ void CRenWin3D::paintGL()
         int i = 0;
         for(const glm::uvec4 &t : m_model->GetTriangles())
         {
-            if(renTexture && m_boundTextureID != (int)t[3])
-            {
-                glEnd();
-                if(m_textures[t[3]])
-                {
-                    m_textures[t[3]]->bind();
-                } else if(m_boundTextureID >= 0 && m_textures[m_boundTextureID])
-                {
-                    m_textures[m_boundTextureID]->release();
-                }
-                glBegin(GL_TRIANGLES);
-                m_boundTextureID = t[3];
-            }
+            BindTexture(t[3]);
 
             const glm::vec3 &vertex1 = vert[t[0]];
             const glm::vec3 &vertex2 = vert[t[1]];
@@ -193,18 +163,7 @@ void CRenWin3D::paintGL()
 
         glEnd();
 
-        if(renTexture)
-        {
-            for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-            {
-                if(m_textures[it->first] && m_textures[it->first]->isBound())
-                {
-                    m_textures[it->first]->release();
-                    break;
-                }
-            }
-            m_boundTextureID = -1;
-        }
+        UnbindTexture();
     }
     if(CSettings::RenderGrid)
         DrawGrid();
@@ -338,47 +297,6 @@ void CRenWin3D::UpdateViewAngles()
 void CRenWin3D::UpdateViewMatrix()
 {
     m_viewMatrix = glm::lookAt(m_cameraPosition, m_cameraPosition+m_front, m_up);
-    update();
-}
-
-void CRenWin3D::ReserveTextureID(unsigned id)
-{
-    if(m_textures.find(id) == m_textures.end())
-    {
-        m_textures[id] = nullptr;
-    }
-}
-
-void CRenWin3D::LoadTexture(QImage* img, unsigned index)
-{
-    makeCurrent();
-    if(!img)
-    {
-        m_textures[index].reset(nullptr);
-    } else {
-        if(m_textures[index])
-            m_textures[index]->destroy();
-        m_textures[index].reset(new QOpenGLTexture(*img));
-        m_textures[index]->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-        m_textures[index]->setMagnificationFilter(QOpenGLTexture::Linear);
-        m_textures[index]->setWrapMode(QOpenGLTexture::Repeat);
-    }
-    update();
-}
-
-void CRenWin3D::ClearTextures()
-{
-    makeCurrent();
-    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-    {
-        if(it->second)
-        {
-            it->second->destroy();
-            it->second.reset(nullptr);
-        }
-    }
-    m_textures.clear();
-    m_boundTextureID = -1;
     update();
 }
 

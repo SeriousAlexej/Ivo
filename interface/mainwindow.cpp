@@ -280,24 +280,42 @@ void CMainWindow::Serialize(const char* filename)
 
     m_rw2->SerializeSheets(f);
 
-    /*
-    char hasTexture = (m_textureImg != nullptr ? '1' : '0');
-    std::fwrite(&hasTexture, sizeof(hasTexture), 1, f);
-
-    if(m_textureImg)
+    auto materials = m_model->GetMaterials();
+    unsigned char numTextures = (unsigned char)materials.size();
+    std::fwrite(&numTextures, sizeof(numTextures), 1, f);
+    for(auto it=materials.begin(); it!=materials.end(); it++)
     {
-        int texWidth = m_textureImg->width();
-        int texHeight = m_textureImg->height();
-        int texByteCount = m_textureImg->byteCount();
-        int texFormat = (int)m_textureImg->format();
+        unsigned key = it->first;
+        std::string matName = it->second;
+        std::string texPath = m_textures[key];
+        const QImage* image = m_textureImages[key].get();
 
-        std::fwrite(&texWidth, sizeof(texWidth), 1, f);
-        std::fwrite(&texHeight, sizeof(texHeight), 1, f);
-        std::fwrite(&texByteCount, sizeof(texByteCount), 1, f);
-        std::fwrite(&texFormat, sizeof(texFormat), 1, f);
-        std::fwrite(m_textureImg->constBits(), sizeof(unsigned char), texByteCount, f);
+        int nameLen = matName.length();
+        int pathLen = texPath.length();
+
+        std::fwrite(&key, sizeof(key), 1, f);
+        std::fwrite(&nameLen, sizeof(nameLen), 1, f);
+        std::fwrite(matName.data(), sizeof(char), nameLen, f);
+        std::fwrite(&pathLen, sizeof(pathLen), 1, f);
+        std::fwrite(texPath.data(), sizeof(char), pathLen, f);
+
+        int hasTexture = (image != nullptr ? 1 : 0);
+        std::fwrite(&hasTexture, sizeof(hasTexture), 1, f);
+
+        if(image)
+        {
+            int texWidth = image->width();
+            int texHeight = image->height();
+            int texByteCount = image->byteCount();
+            int texFormat = (int)image->format();
+
+            std::fwrite(&texWidth, sizeof(texWidth), 1, f);
+            std::fwrite(&texHeight, sizeof(texHeight), 1, f);
+            std::fwrite(&texByteCount, sizeof(texByteCount), 1, f);
+            std::fwrite(&texFormat, sizeof(texFormat), 1, f);
+            std::fwrite(image->constBits(), sizeof(unsigned char), texByteCount, f);
+        }
     }
-    */
 
     m_openedModel = filename;
 
@@ -373,36 +391,62 @@ void CMainWindow::Deserialize(const char* filename)
             m_rw2->DeserializeSheets(f);
             m_rw2->UpdateSheetsSize();
 
-            /*
-            char hasTexture = '0';
-            std::fread(&hasTexture, sizeof(hasTexture), 1, f);
+            std::unordered_map<unsigned, std::string> materials;
 
-            if(hasTexture == '1')
+            unsigned char numTextures = 0;
+            std::fread(&numTextures, sizeof(numTextures), 1, f);
+            for(int i=numTextures-1; i>=0; i--)
             {
-                int texWidth = 0;
-                int texHeight = 0;
-                int texByteCount = 0;
-                int texFormat = 0;
+                unsigned key;
+                int nameLen;
+                int pathLen;
+                std::fread(&key, sizeof(key), 1, f);
 
-                std::fread(&texWidth, sizeof(texWidth), 1, f);
-                std::fread(&texHeight, sizeof(texHeight), 1, f);
-                std::fread(&texByteCount, sizeof(texByteCount), 1, f);
-                std::fread(&texFormat, sizeof(texFormat), 1, f);
+                std::fread(&nameLen, sizeof(nameLen), 1, f);
+                char* name = new char[nameLen+1];
+                name[nameLen] = '\0';
+                std::fread(name, sizeof(char), nameLen, f);
 
-                unsigned char* imgBits = new unsigned char[texByteCount];
-                std::fread(imgBits, sizeof(unsigned char), texByteCount, f);
+                std::fread(&pathLen, sizeof(pathLen), 1, f);
+                char* path = new char[pathLen+1];
+                path[pathLen] = '\0';
+                std::fread(path, sizeof(char), pathLen, f);
 
-                m_textureImg.reset(new QImage(imgBits, texWidth, texHeight, (QImage::Format)texFormat));
-                (*m_textureImg) = m_textureImg->copy();
+                int hasTexture = 0;
+                std::fread(&hasTexture, sizeof(hasTexture), 1, f);
 
-                delete[] imgBits;
+                if(hasTexture == 1)
+                {
+                    int texWidth = 0;
+                    int texHeight = 0;
+                    int texByteCount = 0;
+                    int texFormat = 0;
+
+                    std::fread(&texWidth, sizeof(texWidth), 1, f);
+                    std::fread(&texHeight, sizeof(texHeight), 1, f);
+                    std::fread(&texByteCount, sizeof(texByteCount), 1, f);
+                    std::fread(&texFormat, sizeof(texFormat), 1, f);
+
+                    unsigned char* imgBits = new unsigned char[texByteCount];
+                    std::fread(imgBits, sizeof(unsigned char), texByteCount, f);
+
+                    m_textureImages[key].reset(new QImage(imgBits, texWidth, texHeight, (QImage::Format)texFormat));
+                    (*m_textureImages[key]) = m_textureImages[key]->copy();
+
+                    delete[] imgBits;
+                }
+
+                materials[key] = name;
+                m_textures[key] = path;
+
+                m_rw2->ReserveTextureID(key);
+                m_rw3->ReserveTextureID(key);
+
+                if(hasTexture == 1)
+                    emit UpdateTexture(m_textureImages[key].get(), key);
             }
 
-            if(m_textureImg)
-            {
-                emit ApplyTexture(m_textureImg.get());
-            }
-            */
+            m_model->SetMaterials(materials);
 
             UpdateView();
 

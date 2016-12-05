@@ -33,6 +33,7 @@ public:
     inline const glm::vec3*                 GetAABBox()    const { return m_aabbox; }
     inline const std::unordered_map<unsigned, std::string> GetMaterials() const { return m_materials; }
 
+    inline void               SetMaterials(std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
     const CMesh::STriGroup*   GroupUnderCursor(glm::vec2 &curPos) const;
     void                      GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
     void                      Undo();

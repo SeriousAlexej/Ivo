@@ -1,38 +1,29 @@
 #ifndef RENWIN3D_H
 #define RENWIN3D_H
 
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions>
-#include <QOpenGLTexture>
-#include <memory>
-#include <unordered_map>
-#include <QMutex>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/matrix.hpp>
+#include "renwin.h"
 
 class CMesh;
 
-class CRenWin3D : public QOpenGLWidget, protected QOpenGLFunctions
+class CRenWin3D : public IRenWin
 {
     Q_OBJECT
 
 public:
-    CRenWin3D(QWidget *parent = nullptr);
+    explicit CRenWin3D(QWidget *parent = nullptr);
     ~CRenWin3D();
-    void SetModel(CMesh *mdl);
-    void ZoomFit();
-    void ReserveTextureID(unsigned id);
 
-public slots:
-    void LoadTexture(QImage* img, unsigned index);
-    void ClearTextures();
+    void SetModel(CMesh *mdl) override final;
+    void ZoomFit();
 
 protected:
     virtual void initializeGL() override final;
     virtual void paintGL() override final;
     virtual void resizeGL(int w, int h) override final;
-    bool event(QEvent *e) override final;
+    virtual bool event(QEvent *e) override final;
 
 private:
     void DrawGrid();
@@ -40,10 +31,6 @@ private:
     void UpdateViewAngles();
     void UpdateViewMatrix();
 
-    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
-    int                             m_boundTextureID;
-
-    CMesh*                          m_model;
     QPointF                         m_mousePressPoint;
     enum
     { CAM_TRANSLATE,

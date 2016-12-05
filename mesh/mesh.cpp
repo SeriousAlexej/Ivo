@@ -795,6 +795,7 @@ void CMesh::Serialize(FILE *f) const
 void CMesh::Deserialize(FILE *f)
 {
     Clear();
+    g_Mesh = this;
 
     int sizeVar;
 

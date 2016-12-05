@@ -10,17 +10,10 @@
 #include "settings/settings.h"
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
-    QOpenGLWidget(parent), m_model(nullptr)
+    IRenWin(parent)
 {
-    QSurfaceFormat format;
-    format.setDepthBufferSize(16);
-    format.setMajorVersion(2);
-    format.setMinorVersion(0);
-    format.setSamples(2);
-    setFormat(format);
     m_cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f);
     m_w = m_h = 100.0f;
-    m_boundTextureID = -1;
     setMouseTracking(true);
 }
 
@@ -79,14 +72,6 @@ void CRenWin2D::CreateFoldTextures()
 CRenWin2D::~CRenWin2D()
 {
     makeCurrent();
-    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-    {
-        if(it->second)
-        {
-            it->second->destroy();
-        }
-    }
-
     if(m_texValleyFold)
         m_texValleyFold->destroy();
 
@@ -140,6 +125,17 @@ void CRenWin2D::paintGL()
         glLineWidth(1.0f);
 
         RenderSelection();
+    } else {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
+
+        RenderGroups();
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glLineWidth(1.0f);
     }
 }
 
@@ -309,7 +305,8 @@ void CRenWin2D::RenderPaperSheets()
 
 void CRenWin2D::RenderGroups()
 {
-    const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
+    if(!m_model)
+        return;
 
     const std::vector<glm::vec2> &uvs = m_model->GetUVCoords();
 
@@ -324,19 +321,7 @@ void CRenWin2D::RenderGroups()
             const CMesh::STriangle2D& tr2D = **it2;
             const glm::uvec4 &t = m_model->GetTriangles()[tr2D.ID()];
 
-            if(renTexture && m_boundTextureID != (int)t[3])
-            {
-                glEnd();
-                if(m_textures[t[3]])
-                {
-                    m_textures[t[3]]->bind();
-                } else if(m_boundTextureID >= 0 && m_textures[m_boundTextureID])
-                {
-                    m_textures[m_boundTextureID]->release();
-                }
-                glBegin(GL_TRIANGLES);
-                m_boundTextureID = t[3];
-            }
+            BindTexture(t[3]);
 
             const glm::vec2 vertex1 = tr2D[0];
             const glm::vec2 vertex2 = tr2D[1];
@@ -359,18 +344,7 @@ void CRenWin2D::RenderGroups()
     }
     glEnd();
 
-    if(renTexture)
-    {
-        for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-        {
-            if(m_textures[it->first] && m_textures[it->first]->isBound())
-            {
-                m_textures[it->first]->release();
-                break;
-            }
-        }
-        m_boundTextureID = -1;
-    }
+    UnbindTexture();
 }
 
 void CRenWin2D::RenderFlaps() const
@@ -757,48 +731,6 @@ void CRenWin2D::RecalcProjection()
     glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
 }
 
-void CRenWin2D::ReserveTextureID(unsigned id)
-{
-    if(m_textures.find(id) == m_textures.end())
-    {
-        m_textures[id] = nullptr;
-    }
-}
-
-void CRenWin2D::LoadTexture(QImage* img, unsigned index)
-{
-    makeCurrent();
-    if(!img)
-    {
-        m_textures[index].reset(nullptr);
-    } else {
-        if(m_textures[index])
-            m_textures[index]->destroy();
-        m_textures[index].reset(new QOpenGLTexture(*img));
-        m_textures[index]->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-        m_textures[index]->setMagnificationFilter(QOpenGLTexture::Linear);
-        m_textures[index]->setWrapMode(QOpenGLTexture::Repeat);
-    }
-    update();
-}
-
-void CRenWin2D::ClearTextures()
-{
-    makeCurrent();
-    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-    {
-        if(it->second)
-        {
-            it->second->destroy();
-            it->second.reset(nullptr);
-        }
-    }
-    m_textures.clear();
-    m_boundTextureID = -1;
-    update();
-
-}
-
 glm::vec2 CRenWin2D::PointToWorldCoords(QPointF &pt) const
 {
     float width = 2.0f * m_cameraPosition[2] * m_w/m_h;
@@ -1078,3 +1010,4 @@ void CRenWin2D::ZoomFit()
     RecalcProjection();
     update();
 }
+

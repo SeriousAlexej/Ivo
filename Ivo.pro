@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     mesh/command.cpp \
     interface/scalewindow.cpp \
     interface/materialmanager.cpp \
-    formats3d.cpp
+    formats3d.cpp \
+    renderers/renwin.cpp
 
 HEADERS  += \
     mesh/mesh.h \
@@ -46,7 +47,8 @@ HEADERS  += \
     settings/settings.h \
     mesh/command.h \
     interface/scalewindow.h \
-    interface/materialmanager.h
+    interface/materialmanager.h \
+    renderers/renwin.h
 
 FORMS    += interface/mainwindow.ui \
     interface/settingswindow.ui \

@@ -1,19 +1,13 @@
 #ifndef RENWIN2D_H
 #define RENWIN2D_H
 
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions>
-#include <QOpenGLTexture>
-#include <memory>
-#include <unordered_map>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <QString>
 #include <cstdio>
+#include "renwin.h"
 
-class CMesh;
-
-class CRenWin2D : public QOpenGLWidget, protected QOpenGLFunctions
+class CRenWin2D : public IRenWin
 {
     Q_OBJECT
 
@@ -29,21 +23,16 @@ public:
         EM_REM_SHEET
     };
 
-    CRenWin2D(QWidget *parent = nullptr);
+    explicit CRenWin2D(QWidget *parent = nullptr);
     ~CRenWin2D();
 
-    void SetModel(CMesh *mdl);
+    void SetModel(CMesh *mdl) override final;
     void SetMode(EditMode m);
     void ExportSheets(const QString baseName);
     void UpdateSheetsSize();
     void SerializeSheets(FILE* f) const;
     void DeserializeSheets(FILE* f);
     void ZoomFit();
-    void ReserveTextureID(unsigned id);
-
-public slots:
-    void LoadTexture(QImage* img, unsigned index);
-    void ClearTextures();
 
 protected:
     virtual void initializeGL() override final;
@@ -74,10 +63,6 @@ private:
         glm::vec2 m_widthHeight;
     };
 
-    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
-    int                             m_boundTextureID;
-
-    CMesh*                          m_model;
     std::unique_ptr<QOpenGLTexture> m_texValleyFold;
     std::unique_ptr<QOpenGLTexture> m_texMountainFold;
     std::unique_ptr<QOpenGLTexture> m_texPitchBlack;
