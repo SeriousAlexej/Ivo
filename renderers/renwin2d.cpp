@@ -1,4 +1,4 @@
-#include <QOpenGLFramebufferObject>
+﻿#include <QOpenGLFramebufferObject>
 #include <QEvent>
 #include <QMouseEvent>
 #include <QMessageBox>
@@ -8,6 +8,7 @@
 #include "mesh/mesh.h"
 #include "renwin2d.h"
 #include "settings/settings.h"
+#include "io/saferead.h"
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
     IRenWin(parent)
@@ -125,17 +126,6 @@ void CRenWin2D::paintGL()
         glLineWidth(1.0f);
 
         RenderSelection();
-    } else {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
-
-        RenderGroups();
-
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glLineWidth(1.0f);
     }
 }
 
@@ -264,15 +254,15 @@ void CRenWin2D::DeserializeSheets(FILE *f)
     m_currSheet = nullptr;
 
     int sheetsNum;
-    std::fread(&sheetsNum, sizeof(sheetsNum), 1, f);
+    SAFE_FREAD(&sheetsNum, sizeof(sheetsNum), 1, f);
 
     for(int i=0; i<sheetsNum; ++i)
     {
         m_sheets.push_back(SPaperSheet());
         SPaperSheet &sh = m_sheets.back();
 
-        std::fread(&(sh.m_position), sizeof(glm::vec2), 1, f);
-        std::fread(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
+        SAFE_FREAD(&(sh.m_position), sizeof(glm::vec2), 1, f);
+        SAFE_FREAD(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
     }
 }
 
@@ -723,6 +713,11 @@ bool CRenWin2D::event(QEvent *e)
     return true;
 }
 
+void CRenWin2D::AddSheet(const glm::vec2 &pos, const glm::vec2 &widHei)
+{
+    m_sheets.push_back(SPaperSheet{pos, widHei});
+}
+
 void CRenWin2D::RecalcProjection()
 {
     glMatrixMode(GL_PROJECTION);
@@ -824,7 +819,7 @@ void CRenWin2D::ModeLMB()
             mouseWorldCoords.y = static_cast<float>(static_cast<int>(mouseWorldCoords.y));
             const CSettings& sett = CSettings::GetInstance();
             glm::vec2 papSize((float)sett.GetPaperWidth(), (float)sett.GetPaperHeight());
-            m_sheets.push_back(SPaperSheet{mouseWorldCoords, papSize * 0.1f});
+            AddSheet(mouseWorldCoords, papSize * 0.1f);
             m_cameraMode = CAM_STILL;
             break;
         }

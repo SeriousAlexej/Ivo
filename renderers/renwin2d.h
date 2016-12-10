@@ -33,6 +33,8 @@ public:
     void SerializeSheets(FILE* f) const;
     void DeserializeSheets(FILE* f);
     void ZoomFit();
+    void ClearSheets() { m_sheets.clear(); }
+    void AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 
 protected:
     virtual void initializeGL() override final;

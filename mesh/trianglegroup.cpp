@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <list>
+#include <stdexcept>
 #include <unordered_set>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include "mesh/mesh.h"
 #include "mesh/command.h"
+#include "io/saferead.h"
 
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
@@ -163,11 +165,6 @@ void CMesh::STriGroup::CentrateOrigin()
         m_position += tr.m_vtxRT[2];
     }
     m_position /= m_tris.size() * 3;
-    //m_position = glm::vec2((m_toRightDown[0]+m_toTopLeft[0])*0.5f, (m_toTopLeft[1]+m_toRightDown[1])*0.5f);
-    //m_toTopLeft -= m_position;
-    //m_toRightDown -= m_position;
-    //float hw = 0.5f*(m_toRightDown[0]-m_toTopLeft[0]);
-    //float hh = 0.5f*(m_toTopLeft[1]-m_toRightDown[1]);
 
     float aabbHSideSQR = 0.0f;
     for(const auto tri : m_tris)
@@ -183,9 +180,6 @@ void CMesh::STriGroup::CentrateOrigin()
         }
     }
     m_aabbHSide = glm::sqrt(aabbHSideSQR);
-    //m_toTopLeft = m_position + glm::vec2(-m_aabbHSide, m_aabbHSide);
-    //m_toRightDown = m_position + glm::vec2(m_aabbHSide, -m_aabbHSide);
-    //m_aabbHSide = glm::sqrt(hw*hw+hh*hh);
 
     float rotRAD = glm::radians(m_rotation);
     m_matrix[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
@@ -290,13 +284,7 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     float newRotation = grp->m_rotation - tr2->m_rotation + tr2->m_angleOY[e2] + 180.0f - tr->m_angleOY[e] + tr->m_rotation;
     cmdRot.SetRotation(newRotation - grp->GetRotation());
     grp->SetRotation(newRotation);
-/*
-    float rotRAD = glm::radians(newRotation);
-    glm::mat3 matrix = grp->m_matrix;
-    matrix[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
-    matrix[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
-    matrix = matrix * tr2->m_relativeMx;
-*/
+
     glm::vec2 newPos = tr->m_vtxRT[e] - tr2->m_vtxRT[(e2+1)%3]/*(glm::mat2(matrix) * tr2->m_vtx[(e2+1)%3] + glm::vec2(matrix[2][0], matrix[2][1]))*/ + grp->m_position;
     cmdMov.SetTranslation(newPos - grp->GetPosition());
     grp->SetRotation(oldrot);
@@ -497,22 +485,25 @@ void CMesh::STriGroup::Serialize(FILE *f) const
 void CMesh::STriGroup::Deserialize(FILE *f)
 {
     int triSize;
-    std::fread(&triSize, sizeof(int), 1, f);
-    std::vector<int> tris(triSize);
-    std::fread(tris.data(), sizeof(int), triSize, f);
-
-    for(int ind : tris)
+    SAFE_FREAD(&triSize, sizeof(int), 1, f);
+    for(int i=0; i<triSize; i++)
     {
+        int ind;
+        SAFE_FREAD(&ind, sizeof(int), 1, f);
+
+        if(ind >= (int)CMesh::g_Mesh->m_tri2D.size())
+            throw std::logic_error("File is corrupted");
+
         m_tris.push_back(&(CMesh::g_Mesh->m_tri2D[ind]));
         m_tris.back()->m_myGroup = this;
     }
 
-    std::fread(&m_toTopLeft, sizeof(glm::vec2), 1, f);
-    std::fread(&m_toRightDown, sizeof(glm::vec2), 1, f);
-    std::fread(&m_aabbHSide, sizeof(float), 1, f);
-    std::fread(&m_position, sizeof(glm::vec2), 1, f);
-    std::fread(&m_rotation, sizeof(float), 1, f);
-    std::fread(&m_matrix, sizeof(glm::mat3), 1, f);
+    SAFE_FREAD(&m_toTopLeft, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_toRightDown, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_aabbHSide, sizeof(float), 1, f);
+    SAFE_FREAD(&m_position, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_rotation, sizeof(float), 1, f);
+    SAFE_FREAD(&m_matrix, sizeof(glm::mat3), 1, f);
 }
 
 void CMesh::STriGroup::Scale(float scale)

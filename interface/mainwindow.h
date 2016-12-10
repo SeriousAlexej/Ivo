@@ -27,8 +27,6 @@ signals:
     void UpdateTexture(QImage* img, unsigned index);
 
 private slots:
-    void Serialize(const char* filename);
-    void Deserialize(const char* filename);
     void LoadModel();
     void OpenMaterialManager();
     void ClearTextures();
@@ -55,8 +53,12 @@ private slots:
 
 private:
     void closeEvent(QCloseEvent *event) override;
+    void ClearModel();
     void UpdateView();
     void AskToSaveChanges();
+    void SaveToIVO(const char* filename);
+    void LoadFromIVO(const char* filename);
+    void LoadFromPDOv2_0(const char* filename);
 
     Ui::MainWindow*                             ui;
     CMesh*                                      m_model;

@@ -11,6 +11,7 @@
 #include "mesh/mesh.h"
 #include "mesh/command.h"
 #include "settings/settings.h"
+#include "io/saferead.h"
 
 CMesh* CMesh::g_Mesh = nullptr;
 
@@ -139,6 +140,136 @@ std::string CMesh::LoadMesh(const std::string& path)
     return "";
 }
 
+void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
+                        const std::vector<std::unique_ptr<PDO_Edge>>& edges,
+                        const std::vector<glm::vec3>&                 vertices3D,
+                        const std::unordered_map<unsigned, PDO_Part>& parts)
+{
+    Clear();
+
+    m_tri2D.resize(faces.size());
+    m_triangles.resize(faces.size());
+
+    for(unsigned f=0; f<faces.size(); f++)
+    {
+        const PDO_Face& face = faces[f];
+        STriangle2D&    tr2D = m_tri2D[f];
+        glm::uvec4&     tr = m_triangles[f];
+
+        glm::vec2 averageTri2DPos(0.0f, 0.0f);
+        for(int i=0; i<3; ++i)
+        {
+            const PDO_2DVertex& vertex = face.vertices[i];
+
+            unsigned newIndex = m_uvCoords.size();
+
+            m_uvCoords.push_back(vertex.uv);
+            m_normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+            m_vertices.push_back(vertices3D[vertex.index3Dvert]);
+
+            tr[i] = newIndex;
+
+            averageTri2DPos += vertex.pos;
+        }
+        tr[3] = face.matIndex;
+
+        averageTri2DPos /= 3.0f;
+
+        tr2D.m_id = f;
+        tr2D.m_position = averageTri2DPos;
+        tr2D.m_rotation = 0.0f;
+        tr2D.m_myGroup = nullptr;
+        tr2D.m_relativeMx = glm::mat3(1);
+        for(int i=0; i<3; i++)
+        {
+            tr2D.m_edges[i] = nullptr;
+            tr2D.m_flapSharp[i] = false;
+            tr2D.m_vtx[i] = tr2D.m_vtxR[i] = face.vertices[i].pos - averageTri2DPos;
+            tr2D.m_vtxRT[i] = face.vertices[i].pos;
+        }
+        for(int i=0; i<3; i++)
+        {
+            tr2D.m_edgeLen[i] = glm::distance(tr2D.m_vtx[i], tr2D.m_vtx[(i+1)%3]);
+
+            glm::vec2 vecAngle = tr2D.m_vtx[(i+1)%3] - tr2D.m_vtx[i];
+            float sgnX = (vecAngle.x < 0.0f ? -1.0f : 1.0f);
+            tr2D.m_angleOY[i] = sgnX * glm::degrees(glm::acos(glm::clamp(vecAngle.y / glm::length(vecAngle), -1.0f, 1.0f)));
+        }
+        tr2D.ComputeNormals();
+    }
+
+    CalculateFlatNormals();
+
+    for(const std::unique_ptr<PDO_Edge>& e : edges)
+    {
+        const PDO_Edge& edge = *e;
+
+        m_edges.push_back(SEdge());
+        SEdge &edg = m_edges.back();
+
+        edg.m_left = &m_tri2D[edge.face1ID];
+        for(int i=0; i<3; i++)
+        {
+            if(edge.vtx1ID == faces[edge.face1ID].vertices[i].index3Dvert)
+            {
+                edg.m_leftIndex = i;
+                break;
+            }
+        }
+        edg.m_left->m_edges[edg.m_leftIndex] = &edg;
+
+        if(edge.face2ID >= 0)
+        {
+            edg.m_right = &m_tri2D[edge.face2ID];
+            for(int i=0; i<3; i++)
+            {
+                if(edge.vtx2ID == faces[edge.face2ID].vertices[i].index3Dvert)
+                {
+                    edg.m_rightIndex = i;
+                    break;
+                }
+            }
+            edg.m_right->m_edges[edg.m_rightIndex] = &edg;
+            edg.m_angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[edge.face1ID], m_flatNormals[edge.face2ID]), -1.0f, 1.0f)));
+
+            const PDO_2DVertex& v1 = faces[edge.face1ID].vertices[edg.m_leftIndex];
+            const PDO_2DVertex& v2 = faces[edge.face2ID].vertices[edg.m_rightIndex];
+            edg.m_flapPosition = (SEdge::EFlapPosition)((v1.hasFlap ? 1 : 0) + (v2.hasFlap ? 2 : 0));
+        }
+        else
+        {
+            edg.m_right = nullptr;
+            edg.m_rightIndex = -1;
+            edg.m_angle = 0.0f;
+            edg.m_flapPosition = SEdge::FP_NONE;
+        }
+
+        edg.m_snapped = edge.snapped;
+        SetFoldType(edg);
+    }
+
+    for(auto it=parts.begin(); it!=parts.end(); it++)
+    {
+        const PDO_Part& part = it->second;
+        m_groups.push_back(STriGroup());
+        STriGroup& grp = m_groups.back();
+
+        grp.m_rotation = 0.0f;
+
+        for(const PDO_Face* fc : part.faces)
+        {
+            grp.m_tris.push_back(&m_tri2D[fc->id]);
+            m_tri2D[fc->id].m_myGroup = &grp;
+        }
+
+        grp.CentrateOrigin();
+    }
+
+    UpdateGroupDepth();
+    CalculateAABBox();
+    g_Mesh = this;
+}
+
 void CMesh::FillAdjTri_Gen2DTri()
 {
     STriangle2D dummy;
@@ -159,6 +290,7 @@ void CMesh::FillAdjTri_Gen2DTri()
         m_tri2D[i].m_angleOY[0] = glm::degrees(glm::acos(v1v2cos));
         m_tri2D[i].m_angleOY[1] = -glm::degrees(glm::acos(glm::clamp(glm::dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(glm::distance(*v1[2],*v1[0])*glm::distance(*v1[2],*v1[1])), -1.0f, 1.0f) ));
         m_tri2D[i].m_angleOY[2] = 180.0f;
+
         m_tri2D[i].Init();
         m_tri2D[i].m_id = i;
 
@@ -205,24 +337,16 @@ void CMesh::FillAdjTri_Gen2DTri()
     }
 }
 
-// i, j - indices of triangles in range [ 0, triangles.size() )
-// e1, e2 - indices of edges in range [ 0, 2 ]
-void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
+void CMesh::SetFoldType(SEdge &edg)
 {
-    m_edges.push_back(SEdge());
-    SEdge &edg = m_edges.back();
-    edg.m_left = &m_tri2D[i];
-    edg.m_right = &m_tri2D[j];
-    edg.m_leftIndex = e1;
-    edg.m_rightIndex = e2;
-    edg.m_snapped = false;
-    edg.m_flapPosition = SEdge::FP_LEFT;
-    m_tri2D[i].m_edges[e1] = &edg;
-    m_tri2D[j].m_edges[e2] = &edg;
+    if(!edg.HasTwoTriangles())
+    {
+        edg.m_foldType = SEdge::FT_FLAT;
+        return;
+    }
 
-    float angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
-    edg.m_angle = angle;
-
+    int i = edg.m_left->m_id;
+    int j = edg.m_right->m_id;
     glm::vec3 &v0 = m_vertices[m_triangles[i][0]];
     glm::vec3 &v1 = m_vertices[m_triangles[i][1]];
     glm::vec3 &up = m_flatNormals[i];
@@ -235,7 +359,7 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     triBasis[3] = glm::vec4(v1[0],    v1[1],    v1[2],    1.0f);
     glm::vec3 *toCheck = nullptr;
     //pick vertex of second triangle, that does not belong to the edge between triangles i and j
-    switch(e2)
+    switch(edg.m_rightIndex)
     {
         case 0: //edge with vtx 1 and 2
             toCheck = &m_vertices[m_triangles[j][2]]; //choose 3
@@ -262,6 +386,28 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     {
         edg.m_foldType = SEdge::FT_FLAT;
     }
+}
+
+// i, j - indices of triangles in range [ 0, triangles.size() )
+// e1, e2 - indices of edges in range [ 0, 2 ]
+void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
+{
+    m_edges.push_back(SEdge());
+    SEdge &edg = m_edges.back();
+    edg.m_left = &m_tri2D[i];
+    edg.m_right = &m_tri2D[j];
+    edg.m_leftIndex = e1;
+    edg.m_rightIndex = e2;
+    edg.m_snapped = false;
+    edg.m_flapPosition = SEdge::FP_LEFT;
+    m_tri2D[i].m_edges[e1] = &edg;
+    m_tri2D[j].m_edges[e2] = &edg;
+
+    float angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
+    edg.m_angle = angle;
+
+    m_tri2D[j].m_id = j;
+    SetFoldType(edg);
 }
 
 void CMesh::CalculateFlatNormals()
@@ -751,14 +897,12 @@ void CMesh::Serialize(FILE *f) const
     {
         tr2d.Serialize(f);
     }
-    //std::fwrite(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
 
     sizeVar = m_edges.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
     for(const SEdge& e : m_edges)
     {
         e.Serialize(f);
-        //std::fwrite(&e, sizeof(SEdge), 1, f);
     }
 
     sizeVar = m_groups.size();
@@ -799,50 +943,63 @@ void CMesh::Deserialize(FILE *f)
 
     int sizeVar;
 
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_uvCoords.resize(sizeVar);
-    std::fread(m_uvCoords.data(), sizeof(glm::vec2), sizeVar, f);
-
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_normals.resize(sizeVar);
-    std::fread(m_normals.data(), sizeof(glm::vec3), sizeVar, f);
-
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_vertices.resize(sizeVar);
-    std::fread(m_vertices.data(), sizeof(glm::vec3), sizeVar, f);
-
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_triangles.resize(sizeVar);
-    std::fread(m_triangles.data(), sizeof(glm::uvec4), sizeVar, f);
-
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_tri2D.resize(sizeVar);
-    for(STriangle2D& tr2d : m_tri2D)
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
     {
-        tr2d.Deserialize(f);
+        glm::vec2 uv;
+        SAFE_FREAD(&uv, sizeof(glm::vec2), 1, f);
+        m_uvCoords.push_back(uv);
     }
-    //std::fread(m_tri2D.data(), sizeof(STriangle2D), sizeVar, f);
 
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
+    {
+        glm::vec3 norm;
+        SAFE_FREAD(&norm, sizeof(glm::vec3), 1, f);
+        m_normals.push_back(norm);
+    }
+
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
+    {
+        glm::vec3 vert;
+        SAFE_FREAD(&vert, sizeof(glm::vec3), 1, f);
+        m_vertices.push_back(vert);
+    }
+
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
+    {
+        glm::uvec4 tri;
+        SAFE_FREAD(&tri, sizeof(glm::uvec4), 1, f);
+        m_triangles.push_back(tri);
+    }
+
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
+    {
+        m_tri2D.push_back(STriangle2D());
+        m_tri2D.back().Deserialize(f);
+    }
+
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; ++i)
     {
         m_edges.push_back(SEdge());
-        SEdge& e = m_edges.back();
-        e.Deserialize(f);
-        //std::fread(&e, sizeof(SEdge), 1, f);
+        m_edges.back().Deserialize(f);
     }
 
-    std::fread(&sizeVar, sizeof(sizeVar), 1, f);
-    m_groups.resize(sizeVar, STriGroup());
-    for(STriGroup &g : m_groups)
+    SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
+    for(int i=0; i<sizeVar; i++)
     {
-        g.Deserialize(f);
+        m_groups.push_back(STriGroup());
+        m_groups.back().Deserialize(f);
     }
 
     {
         sizeVar = m_edges.size();
         std::vector<int> edgptrInd(sizeVar * 2);
-        std::fread(edgptrInd.data(), sizeof(int), sizeVar * 2, f);
+        SAFE_FREAD(edgptrInd.data(), sizeof(int), sizeVar * 2, f);
         auto eIter = m_edges.begin();
         for(int i=0; i<sizeVar; ++i, eIter++)
         {

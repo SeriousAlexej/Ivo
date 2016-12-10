@@ -36,7 +36,11 @@ SOURCES += main.cpp\
     interface/scalewindow.cpp \
     interface/materialmanager.cpp \
     formats3d.cpp \
-    renderers/renwin.cpp
+    renderers/renwin.cpp \
+    pdo/pdoloader.cpp \
+    pdo/pdotools.cpp \
+    ivo/ivoloader.cpp \
+    io/saferead.cpp
 
 HEADERS  += \
     mesh/mesh.h \
@@ -48,7 +52,9 @@ HEADERS  += \
     mesh/command.h \
     interface/scalewindow.h \
     interface/materialmanager.h \
-    renderers/renwin.h
+    renderers/renwin.h \
+    pdo/pdotools.h \
+    io/saferead.h
 
 FORMS    += interface/mainwindow.ui \
     interface/settingswindow.ui \

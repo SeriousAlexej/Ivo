@@ -1,6 +1,7 @@
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include "mesh/mesh.h"
+#include "io/saferead.h"
 
 void CMesh::SEdge::NextFlapPosition()
 {
@@ -305,18 +306,18 @@ void CMesh::STriangle2D::Serialize(FILE *f) const
 
 void CMesh::STriangle2D::Deserialize(FILE *f)
 {
-    std::fread(&m_id, sizeof(int), 1, f);
-    std::fread(m_vtx, sizeof(glm::vec2), 3, f);
-    std::fread(m_vtxR, sizeof(glm::vec2), 3, f);
-    std::fread(m_vtxRT, sizeof(glm::vec2), 3, f);
-    std::fread(m_norm, sizeof(glm::vec2), 3, f);
-    std::fread(m_normR, sizeof(glm::vec2), 3, f);
-    std::fread(m_flapSharp, sizeof(bool), 3, f);
-    std::fread(m_edgeLen, sizeof(float), 3, f);
-    std::fread(&m_position, sizeof(glm::vec2), 1, f);
-    std::fread(&m_rotation, sizeof(float), 1, f);
-    std::fread(m_angleOY, sizeof(float), 3, f);
-    std::fread(&m_relativeMx, sizeof(glm::mat3), 1, f);
+    SAFE_FREAD(&m_id, sizeof(int), 1, f);
+    SAFE_FREAD(m_vtx, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_vtxR, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_vtxRT, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_norm, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_normR, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_flapSharp, sizeof(bool), 3, f);
+    SAFE_FREAD(m_edgeLen, sizeof(float), 3, f);
+    SAFE_FREAD(&m_position, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_rotation, sizeof(float), 1, f);
+    SAFE_FREAD(m_angleOY, sizeof(float), 3, f);
+    SAFE_FREAD(&m_relativeMx, sizeof(glm::mat3), 1, f);
 }
 
 void CMesh::SEdge::Serialize(FILE *f) const
@@ -331,10 +332,10 @@ void CMesh::SEdge::Serialize(FILE *f) const
 
 void CMesh::SEdge::Deserialize(FILE *f)
 {
-    std::fread(&m_leftIndex, sizeof(int), 1, f);
-    std::fread(&m_rightIndex, sizeof(int), 1, f);
-    std::fread(&m_angle, sizeof(float), 1, f);
-    std::fread(&m_snapped, sizeof(bool), 1, f);
-    std::fread(&m_flapPosition, sizeof(EFlapPosition), 1, f);
-    std::fread(&m_foldType, sizeof(EFoldType), 1, f);
+    SAFE_FREAD(&m_leftIndex, sizeof(int), 1, f);
+    SAFE_FREAD(&m_rightIndex, sizeof(int), 1, f);
+    SAFE_FREAD(&m_angle, sizeof(float), 1, f);
+    SAFE_FREAD(&m_snapped, sizeof(bool), 1, f);
+    SAFE_FREAD(&m_flapPosition, sizeof(EFlapPosition), 1, f);
+    SAFE_FREAD(&m_foldType, sizeof(EFoldType), 1, f);
 }

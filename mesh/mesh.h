@@ -10,6 +10,7 @@
 #include <list>
 #include <cstdio>
 #include <assimp/scene.h>
+#include "pdo/pdotools.h"
 
 #define IVO_VERSION 1
 
@@ -24,6 +25,10 @@ public:
     CMesh();
     ~CMesh();
     std::string LoadMesh(const std::string& path);
+    void        LoadFromPDO(const std::vector<PDO_Face>&                  faces,
+                            const std::vector<std::unique_ptr<PDO_Edge>>& edges,
+                            const std::vector<glm::vec3>&                 vertices3D,
+                            const std::unordered_map<unsigned, PDO_Part>& parts);
     void        Clear();
 
     inline const std::vector<glm::vec3>&    GetNormals()   const { return m_flatNormals; }
@@ -57,6 +62,7 @@ private:
     void GroupTriangles(float maxAngleDeg);
     void UpdateGroupDepth();
     void CalculateAABBox();
+    void SetFoldType(SEdge& edg);
 
     static CMesh*               g_Mesh;
     std::vector<glm::vec2>      m_uvCoords;
@@ -128,10 +134,10 @@ public:
     {
         enum EFlapPosition
         {
-            FP_LEFT=0,
-            FP_RIGHT,
-            FP_BOTH,
-            FP_NONE
+            FP_LEFT=1,
+            FP_RIGHT=2,
+            FP_BOTH=3,
+            FP_NONE=0
         };
         enum EFoldType
         {
