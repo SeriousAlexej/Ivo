@@ -37,9 +37,14 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         int prevFacesSize = faces.size();
         int prevVerticesSize = vertices3D.size();
 
-        ReadLine(fi);//solid
-        ReadLine(fi);//name
-        ReadLine(fi);//1 //???
+        bool skip = false;
+        {
+            int doNotSkip = 1;
+            ReadLine(fi);//solid
+            ReadLine(fi);//name
+            SAFE_FLSCANF(fi, "%d", &doNotSkip);
+            skip = doNotSkip == 0;
+        }
 
         int vertices = 0;
         SAFE_FLSCANF(fi, "vertices %d", &vertices);
@@ -48,7 +53,8 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             glm::vec3 vert(0.0f, 0.0f, 0.0f);
             SAFE_FLSCANF(fi, "%f %f %f", &vert.x, &vert.y, &vert.z);
             //vert.y *= -1.0f;
-            vertices3D.push_back(vert);
+            if(!skip)
+                vertices3D.push_back(vert);
         }
 
         int numFaces = 0;
@@ -75,10 +81,11 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
                 vert.hasFlap = (hasFlap != 0);
                 vert.pos.y *= -1.0f;
 
-                face.vertices.push_back(vert);
+                if(!skip)
+                    face.vertices.push_back(vert);
             }
 
-            if(numvertices >= 3)
+            if(!skip && numvertices >= 3)
                 faces.push_back(face);
         }
 
@@ -95,12 +102,16 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             edge.vtx1ID += prevVerticesSize;
             edge.vtx2ID += prevVerticesSize;
             edge.snapped = (snapped != 0);
-            edges.push_back(std::unique_ptr<PDO_Edge>(new PDO_Edge(edge)));
 
-            faces[edge.face1ID].edges.push_back(edges.back().get());
-            if(edge.face2ID >= 0)
+            if(!skip)
             {
-                faces[edge.face2ID].edgesSecondary.push_back(edges.back().get());
+                edges.push_back(std::unique_ptr<PDO_Edge>(new PDO_Edge(edge)));
+
+                faces[edge.face1ID].edges.push_back(edges.back().get());
+                if(edge.face2ID >= 0)
+                {
+                    faces[edge.face2ID].edgesSecondary.push_back(edges.back().get());
+                }
             }
         }
     }
@@ -150,12 +161,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
                 unsigned char r = imgBuffer[y*texWidth*3 + x*3+0];
                 unsigned char g = imgBuffer[y*texWidth*3 + x*3+1];
                 unsigned char b = imgBuffer[y*texWidth*3 + x*3+2];
-                QColor col;
-                col.setRedF(r/255.0f);
-                col.setGreenF(g/255.0f);
-                col.setBlueF(b/255.0f);
-                col.setAlphaF(1.0f);
-                m_textureImages[j]->setPixelColor(x, y, col);
+                m_textureImages[j]->setPixelColor(x, y, QColor(r, g, b));
             }
         } else {
             m_textureImages[j].reset(nullptr);
