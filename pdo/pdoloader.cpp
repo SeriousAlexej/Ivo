@@ -236,9 +236,9 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     //pre-apply scaling
     float real3Dscale = 1.0f;
     {
-        PDO_Face& f = faces.front();
-        PDO_2DVertex& v1 = f.vertices[0];
-        PDO_2DVertex& v2 = f.vertices[1];
+        const PDO_Face& f = faces.front();
+        const PDO_2DVertex& v1 = f.vertices[0];
+        const PDO_2DVertex& v2 = f.vertices[1];
         float len2D = glm::distance(v1.pos, v2.pos);
         float len3D = glm::distance(vertices3D[v1.index3Dvert], vertices3D[v2.index3Dvert]);
         real3Dscale = len2D / len3D;

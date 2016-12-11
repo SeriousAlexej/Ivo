@@ -322,8 +322,8 @@ void CMainWindow::on_actionLoad_Model_triggered()
 
     } catch(std::exception& e)
     {
-        QMessageBox::information(this, "Error", e.what());
         ClearModel();
+        QMessageBox::information(this, "Error", e.what());
     }
 }
 

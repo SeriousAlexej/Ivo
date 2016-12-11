@@ -208,8 +208,6 @@ void CMainWindow::LoadFromIVO(const char* filename)
             sett.SetStippleLoop( stipplLp );
             m_rw2->UpdateSheetsSize();
 
-            UpdateView();
-
             break;
         }
         default :
