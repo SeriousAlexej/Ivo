@@ -3,8 +3,8 @@
 #include "io/saferead.h"
 #include "mesh/mesh.h"
 #include "settings/settings.h"
+#include "renderers/renwin.h"
 #include "renderers/renwin2d.h"
-#include "renderers/renwin3d.h"
 
 void CMainWindow::SaveToIVO(const char* filename)
 {
@@ -132,7 +132,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
             m_openedModel = filename;
 
             m_rw2->SetModel(newModel);
-            m_rw3->SetModel(newModel);
+            ((IRenWin*)m_rw3)->SetModel(newModel);
             if(m_model)
                 delete m_model;
             m_model = newModel;
@@ -188,7 +188,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
                 m_textures[key] = path.get();
 
                 m_rw2->ReserveTextureID(key);
-                m_rw3->ReserveTextureID(key);
+                ((IRenWin*)m_rw3)->ReserveTextureID(key);
 
                 if(hasTexture == 1)
                     emit UpdateTexture(m_textureImages[key].get(), key);

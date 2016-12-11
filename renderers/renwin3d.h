@@ -18,6 +18,8 @@ public:
 
     void SetModel(CMesh *mdl) override final;
     void ZoomFit();
+    void ToggleLighting(bool checked);
+    void ToggleGrid(bool checked);
 
 protected:
     virtual void initializeGL() override final;
@@ -44,6 +46,8 @@ private:
     glm::vec3       m_front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3       m_up = glm::vec3(0.0f, 1.0f, 0.0f);
     float           m_fovy = 70.0f;
+    bool            m_lighting = true;
+    bool            m_grid = true;
 };
 
 #endif // RENWIN3D_H

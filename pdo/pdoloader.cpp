@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include "settings/settings.h"
 #include "mesh/mesh.h"
+#include "renderers/renwin.h"
 #include "renderers/renwin2d.h"
-#include "renderers/renwin3d.h"
 #include "interface/mainwindow.h"
 #include "io/saferead.h"
 #include "pdotools.h"
@@ -142,7 +142,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             m_textureImages[j].reset(new QImage(texWidth, texHeight, QImage::Format_RGB32));
             m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
             m_rw2->ReserveTextureID(j);
-            m_rw3->ReserveTextureID(j);
+            ((IRenWin*)m_rw3)->ReserveTextureID(j);
 
             for(int x=0; x<texWidth; x++)
             for(int y=0; y<texHeight; y++)
@@ -272,7 +272,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
 
     m_model = new CMesh();
     m_rw2->SetModel(m_model);
-    m_rw3->SetModel(m_model);
+    ((IRenWin*)m_rw3)->SetModel(m_model);
 
     for(int x=0; x<sheetsHorizontal; x++)
     for(int y=0; y<sheetsVertical; y++)

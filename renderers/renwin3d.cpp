@@ -39,6 +39,24 @@ void CRenWin3D::initializeGL()
     glLightfv(GL_LIGHT1, GL_AMBIENT, &ambi[0]);
 }
 
+void CRenWin3D::ToggleLighting(bool checked)
+{
+    m_lighting = checked;
+    makeCurrent();
+    if(m_lighting)
+    {
+        glEnable(GL_LIGHTING);
+    } else {
+        glDisable(GL_LIGHTING);
+    }
+    doneCurrent();
+}
+
+void CRenWin3D::ToggleGrid(bool checked)
+{
+    m_grid = checked;
+}
+
 void CRenWin3D::DrawAxis()
 {
     glDisable(GL_LIGHTING);
@@ -82,7 +100,10 @@ void CRenWin3D::DrawAxis()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
 
-    glEnable(GL_LIGHTING);
+    if(m_lighting)
+    {
+        glEnable(GL_LIGHTING);
+    }
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
@@ -165,8 +186,10 @@ void CRenWin3D::paintGL()
 
         UnbindTexture();
     }
-    if(CSettings::RenderGrid)
+    if(m_grid)
+    {
         DrawGrid();
+    }
     DrawAxis();
 }
 

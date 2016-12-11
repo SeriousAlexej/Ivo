@@ -364,6 +364,12 @@ void CMainWindow::on_actionAutoPack_triggered()
 
 void CMainWindow::on_actionShow_Grid_triggered(bool checked)
 {
-    CSettings::RenderGrid = checked;
+    m_rw3->ToggleGrid(checked);
+    UpdateView();
+}
+
+void CMainWindow::on_actionToggle_Lighting_triggered(bool checked)
+{
+    m_rw3->ToggleLighting(checked);
     UpdateView();
 }

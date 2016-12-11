@@ -50,6 +50,7 @@ private slots:
     void on_actionScale_triggered();
     void on_actionAutoPack_triggered();
     void on_actionShow_Grid_triggered(bool checked);
+    void on_actionToggle_Lighting_triggered(bool checked);
 
 private:
     void closeEvent(QCloseEvent *event) override;

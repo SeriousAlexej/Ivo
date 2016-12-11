@@ -23,8 +23,6 @@ public:
     static const unsigned char R_TEXTR = (1u << 2);
     static const unsigned char R_FOLDS = (1u << 3);
 
-    static bool         RenderGrid;
-
     static CSettings&   GetInstance();
 
     unsigned char       GetRenderFlags() const;

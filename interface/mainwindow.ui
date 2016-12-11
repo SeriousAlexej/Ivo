@@ -62,7 +62,7 @@
      <x>0</x>
      <y>0</y>
      <width>951</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -89,6 +89,7 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <addaction name="actionToggle_Lighting"/>
     <addaction name="actionShow_Grid"/>
     <addaction name="actionZoom_fit"/>
     <addaction name="actionZoom_2D"/>
@@ -213,7 +214,7 @@
      <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
    </property>
    <property name="text">
-    <string>Material Manager</string>
+    <string>Mate&amp;rial Manager</string>
    </property>
    <property name="toolTip">
     <string>Browse current model's materials and assign textures</string>
@@ -465,7 +466,7 @@
      <normaloff>:/icons/icons/48px-Package-x-generic.svg.png</normaloff>:/icons/icons/48px-Package-x-generic.svg.png</iconset>
    </property>
    <property name="text">
-    <string>Auto Pack</string>
+    <string>&amp;Auto Pack</string>
    </property>
    <property name="toolTip">
     <string>Automatically arrange groups in 2D window</string>
@@ -483,13 +484,34 @@
      <normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</iconset>
    </property>
    <property name="text">
-    <string>Show Grid</string>
+    <string>&amp;Show Grid</string>
    </property>
    <property name="toolTip">
     <string>Show grid in 3D view window</string>
    </property>
    <property name="shortcut">
     <string>G</string>
+   </property>
+  </action>
+  <action name="actionToggle_Lighting">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/light_bulb.png</normaloff>:/icons/icons/light_bulb.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Toggle Lighting</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Lighting</string>
+   </property>
+   <property name="shortcut">
+    <string>H</string>
    </property>
   </action>
  </widget>
