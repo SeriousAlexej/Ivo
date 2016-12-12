@@ -68,7 +68,7 @@ private:
     std::unique_ptr<QOpenGLTexture> m_texValleyFold;
     std::unique_ptr<QOpenGLTexture> m_texMountainFold;
     std::unique_ptr<QOpenGLTexture> m_texPitchBlack;
-    glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
+    glm::vec3                       m_cameraPosition = glm::vec3(0); //3rd component - zoom coeff.
     float                           m_w;
     float                           m_h;
     QPointF                         m_mousePressPoint;
