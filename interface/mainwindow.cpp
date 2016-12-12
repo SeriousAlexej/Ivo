@@ -121,13 +121,12 @@ void CMainWindow::LoadModel()
     if(modelPath.empty())
         return;
 
-    CMesh *newModel = new CMesh();
-    std::string errorString = newModel->LoadMesh(modelPath);
-    if(!errorString.empty())
+    try
     {
-        delete newModel;
-        QMessageBox::information(this, "Error", errorString.c_str());
-    } else {
+        CMesh *newModel = new CMesh();
+
+        newModel->LoadMesh(modelPath);
+
         AskToSaveChanges();
         m_openedModel = "";
         m_rw2->SetModel(newModel);
@@ -137,7 +136,13 @@ void CMainWindow::LoadModel()
         m_model = newModel;
         ClearTextures();
 
+        m_rw2->ZoomFit();
+        m_rw3->ZoomFit();
         UpdateView();
+    } catch(std::exception& e)
+    {
+        ClearModel();
+        QMessageBox::information(this, "Error", e.what());
     }
 }
 

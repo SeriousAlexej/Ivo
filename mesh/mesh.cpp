@@ -107,7 +107,7 @@ void CMesh::AddMeshesFromAIScene(const aiScene* scene, const aiNode* node)
     unnamedMatIndex = 1u;
 }
 
-std::string CMesh::LoadMesh(const std::string& path)
+void CMesh::LoadMesh(const std::string& path)
 {
     Clear();
 
@@ -121,14 +121,14 @@ std::string CMesh::LoadMesh(const std::string& path)
                                                      aiProcess_FlipUVs);
     if(!scene)
     {
-        return importer.GetErrorString();
+        throw std::logic_error(importer.GetErrorString());
     }
 
     AddMeshesFromAIScene(scene, scene->mRootNode);
 
     if(m_vertices.size() == 0)
     {
-        return "File contains no 3D geometry";
+        throw std::logic_error("File contains no 3D geometry");
     }
 
     CalculateFlatNormals(); //this function goes first!
@@ -137,7 +137,6 @@ std::string CMesh::LoadMesh(const std::string& path)
     PackGroups(false);
     CalculateAABBox();
     g_Mesh = this;
-    return "";
 }
 
 void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
@@ -254,8 +253,6 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
         m_groups.push_back(STriGroup());
         STriGroup& grp = m_groups.back();
 
-        grp.m_rotation = 0.0f;
-
         for(const PDO_Face* fc : part.faces)
         {
             grp.m_tris.push_back(&m_tri2D[fc->id]);
@@ -263,6 +260,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
         }
 
         grp.CentrateOrigin();
+        grp.SetRotation(0.0f);
     }
 
     UpdateGroupDepth();
@@ -1005,16 +1003,23 @@ void CMesh::Deserialize(FILE *f)
         {
             SEdge &e = *eIter;
 
-            if(edgptrInd[i*2] >= 0)
+            int leftTriInd = edgptrInd[i*2];
+            int rightTriInd = edgptrInd[i*2 + 1];
+            if(leftTriInd >= (int)m_tri2D.size() || rightTriInd >= (int)m_tri2D.size())
             {
-                e.m_left = &m_tri2D[edgptrInd[i*2]];
+                throw std::logic_error("Model file is corrupted");
+            }
+
+            if(leftTriInd >= 0)
+            {
+                e.m_left = &m_tri2D[leftTriInd];
                 e.m_left->m_edges[e.m_leftIndex] = &e;
             } else {
                 e.m_left = nullptr;
             }
-            if(edgptrInd[i*2 + 1] >= 0)
+            if(rightTriInd >= 0)
             {
-                e.m_right = &m_tri2D[edgptrInd[i*2 + 1]];
+                e.m_right = &m_tri2D[rightTriInd];
                 e.m_right->m_edges[e.m_rightIndex] = &e;
             } else {
                 e.m_right = nullptr;
