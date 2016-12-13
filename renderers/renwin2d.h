@@ -68,7 +68,7 @@ private:
     std::unique_ptr<QOpenGLTexture> m_texValleyFold;
     std::unique_ptr<QOpenGLTexture> m_texMountainFold;
     std::unique_ptr<QOpenGLTexture> m_texPitchBlack;
-    glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
+    glm::vec3                       m_cameraPosition = glm::vec3(0); //3rd component - zoom coeff.
     float                           m_w;
     float                           m_h;
     QPointF                         m_mousePressPoint;
@@ -81,7 +81,7 @@ private:
     void*                           m_currGroup = nullptr;
     void*                           m_currTri = nullptr;
     int                             m_currEdge = -1;
-    glm::vec2                       m_currEdgeVec;
+    glm::vec2                       m_currEdgeVec = glm::vec2(0);
     glm::vec2                       m_currGroupOldPos = glm::vec2(0.0f, 0.0f);
     float                           m_currGroupOldRot = 0.0f;
     glm::vec2                       m_fromCurrGroupCenter = glm::vec2(0.0f,0.0f);
