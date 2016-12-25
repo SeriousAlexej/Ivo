@@ -813,6 +813,12 @@ void CMesh::CalculateAABBox()
     m_aabbox[5] = glm::vec3(lowestX, highestY, highestZ);
     m_aabbox[6] = glm::vec3(highestX, highestY, highestZ);
     m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
+
+    glm::vec3 toCenter = 0.5f * (m_aabbox[0] + m_aabbox[6]);
+    for(int i=0; i<7; i++)
+        m_aabbox[i] -= toCenter;
+    for(glm::vec3& v : m_vertices)
+        v -= toCenter;
 }
 
 glm::vec3 CMesh::GetSizeMillimeters() const

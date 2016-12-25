@@ -13,6 +13,12 @@ class CRenWin3D : public IRenWin
     Q_OBJECT
 
 public:
+    enum EditMode
+    {
+        EM_NONE,
+        EM_POLYPAINT
+    };
+
     explicit CRenWin3D(QWidget *parent = nullptr);
     ~CRenWin3D();
 
@@ -20,6 +26,7 @@ public:
     void ZoomFit();
     void ToggleLighting(bool checked);
     void ToggleGrid(bool checked);
+    void SetEditMode(EditMode mode);
 
 protected:
     virtual void initializeGL() override final;
@@ -32,10 +39,11 @@ private:
     void DrawAxis();
     void UpdateViewAngles();
     void UpdateViewMatrix();
+    void RefreshPickingTexture();
 
-    QPointF                         m_mousePressPoint;
     enum
-    { CAM_TRANSLATE,
+    { CAM_FLYOVER,
+      CAM_TRANSLATE,
       CAM_ROTATE,
       CAM_STILL,
       CAM_ZOOM }    m_cameraMode = CAM_STILL;
@@ -48,6 +56,12 @@ private:
     float           m_fovy = 70.0f;
     bool            m_lighting = true;
     bool            m_grid = true;
+    QImage          m_pickingTexture;
+    bool            m_pickTexValid = false;
+    EditMode        m_editMode = EM_NONE;
+    QPointF         m_mousePressPoint;
+    unsigned        m_width = 800;
+    unsigned        m_height = 600;
 };
 
 #endif // RENWIN3D_H

@@ -8,7 +8,7 @@ IRenWin::IRenWin(QWidget* parent) :
     format.setDepthBufferSize(16);
     format.setMajorVersion(2);
     format.setMinorVersion(0);
-    format.setSamples(2);
+    format.setSamples(6);
     setFormat(format);
     m_boundTextureID = -1;
 }

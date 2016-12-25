@@ -9,7 +9,7 @@ void BadFile(std::FILE* fi)
     throw std::logic_error("Error reading from file!");
 }
 
-std::string ReadLine(FILE* fi)
+std::string ReadLine(std::FILE* fi)
 {
     std::string line = "";
     char tmp;

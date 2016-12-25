@@ -215,6 +215,12 @@ bool CMesh::STriangle2D::PointIsNearEdge(const glm::vec2 &point, const int &i, f
     return false;
 }
 
+float CMesh::STriangle2D::GetEdgeLen(size_t index) const
+{
+    assert(index < 3);
+    return m_edgeLen[index];
+}
+
 const glm::vec2& CMesh::STriangle2D::operator[](size_t index) const
 {
     assert(index < 3);

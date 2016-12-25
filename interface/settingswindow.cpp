@@ -167,13 +167,13 @@ void CSettingsWindow::on_pushButtonApplyPreset_clicked()
     }
 }
 
-void CSettingsWindow::on_spinBoxW_valueChanged(double i)
+void CSettingsWindow::on_spinBoxW_valueChanged(int i)
 {
     Q_UNUSED(i);
     UpdateResolution();
 }
 
-void CSettingsWindow::on_spinBoxH_valueChanged(double i)
+void CSettingsWindow::on_spinBoxH_valueChanged(int i)
 {
     Q_UNUSED(i);
     UpdateResolution();

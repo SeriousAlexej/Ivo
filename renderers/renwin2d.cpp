@@ -90,6 +90,7 @@ void CRenWin2D::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_MULTISAMPLE);
     glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
     CreateFoldTextures();
 }
@@ -445,7 +446,7 @@ void CRenWin2D::RenderEdge(void *tr, int edge, int foldType) const
     const glm::vec2 &v1 = t[edge];
     const glm::vec2 &v2 = t[(edge+1)%3];
     const glm::vec2 vN = t.GetNormal(edge) * 0.04f * CSettings::GetInstance().GetLineWidth();
-    float len = glm::length(v2 - v1) * 0.5f * (float)CSettings::GetInstance().GetStippleLoop();
+    float len = t.GetEdgeLen(edge) * 0.5f * (float)CSettings::GetInstance().GetStippleLoop();
     float dep = g->GetDepth() - CMesh::STriGroup::GetDepthStep()*0.3f;
 
     switch(foldType)
@@ -624,6 +625,15 @@ bool CRenWin2D::event(QEvent *e)
 
     switch(e->type())
     {
+        case QEvent::Wheel :
+        {
+            QWheelEvent *we = static_cast<QWheelEvent*>(e);
+            m_cameraPosition[2] = glm::clamp(m_cameraPosition[2] + 0.01f*we->delta(), 0.1f, 1000000.0f);
+            makeCurrent();
+            RecalcProjection();
+            update();
+            break;
+        }
         case QEvent::MouseButtonPress :
         {
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
@@ -683,7 +693,7 @@ bool CRenWin2D::event(QEvent *e)
             {
                 case CAM_ZOOM :
                 {
-                    m_cameraPosition[2] = glm::clamp(oldPos[2] - static_cast<float>(m_mousePressPoint.ry() - newPos.ry())*0.005f, 0.1f, 1000000.0f);
+                    m_cameraPosition[2] = glm::clamp(oldPos[2] - static_cast<float>(m_mousePressPoint.ry() - newPos.ry())*0.1f, 0.1f, 1000000.0f);
                     makeCurrent();
                     RecalcProjection();
                     shouldUpdate = true;

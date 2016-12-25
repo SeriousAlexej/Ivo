@@ -4,7 +4,7 @@
 #include <string>
 
 extern void        BadFile(std::FILE* fi);
-extern std::string ReadLine(FILE* fi);
+extern std::string ReadLine(std::FILE* fi);
 
 #define FLINESCANF_IMPL___(num, f, ...)\
 do { if(std::sscanf(ReadLine(f).c_str(), __VA_ARGS__) != num) BadFile(f); } while(false)

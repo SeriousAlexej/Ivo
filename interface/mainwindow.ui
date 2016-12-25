@@ -162,6 +162,7 @@
    <addaction name="actionExport_Sheets"/>
    <addaction name="actionScale"/>
    <addaction name="actionSettings"/>
+   <addaction name="actionPolypaint"/>
   </widget>
   <action name="actionOpen_obj">
    <property name="icon">
@@ -384,9 +385,6 @@
    <property name="toolTip">
     <string>Edit rendering, paper and export settings</string>
    </property>
-   <property name="shortcut">
-    <string>S</string>
-   </property>
   </action>
   <action name="actionZoom_fit">
    <property name="icon">
@@ -512,6 +510,14 @@
    </property>
    <property name="shortcut">
     <string>H</string>
+   </property>
+  </action>
+  <action name="actionPolypaint">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Polypaint</string>
    </property>
   </action>
  </widget>

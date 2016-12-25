@@ -22,8 +22,8 @@ private slots:
     void on_pushButtonCancel_clicked();
     void on_pushButtonOrientation_clicked();
     void on_pushButtonApplyPreset_clicked();
-    void on_spinBoxW_valueChanged(double i);
-    void on_spinBoxH_valueChanged(double i);
+    void on_spinBoxW_valueChanged(int i);
+    void on_spinBoxH_valueChanged(int i);
     void on_doubleSpinBoxMultiplier_valueChanged(double i);
 
 private:

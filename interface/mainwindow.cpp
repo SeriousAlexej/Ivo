@@ -3,7 +3,9 @@
 #include <QHBoxLayout>
 #include <QActionGroup>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <cstdio>
+#include <thread>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "renderers/renwin3d.h"
@@ -35,6 +37,16 @@ CMainWindow::CMainWindow(QWidget *parent) :
         l->addWidget(m_rw2);
         ui->frameRight->setLayout(l);
     }
+
+    std::thread updateEventThread([this](){
+        while(true) //is this safe? :D
+        {
+            QEvent* updateEvent = new QEvent((QEvent::Type)(QEvent::User + 1));
+            QCoreApplication::postEvent(m_rw3, updateEvent);
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        }
+    });
+    updateEventThread.detach();
 
     QActionGroup *ag = new QActionGroup(this);
     ag->addAction(ui->actionModeMove);
@@ -377,4 +389,14 @@ void CMainWindow::on_actionToggle_Lighting_triggered(bool checked)
 {
     m_rw3->ToggleLighting(checked);
     UpdateView();
+}
+
+void CMainWindow::on_actionPolypaint_triggered()
+{
+    if(ui->actionPolypaint->isChecked())
+    {
+        m_rw3->SetEditMode(CRenWin3D::EM_POLYPAINT);
+    } else {
+        m_rw3->SetEditMode(CRenWin3D::EM_NONE);
+    }
 }

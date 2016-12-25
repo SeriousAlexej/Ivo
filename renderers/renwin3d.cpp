@@ -1,7 +1,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <QOpenGLWidget>
+#include <QOpenGLFramebufferObject>
 #include <QEvent>
 #include <QMouseEvent>
+#include <chrono>
 #include "settings/settings.h"
 #include "renwin3d.h"
 #include "mesh/mesh.h"
@@ -9,6 +11,8 @@
 CRenWin3D::CRenWin3D(QWidget *parent) :
     IRenWin(parent)
 {
+    grabKeyboard();
+    setMouseTracking(true);
     UpdateViewAngles();
 }
 
@@ -22,6 +26,12 @@ CRenWin3D::~CRenWin3D()
 {
 }
 
+void CRenWin3D::SetEditMode(EditMode mode)
+{
+    m_editMode = mode;
+    m_pickTexValid = false;
+}
+
 void CRenWin3D::initializeGL()
 {
     initializeOpenGLFunctions();
@@ -29,6 +39,7 @@ void CRenWin3D::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glEnable(GL_MULTISAMPLE);
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
     glShadeModel(GL_FLAT);
     glEnable(GL_LIGHTING);
@@ -195,23 +206,181 @@ void CRenWin3D::paintGL()
 
 void CRenWin3D::resizeGL(int w, int h)
 {
+    m_pickTexValid = false;
+    m_width = w;
+    m_height = h;
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glm::mat4 projMx = glm::perspective(m_fovy, (static_cast<float>(w))/(static_cast<float>(h)), 1.0f, 3000.0f);
+    glm::mat4 projMx = glm::perspective(m_fovy, (static_cast<float>(w))/(static_cast<float>(h)), 0.1f, 3000.0f);
     glMultMatrixf(&projMx[0][0]);
 }
 
+#define KEY_UP      (1u<<0u)
+#define KEY_DOWN    (1u<<1u)
+#define KEY_LEFT    (1u<<2u)
+#define KEY_RIGHT   (1u<<3u)
+#define KEY_FORWARD (1u<<4u)
+#define KEY_BACKWRD (1u<<5u)
+
 bool CRenWin3D::event(QEvent *e)
 {
+    static auto lastEventTime = std::chrono::high_resolution_clock::now();
+    static unsigned keyFlags = 0u;
+
     static glm::vec2 oldRot = m_cameraRotation;
     static glm::vec3 oldPos = m_cameraPosition;
+    static QPoint oldCursorPos = QCursor::pos();
+
+    if(e->type() == QEvent::User + 1)
+    {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastEventTime).count() / 1000.0f;
+        lastEventTime = currentTime;
+
+        if(keyFlags != 0u)
+        {
+            if(keyFlags & KEY_UP)
+            {
+                m_cameraPosition += m_up * deltaTime;
+            } else if(keyFlags & KEY_DOWN)
+            {
+                m_cameraPosition -= m_up * deltaTime;
+            }
+
+            if(keyFlags & KEY_RIGHT)
+            {
+                m_cameraPosition += m_right * deltaTime;
+            } else if(keyFlags & KEY_LEFT)
+            {
+                m_cameraPosition -= m_right * deltaTime;
+            }
+
+            if(keyFlags & KEY_FORWARD)
+            {
+                m_cameraPosition += m_front * deltaTime;
+            } else if(keyFlags & KEY_BACKWRD)
+            {
+                m_cameraPosition -= m_front * deltaTime;
+            }
+            UpdateViewAngles();
+        }
+
+        return true;
+    }
 
     switch(e->type())
     {
+        case QEvent::KeyPress :
+        {
+            if(m_cameraMode != CAM_FLYOVER)
+                break;
+
+            QKeyEvent *ke = static_cast<QKeyEvent*>(e);
+            switch(ke->key())
+            {
+                case Qt::Key_W :
+                {
+                    keyFlags |= KEY_FORWARD;
+                    break;
+                }
+                case Qt::Key_S :
+                {
+                    keyFlags |= KEY_BACKWRD;
+                    break;
+                }
+                case Qt::Key_D :
+                {
+                    keyFlags |= KEY_RIGHT;
+                    break;
+                }
+                case Qt::Key_A :
+                {
+                    keyFlags |= KEY_LEFT;
+                    break;
+                }
+                case Qt::Key_Space :
+                {
+                    keyFlags |= KEY_UP;
+                    break;
+                }
+                case Qt::Key_C :
+                {
+                    keyFlags |= KEY_DOWN;
+                    break;
+                }
+                default : break;
+            }
+            break;
+        }
+        case QEvent::KeyRelease :
+        {
+            QKeyEvent *ke = static_cast<QKeyEvent*>(e);
+            switch(ke->key())
+            {
+                case Qt::Key_Escape :
+                {
+                    keyFlags = 0u;
+                    if(m_cameraMode != CAM_FLYOVER && underMouse())
+                    {
+                        m_cameraMode = CAM_FLYOVER;
+                        oldCursorPos = QCursor::pos();
+                        grabMouse();
+                        setCursor(Qt::BlankCursor);
+                    } else {
+                        m_cameraMode = CAM_STILL;
+                        releaseMouse();
+                        setCursor(Qt::ArrowCursor);
+                    }
+                    break;
+                }
+                case Qt::Key_W :
+                {
+                    keyFlags &= ~KEY_FORWARD;
+                    break;
+                }
+                case Qt::Key_S :
+                {
+                    keyFlags &= ~KEY_BACKWRD;
+                    break;
+                }
+                case Qt::Key_D :
+                {
+                    keyFlags &= ~KEY_RIGHT;
+                    break;
+                }
+                case Qt::Key_A :
+                {
+                    keyFlags &= ~KEY_LEFT;
+                    break;
+                }
+                case Qt::Key_Space :
+                {
+                    keyFlags &= ~KEY_UP;
+                    break;
+                }
+                case Qt::Key_C :
+                {
+                    keyFlags &= ~KEY_DOWN;
+                    break;
+                }
+                default : break;
+            }
+            break;
+        }
+        case QEvent::Wheel :
+        {
+            QWheelEvent *we = static_cast<QWheelEvent*>(e);
+            m_cameraPosition -= m_front*0.005f*(float)we->delta();
+            UpdateViewMatrix();
+            break;
+        }
         case QEvent::MouseButtonPress :
         {
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
+
+            if(m_cameraMode == CAM_FLYOVER)
+                break;
 
             if(m_cameraMode != CAM_STILL)
             {
@@ -249,6 +418,8 @@ bool CRenWin3D::event(QEvent *e)
         }
         case QEvent::MouseButtonRelease :
         {
+            if(m_cameraMode == CAM_FLYOVER)
+                break;
             m_cameraMode = CAM_STILL;
             break;
         }
@@ -274,8 +445,17 @@ bool CRenWin3D::event(QEvent *e)
                 case CAM_TRANSLATE :
                 {
                     m_cameraPosition = oldPos - m_right * static_cast<float>(newPos.rx() - m_mousePressPoint.rx())*0.01f
-                                            + m_up    * static_cast<float>(newPos.ry() - m_mousePressPoint.ry())*0.01f;
+                                              + m_up    * static_cast<float>(newPos.ry() - m_mousePressPoint.ry())*0.01f;
                     UpdateViewMatrix();
+                    break;
+                }
+                case CAM_FLYOVER :
+                {
+                    QPoint currPos = QCursor::pos();
+                    m_cameraRotation[0] -= (currPos.x() - oldCursorPos.x())*0.001f;
+                    m_cameraRotation[1] -= (currPos.y() - oldCursorPos.y())*0.001f;
+                    UpdateViewAngles();
+                    QCursor::setPos(oldCursorPos);
                     break;
                 }
                 default : break;
@@ -321,6 +501,69 @@ void CRenWin3D::UpdateViewMatrix()
 {
     m_viewMatrix = glm::lookAt(m_cameraPosition, m_cameraPosition+m_front, m_up);
     update();
+}
+
+void CRenWin3D::RefreshPickingTexture()
+{
+    m_pickTexValid = true;
+
+    if(!m_model)
+        return;
+
+    makeCurrent();
+
+    QOpenGLFramebufferObject fbo(m_width, m_height, QOpenGLFramebufferObject::Depth, GL_TEXTURE_2D);
+    if(!fbo.isValid())
+    {
+        return;
+    }
+    fbo.bind();
+
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixf(&m_viewMatrix[0][0]);
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+    glBegin(GL_TRIANGLES);
+
+    const std::vector<glm::vec3> &vert = m_model->GetVertices();
+
+    int i = 0;
+    for(const glm::uvec4 &t : m_model->GetTriangles())
+    {
+        const glm::vec3 &vertex1 = vert[t[0]];
+        const glm::vec3 &vertex2 = vert[t[1]];
+        const glm::vec3 &vertex3 = vert[t[2]];
+
+        int r = i & 0x0000FF;
+        int g = i & 0x00FF00; g >>= 8;
+        int b = i & 0xFF0000; b >>= 16;
+
+        glColor3ub(r, g, b);
+        glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+        glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+        glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+        i++;
+    }
+
+    glEnd();
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+
+    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+
+    m_pickingTexture = fbo.toImage();
+
+    fbo.release();
+
+    doneCurrent();
 }
 
 void CRenWin3D::ZoomFit()
