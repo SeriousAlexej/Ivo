@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <cstdio>
 #include <thread>
+#include <mutex>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "renderers/renwin3d.h"
@@ -18,6 +19,9 @@
 #include "pdo/pdotools.h"
 
 extern QString g_GetSupported3DFormats();
+
+bool g_rw3IsValid = true;
+std::mutex g_rw3Mutex;
 
 CMainWindow::CMainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -39,11 +43,19 @@ CMainWindow::CMainWindow(QWidget *parent) :
     }
 
     std::thread updateEventThread([this](){
-        while(true) //is this safe? :D
+        while(true)
         {
-            QEvent* updateEvent = new QEvent((QEvent::Type)(QEvent::User + 1));
-            QCoreApplication::postEvent(m_rw3, updateEvent);
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            g_rw3Mutex.lock();
+            if(g_rw3IsValid)
+            {
+                g_rw3Mutex.unlock();
+                QEvent* updateEvent = new QEvent((QEvent::Type)(QEvent::User + 1));
+                QCoreApplication::postEvent(m_rw3, updateEvent);
+                std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            } else {
+                g_rw3Mutex.unlock();
+                break;
+            }
         }
     });
     updateEventThread.detach();
@@ -74,6 +86,10 @@ CMainWindow::~CMainWindow()
 
 void CMainWindow::closeEvent(QCloseEvent *event)
 {
+    g_rw3Mutex.lock();
+    g_rw3IsValid = false;
+    g_rw3Mutex.unlock();
+
     AskToSaveChanges();
     event->accept();
 }

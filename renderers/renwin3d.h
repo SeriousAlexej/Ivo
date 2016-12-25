@@ -4,6 +4,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/matrix.hpp>
+#include <unordered_set>
 #include "renwin.h"
 
 class CMesh;
@@ -62,6 +63,7 @@ private:
     QPointF         m_mousePressPoint;
     unsigned        m_width = 800;
     unsigned        m_height = 600;
+    std::unordered_set<int> m_pickTriIndices;
 };
 
 #endif // RENWIN3D_H

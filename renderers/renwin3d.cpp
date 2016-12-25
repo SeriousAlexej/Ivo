@@ -30,6 +30,21 @@ void CRenWin3D::SetEditMode(EditMode mode)
 {
     m_editMode = mode;
     m_pickTexValid = false;
+
+    switch(m_editMode)
+    {
+        case EM_POLYPAINT:
+        {
+            m_pickTriIndices.clear();
+            break;
+        }
+        case EM_NONE:
+        {
+            break;
+        }
+        default : assert(false);
+    }
+    update();
 }
 
 void CRenWin3D::initializeGL()
@@ -169,6 +184,8 @@ void CRenWin3D::paintGL()
         int i = 0;
         for(const glm::uvec4 &t : m_model->GetTriangles())
         {
+            bool faceSelected = m_pickTriIndices.find(i) != m_pickTriIndices.end();
+
             BindTexture(t[3]);
 
             const glm::vec3 &vertex1 = vert[t[0]];
@@ -183,13 +200,18 @@ void CRenWin3D::paintGL()
 
             glNormal3f(faceNormal[0], faceNormal[1], faceNormal[2]);
 
-            glTexCoord2f(uv1[0], uv1[1]);
+            if(faceSelected)
+                glTexCoord2f(0.0f, 0.0f);
+            else
+                glTexCoord2f(uv1[0], uv1[1]);
             glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
 
-            glTexCoord2f(uv2[0], uv2[1]);
+            if(!faceSelected)
+                glTexCoord2f(uv2[0], uv2[1]);
             glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
 
-            glTexCoord2f(uv3[0], uv3[1]);
+            if(!faceSelected)
+                glTexCoord2f(uv3[0], uv3[1]);
             glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
         }
 
@@ -223,10 +245,14 @@ void CRenWin3D::resizeGL(int w, int h)
 #define KEY_FORWARD (1u<<4u)
 #define KEY_BACKWRD (1u<<5u)
 
+#define KEY_LMB     (1u<<6u)
+#define KEY_RMB     (1u<<7u)
+
 bool CRenWin3D::event(QEvent *e)
 {
     static auto lastEventTime = std::chrono::high_resolution_clock::now();
     static unsigned keyFlags = 0u;
+    static unsigned mouseKeyFlags = 0u;
 
     static glm::vec2 oldRot = m_cameraRotation;
     static glm::vec3 oldPos = m_cameraPosition;
@@ -263,7 +289,7 @@ bool CRenWin3D::event(QEvent *e)
             {
                 m_cameraPosition -= m_front * deltaTime;
             }
-            UpdateViewAngles();
+            UpdateViewMatrix();
         }
 
         return true;
@@ -402,14 +428,40 @@ bool CRenWin3D::event(QEvent *e)
                 }
                 case Qt::LeftButton :
                 {
-                    m_cameraMode = CAM_ROTATE;
-                    oldRot = m_cameraRotation;
+                    switch(m_editMode)
+                    {
+                        case EM_POLYPAINT:
+                        {
+                            mouseKeyFlags |= KEY_LMB;
+                            break;
+                        }
+                        case EM_NONE:
+                        {
+                            m_cameraMode = CAM_ROTATE;
+                            oldRot = m_cameraRotation;
+                            break;
+                        }
+                        default : assert(false);
+                    }
                     break;
                 }
                 case Qt::RightButton :
                 {
-                    m_cameraMode = CAM_ZOOM;
-                    oldPos = m_cameraPosition;
+                    switch(m_editMode)
+                    {
+                    case EM_POLYPAINT:
+                    {
+                        mouseKeyFlags |= KEY_RMB;
+                        break;
+                    }
+                    case EM_NONE:
+                    {
+                        m_cameraMode = CAM_ZOOM;
+                        oldPos = m_cameraPosition;
+                        break;
+                    }
+                    default : assert(false);
+                    }
                     break;
                 }
                 default : break;
@@ -420,6 +472,25 @@ bool CRenWin3D::event(QEvent *e)
         {
             if(m_cameraMode == CAM_FLYOVER)
                 break;
+
+            QMouseEvent *me = static_cast<QMouseEvent*>(e);
+            switch(m_editMode)
+            {
+                case EM_POLYPAINT:
+                {
+                    if(me->button() == Qt::LeftButton)
+                        mouseKeyFlags &= ~KEY_LMB;
+                    else if(me->button() == Qt::RightButton)
+                        mouseKeyFlags &= ~KEY_RMB;
+                    break;
+                }
+                case EM_NONE:
+                {
+                    break;
+                }
+                default : assert(false);
+            }
+
             m_cameraMode = CAM_STILL;
             break;
         }
@@ -427,6 +498,46 @@ bool CRenWin3D::event(QEvent *e)
         {
             QMouseEvent *me = static_cast<QMouseEvent*>(e);
             QPointF newPos = me->pos();
+
+            switch(m_editMode)
+            {
+                case EM_POLYPAINT:
+                {
+                    RefreshPickingTexture();
+                    QPoint p = me->pos();
+
+                    if(p.x() < 0 || p.y() < 0 || p.x() >= (int)m_width || p.y() >= (int)m_height)
+                        break;
+
+                    QColor col = m_pickingTexture.pixelColor(p.x(), p.y());
+
+                    int index = 0;
+                    index |= col.red();
+                    index |= col.green() << 8;
+                    index |= col.blue() << 16;
+
+                    if(index < 0xFFFFFF)
+                    {
+                        if(mouseKeyFlags & KEY_LMB)
+                        {
+                            m_pickTriIndices.insert(index);
+                        } else if(mouseKeyFlags & KEY_RMB)
+                        {
+                            auto foundPos = m_pickTriIndices.find(index);
+                            if(foundPos != m_pickTriIndices.end())
+                                m_pickTriIndices.erase(foundPos);
+                        }
+                        update();
+                    }
+                    break;
+                }
+                case EM_NONE:
+                {
+                    break;
+                }
+                default : assert(false);
+            }
+
             switch(m_cameraMode)
             {
                 case CAM_ZOOM :
@@ -499,12 +610,15 @@ void CRenWin3D::UpdateViewAngles()
 
 void CRenWin3D::UpdateViewMatrix()
 {
+    m_pickTexValid = false;
     m_viewMatrix = glm::lookAt(m_cameraPosition, m_cameraPosition+m_front, m_up);
     update();
 }
 
 void CRenWin3D::RefreshPickingTexture()
 {
+    if(m_pickTexValid)
+        return;
     m_pickTexValid = true;
 
     if(!m_model)
@@ -554,7 +668,8 @@ void CRenWin3D::RefreshPickingTexture()
 
     glEnd();
 
-    glEnable(GL_LIGHTING);
+    if(m_lighting)
+        glEnable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
 
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
