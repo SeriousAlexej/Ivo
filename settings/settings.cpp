@@ -91,7 +91,7 @@ float CSettings::GetLineWidth() const
 
 void CSettings::SetLineWidth(float aLineW)
 {
-    assert(aLineW >= 1.0f);
+    assert(aLineW >= 0.1f);
     m_lineWidth = aLineW;
 }
 

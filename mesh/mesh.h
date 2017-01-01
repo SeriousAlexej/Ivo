@@ -100,7 +100,7 @@ public:
         STriGroup*              GetGroup() const;
         bool                    IsFlapSharp(size_t index) const;
         SEdge*                  GetEdge(size_t index) const;
-        const glm::vec2&        GetNormal(size_t index) const;
+        glm::vec2               GetNormal(size_t index) const;
         float                   GetEdgeLen(size_t index) const;
 
     private:

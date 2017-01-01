@@ -43,44 +43,31 @@ void CRenWin2D::SetModel(CMesh *mdl)
 
 void CRenWin2D::CreateFoldTextures()
 {
-    QImage imgBlack(1, 1, QImage::Format_ARGB32);
-    QImage imgValley(16, 1, QImage::Format_ARGB32);
-    QImage imgMountain(16, 1, QImage::Format_ARGB32);
-    imgBlack.fill(QColor(0,0,0,255));
-    imgValley.fill(QColor(0,0,0,255));
-    imgMountain.fill(QColor(0,0,0,255));
+    QImage imgFolds(16, 4, QImage::Format_ARGB32); //row 0 - black, row 1 - valley, row 2 - mountain, row 3 - white
+    imgFolds.fill(QColor(0,0,0,255));
 
     for(int i=0; i<6; ++i)
     {
-        imgValley.setPixelColor(i, 0, QColor(0,0,0,0));
-        imgMountain.setPixelColor(i, 0, QColor(0,0,0,0));
+        imgFolds.setPixelColor(i, 1, QColor(0,0,0,0));
+        imgFolds.setPixelColor(i, 2, QColor(0,0,0,0));
     }
-    imgMountain.setPixelColor(3, 0, QColor(0,0,0,255));
+    for(int i=0; i<16; ++i)
+    {
+        imgFolds.setPixelColor(i, 3, QColor(255, 255, 255, 255));
+    }
+    imgFolds.setPixelColor(3, 2, QColor(0,0,0,255));
 
-    m_texValleyFold.reset(new QOpenGLTexture(imgValley));
-    m_texValleyFold->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-    m_texValleyFold->setWrapMode(QOpenGLTexture::Repeat);
-
-    m_texMountainFold.reset(new QOpenGLTexture(imgMountain));
-    m_texMountainFold->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-    m_texMountainFold->setWrapMode(QOpenGLTexture::Repeat);
-
-    m_texPitchBlack.reset(new QOpenGLTexture(imgBlack));
-    m_texPitchBlack->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-    m_texPitchBlack->setWrapMode(QOpenGLTexture::Repeat);
+    m_texFolds.reset(new QOpenGLTexture(imgFolds));
+    m_texFolds->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+    m_texFolds->setWrapMode(QOpenGLTexture::Repeat);
 }
 
 CRenWin2D::~CRenWin2D()
 {
     makeCurrent();
-    if(m_texValleyFold)
-        m_texValleyFold->destroy();
+    if(m_texFolds)
+        m_texFolds->destroy();
 
-    if(m_texMountainFold)
-        m_texMountainFold->destroy();
-
-    if(m_texPitchBlack)
-        m_texPitchBlack->destroy();
     doneCurrent();
 }
 
@@ -107,24 +94,20 @@ void CRenWin2D::paintGL()
 
         RenderPaperSheets();
 
-        RenderGroups();
-
         const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
-
-        glColor3f(0.0f, 0.0f, 0.0f);
-        glLineWidth(CSettings::GetInstance().GetLineWidth());
 
         if(renFlags & CSettings::R_FLAPS)
         {
             RenderFlaps();
+            glClear(GL_DEPTH_BUFFER_BIT);
         }
+
+        RenderGroups();
+
         if(renFlags & (CSettings::R_EDGES | CSettings::R_FOLDS))
         {
             RenderEdges();
         }
-
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glLineWidth(1.0f);
 
         RenderSelection();
     }
@@ -171,13 +154,6 @@ void CRenWin2D::ExportSheets(const QString baseName)
     const unsigned char renFlags = sett.GetRenderFlags();
     const unsigned char imgQuality = sett.GetImageQuality();
 
-    QOpenGLFramebufferObject fbo(fboW, fboH, QOpenGLFramebufferObject::Depth, GL_TEXTURE_2D);
-    if(!fbo.isValid())
-    {
-        QMessageBox::information(this, "Export Error", "Failed to create framebuffer object!");
-        return;
-    }
-    fbo.bind();
     glViewport(0, 0, fboW, fboH);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -190,29 +166,39 @@ void CRenWin2D::ExportSheets(const QString baseName)
     int sheetNum = 1;
     for(auto &sheet : m_sheets)
     {
+        QOpenGLFramebufferObjectFormat fboFormat;
+        fboFormat.setSamples(6);
+        fboFormat.setAttachment(QOpenGLFramebufferObject::Depth);
+        fboFormat.setTextureTarget(GL_TEXTURE_2D_MULTISAMPLE);
+        QOpenGLFramebufferObject fbo(fboW, fboH, fboFormat);
+        if(!fbo.isValid())
+        {
+            QMessageBox::information(this, "Export Error", "Failed to create framebuffer object!");
+            break;
+        }
+        fbo.bind();
+
         glLoadIdentity();
         glTranslatef(-sheet.m_position.x - papW*0.05f, -sheet.m_position.y - papH*0.05f, -1.0f);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glLineWidth(1.0f);
-
-        RenderGroups();
-
-        glColor3f(0.0f, 0.0f, 0.0f);
-        glLineWidth(sett.GetLineWidth());
-
         if(renFlags & CSettings::R_FLAPS)
         {
             RenderFlaps();
+            glClear(GL_DEPTH_BUFFER_BIT);
         }
+
+        RenderGroups();
+
         if(renFlags & (CSettings::R_EDGES | CSettings::R_FOLDS))
         {
             RenderEdges();
         }
 
         QImage img(fbo.toImage());
+
+        assert(fbo.release());
 
         if(!img.save(dstFolder + baseName + "_" + QString::number(sheetNum++) + "." + imgFormat.toLower(), imgFormat.toStdString().c_str(), imgQuality))
         {
@@ -226,12 +212,7 @@ void CRenWin2D::ExportSheets(const QString baseName)
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glLineWidth(1.0f);
-
     glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
-
-    assert(fbo.release());
 
     doneCurrent();
 
@@ -340,33 +321,54 @@ void CRenWin2D::RenderGroups()
 
 void CRenWin2D::RenderFlaps() const
 {
+    if(!m_model)
+        return;
+
+    if(m_texFolds)
+        m_texFolds->bind();
+
+    glBegin(GL_QUADS);
     for(CMesh::SEdge &e : m_model->m_edges)
     {
-        if(!e.IsSnapped() && e.GetFlapPosition() != CMesh::SEdge::FP_NONE)
+        if(!e.IsSnapped())
         {
-            if(e.GetFlapPosition() == CMesh::SEdge::FP_LEFT)
+            switch(e.GetFlapPosition())
             {
+            case CMesh::SEdge::FP_LEFT:
                 RenderFlap(e.GetTriangle(0), e.GetTriIndex(0));
-            } else
-            if(e.GetFlapPosition() == CMesh::SEdge::FP_RIGHT)
-            {
+                break;
+            case CMesh::SEdge::FP_RIGHT:
                 RenderFlap(e.GetTriangle(1), e.GetTriIndex(1));
-            } else
-            if(e.GetFlapPosition() == CMesh::SEdge::FP_BOTH)
-            {
+                break;
+            case CMesh::SEdge::FP_BOTH:
                 RenderFlap(e.GetTriangle(0), e.GetTriIndex(0));
                 RenderFlap(e.GetTriangle(1), e.GetTriIndex(1));
+                break;
+            case CMesh::SEdge::FP_NONE:
+            default:
+                break;
             }
         }
     }
+    glEnd();
+
+    if(m_texFolds && m_texFolds->isBound())
+        m_texFolds->release();
 }
 
 void CRenWin2D::RenderEdges()
 {
+    if(!m_model)
+        return;
+
     const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
+    if(m_texFolds)
+        m_texFolds->bind();
+
     glBegin(GL_QUADS);
     for(CMesh::SEdge &e : m_model->m_edges)
     {
@@ -392,102 +394,109 @@ void CRenWin2D::RenderEdges()
     glEnd();
     glDisable(GL_BLEND);
 
-    if(m_texMountainFold && m_texMountainFold->isBound())
-        m_texMountainFold->release();
-
-    if(m_texValleyFold && m_texValleyFold->isBound())
-        m_texValleyFold->release();
-
-    if(m_texPitchBlack && m_texPitchBlack->isBound())
-        m_texPitchBlack->release();
+    if(m_texFolds && m_texFolds->isBound())
+        m_texFolds->release();
 }
 
 void CRenWin2D::RenderFlap(void *tr, int edge) const
 {
     const CMesh::STriangle2D& t = *static_cast<CMesh::STriangle2D*>(tr);
-    CMesh::STriGroup *g = t.GetGroup();
-    float dep = g->GetDepth() + CMesh::STriGroup::GetDepthStep()*0.3f;
+    const CMesh::STriGroup *g = t.GetGroup();
+    const float dep = g->GetDepth() + CMesh::STriGroup::GetDepthStep()*0.3f;
+    const float dep2 = dep + CMesh::STriGroup::GetDepthStep()*0.15f;
     const glm::vec2 &v1 = t[edge];
     const glm::vec2 &v2 = t[(edge+1)%3];
-    const glm::vec2 &vN = t.GetNormal(edge);
+    const glm::vec2 vN = t.GetNormal(edge) * 0.5f;
 
-    glBegin(GL_LINE_STRIP);
-
-    for(int i=0; i<2; ++i)
+    float x[4];
+    float y[4];
+    if(t.IsFlapSharp(edge))
     {
-        if(t.IsFlapSharp(edge))
-        {
-            glVertex3f(v1.x, v1.y, -dep);
-            glVertex3f(0.5f*v1.x+0.5f*v2.x+vN.x, 0.5f*v1.y+0.5f*v2.y+vN.y, -dep);
-            glVertex3f(v2.x, v2.y, -dep);
-        } else {
-            glVertex3f(v1.x, v1.y, -dep);
-            glVertex3f(0.9f*v1.x+0.1f*v2.x+vN.x, 0.9f*v1.y+0.1f*v2.y+vN.y, -dep);
-            glVertex3f(0.1f*v1.x+0.9f*v2.x+vN.x, 0.1f*v1.y+0.9f*v2.y+vN.y, -dep);
-            glVertex3f(v2.x, v2.y, -dep);
-        }
-
-        glEnd();
-
-        if(i==0)
-        {
-            dep += CMesh::STriGroup::GetDepthStep()*0.15f;
-            glColor3f(1.0f, 1.0f, 1.0f);
-            glBegin(GL_POLYGON);
-        }
+        x[0] = v1.x;
+        y[0] = v1.y;
+        x[1] = 0.5f*v1.x + 0.5f*v2.x + vN.x;
+        y[1] = 0.5f*v1.y + 0.5f*v2.y + vN.y;
+        x[2] = v2.x;
+        y[2] = v2.y;
+        x[3] = 0.5f*v1.x + 0.5f*v2.x;
+        y[3] = 0.5f*v1.y + 0.5f*v2.y;
+    } else {
+        x[0] = v1.x;
+        y[0] = v1.y;
+        x[1] = 0.9f*v1.x + 0.1f*v2.x + vN.x;
+        y[1] = 0.9f*v1.y + 0.1f*v2.y + vN.y;
+        x[2] = 0.1f*v1.x + 0.9f*v2.x + vN.x;
+        y[2] = 0.1f*v1.y + 0.9f*v2.y + vN.y;
+        x[3] = v2.x;
+        y[3] = v2.y;
     }
-    glColor3f(0.0f, 0.0f, 0.0f);
+    static const glm::mat2 rotMx90deg = glm::mat2(glm::vec2(glm::cos(glm::radians(90.0f)), glm::sin(glm::radians(90.0f))),
+                                                  glm::vec2(-glm::sin(glm::radians(90.0f)), glm::cos(glm::radians(90.0f))));
+    const float normalScaler = 0.015f * CSettings::GetInstance().GetLineWidth();
+
+    //render inner part of flap
+    glTexCoord2f(0.0f, 0.8f); //white
+    glVertex3f(x[0], y[0], -dep2);
+    glVertex3f(x[1], y[1], -dep2);
+    glVertex3f(x[2], y[2], -dep2);
+    glVertex3f(x[3], y[3], -dep2);
+
+    //render edges of flap
+    glTexCoord2f(0.0f, 0.1f); //black
+    for(int i=0; i<4; i++)
+    {
+        int i2 = (i+1)%4;
+        const float& x1 = x[i];
+        const float& x2 = x[i2];
+        const float& y1 = y[i];
+        const float& y2 = y[i2];
+        const glm::vec2 eN = glm::normalize(rotMx90deg * glm::vec2(x2-x1, y2-y1)) * normalScaler;
+
+        glVertex3f(x1 - eN.x, y1 - eN.y, -dep);
+        glVertex3f(x1 + eN.x, y1 + eN.y, -dep);
+        glVertex3f(x2 + eN.x, y2 + eN.y, -dep);
+        glVertex3f(x2 - eN.x, y2 - eN.y, -dep);
+    }
 }
 
 void CRenWin2D::RenderEdge(void *tr, int edge, int foldType) const
 {
     const CMesh::STriangle2D& t = *static_cast<CMesh::STriangle2D*>(tr);
-    CMesh::STriGroup *g = t.GetGroup();
+    const CMesh::STriGroup *g = t.GetGroup();
     const glm::vec2 &v1 = t[edge];
     const glm::vec2 &v2 = t[(edge+1)%3];
-    const glm::vec2 vN = t.GetNormal(edge) * 0.04f * CSettings::GetInstance().GetLineWidth();
-    float len = t.GetEdgeLen(edge) * 0.5f * (float)CSettings::GetInstance().GetStippleLoop();
-    float dep = g->GetDepth() - CMesh::STriGroup::GetDepthStep()*0.3f;
+    const glm::vec2 vN = t.GetNormal(edge) * 0.015f * CSettings::GetInstance().GetLineWidth();
+    const float len = t.GetEdgeLen(edge) * (float)CSettings::GetInstance().GetStippleLoop();
+    const float dep = g->GetDepth() - CMesh::STriGroup::GetDepthStep()*0.3f;
+
+    float foldSelector = 1.0f;
 
     switch(foldType)
     {
     case CMesh::SEdge::FT_FLAT:
-        if(m_texPitchBlack && !m_texPitchBlack->isBound())
-        {
-            glEnd();
-            m_texPitchBlack->bind();
-            glBegin(GL_QUADS);
-        }
+        foldSelector = 1.0f;
         break;
     case CMesh::SEdge::FT_VALLEY:
-        if(m_texValleyFold && !m_texValleyFold->isBound())
-        {
-            glEnd();
-            m_texValleyFold->bind();
-            glBegin(GL_QUADS);
-        }
+        foldSelector = 2.0f;
         break;
     case CMesh::SEdge::FT_MOUNTAIN:
-        if(m_texMountainFold && !m_texMountainFold->isBound())
-        {
-            glEnd();
-            m_texMountainFold->bind();
-            glBegin(GL_QUADS);
-        }
+        foldSelector = 3.0f;
         break;
     default: assert(false);
     }
 
-    glTexCoord2f(0.0f, 0.0f);
+    static const float oneForth = 1.0f/4.0f;
+
+    glTexCoord2f(0.0f, oneForth * (foldSelector - 1.0f) + 0.1f);
     glVertex3f(v1.x - vN.x, v1.y - vN.y, -dep);
 
-    glTexCoord2f(0.0f, 1.0f);
+    glTexCoord2f(0.0f, oneForth * foldSelector - 0.1f);
     glVertex3f(v1.x + vN.x, v1.y + vN.y, -dep);
 
-    glTexCoord2f(len, 1.0f);
+    glTexCoord2f(len, oneForth * foldSelector - 0.1f);
     glVertex3f(v2.x + vN.x, v2.y + vN.y, -dep);
 
-    glTexCoord2f(len, 0.0f);
+    glTexCoord2f(len, oneForth * (foldSelector - 1.0f) + 0.1f);
     glVertex3f(v2.x - vN.x, v2.y - vN.y, -dep);
 }
 
