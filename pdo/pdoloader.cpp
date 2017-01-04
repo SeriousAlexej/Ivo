@@ -134,7 +134,12 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         materialNames[j] = matName;
 
         int hasTexture = 0;
-        SAFE_FLSCANF(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*d %d", &hasTexture);
+        float colR, colG, colB;
+        SAFE_FLSCANF(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
+
+        m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
+        m_rw2->ReserveTextureID(j);
+        ((IRenWin*)m_rw3)->ReserveTextureID(j);
 
         if(hasTexture != 0)
         {
@@ -151,9 +156,6 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             ReadLine(fi);//
 
             m_textureImages[j].reset(new QImage(texWidth, texHeight, QImage::Format_RGB32));
-            m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
-            m_rw2->ReserveTextureID(j);
-            ((IRenWin*)m_rw3)->ReserveTextureID(j);
 
             for(int x=0; x<texWidth; x++)
             for(int y=0; y<texHeight; y++)
@@ -164,8 +166,8 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
                 m_textureImages[j]->setPixelColor(x, y, QColor(r, g, b));
             }
         } else {
-            m_textureImages[j].reset(nullptr);
-            m_textures[j] = "";
+            m_textureImages[j].reset(new QImage(1, 1, QImage::Format_RGB32));
+            m_textureImages[j]->setPixelColor(0, 0, QColor(colR * 255, colG * 255, colB * 255));
         }
     }
 
