@@ -60,6 +60,7 @@ void CRenWin3D::initializeGL()
     glShadeModel(GL_FLAT);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT1);
+    glShadeModel(GL_SMOOTH);
     glm::vec4 diff = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     glm::vec4 ambi = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, &diff[0]);
@@ -139,11 +140,11 @@ void CRenWin3D::DrawGrid()
     glDisable(GL_LIGHTING);
     glColor3f(0.0f, 0.0f, 0.0f);
     glBegin(GL_LINES);
-        glVertex3f(m_cameraPosition.x + 100.0f, 0.0f, 0.0f);
-        glVertex3f(m_cameraPosition.x - 100.0f, 0.0f, 0.0f);
+        glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, 0.0f);
+        glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, 0.0f);
 
-        glVertex3f(0.0f, 0.0f, m_cameraPosition.z + 100.0f);
-        glVertex3f(0.0f, 0.0f, m_cameraPosition.z - 100.0f);
+        glVertex3f(0.0f, 0.0f, m_cameraPosition.z + 50.0f);
+        glVertex3f(0.0f, 0.0f, m_cameraPosition.z - 50.0f);
     glEnd();
 
     int baseX = (int)m_cameraPosition.x;
@@ -151,25 +152,55 @@ void CRenWin3D::DrawGrid()
 
     glColor3f(0.4f, 0.4f, 0.4f);
     glBegin(GL_LINES);
-        for(int i=-100; i<100; ++i)
+        for(int i=-50; i<50; ++i)
         {
-            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z + 100.0f);
-            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z - 100.0f);
+            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z + 50.0f);
+            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z - 50.0f);
         }
-        for(int i=-100; i<100; ++i)
+        for(int i=-50; i<50; ++i)
         {
-            glVertex3f(m_cameraPosition.x + 100.0f, 0.0f, baseZ+i);
-            glVertex3f(m_cameraPosition.x - 100.0f, 0.0f, baseZ+i);
+            glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, baseZ+i);
+            glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, baseZ+i);
         }
     glEnd();
 }
 
+void CRenWin3D::DrawBackground()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    if(m_lighting)
+        glDisable(GL_LIGHTING);
+
+    glBegin(GL_QUADS);
+    glColor3ub(214, 237, 255);
+    glVertex3f(-1.0f, 1.0f, -1.0f);
+    glVertex3f(1.0f, 1.0f, -1.0f);
+    glColor3ub(255, 255, 255);
+    glVertex3f(1.0f, -1.0f, -1.0f);
+    glVertex3f(-1.0f, -1.0f, -1.0f);
+    glEnd();
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
+    if(m_lighting)
+        glEnable(GL_LIGHTING);
+}
+
 void CRenWin3D::paintGL()
 {
+    DrawBackground();
     if(m_model)
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        glClear(GL_DEPTH_BUFFER_BIT);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glMultMatrixf(&m_viewMatrix[0][0]);
@@ -220,12 +251,12 @@ void CRenWin3D::paintGL()
         glEnd();
 
         UnbindTexture();
+        if(m_grid)
+        {
+            DrawGrid();
+        }
+        DrawAxis();
     }
-    if(m_grid)
-    {
-        DrawGrid();
-    }
-    DrawAxis();
 }
 
 void CRenWin3D::resizeGL(int w, int h)
@@ -236,7 +267,7 @@ void CRenWin3D::resizeGL(int w, int h)
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glm::mat4 projMx = glm::perspective(m_fovy, (static_cast<float>(w))/(static_cast<float>(h)), 0.1f, 3000.0f);
+    glm::mat4 projMx = glm::perspective(glm::radians(m_fovy), (static_cast<float>(w))/(static_cast<float>(h)), 0.1f, 3000.0f);
     glMultMatrixf(&projMx[0][0]);
 }
 
@@ -266,30 +297,32 @@ bool CRenWin3D::event(QEvent *e)
         float deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastEventTime).count() / 1000.0f;
         lastEventTime = currentTime;
 
+        static const float cameraSpeedCM = 10.0f;//10 cm per second
+
         if(keyFlags != 0u)
         {
             if(keyFlags & KEY_UP)
             {
-                m_cameraPosition += m_up * deltaTime;
+                m_cameraPosition += m_up * deltaTime * cameraSpeedCM;
             } else if(keyFlags & KEY_DOWN)
             {
-                m_cameraPosition -= m_up * deltaTime;
+                m_cameraPosition -= m_up * deltaTime * cameraSpeedCM;
             }
 
             if(keyFlags & KEY_RIGHT)
             {
-                m_cameraPosition += m_right * deltaTime;
+                m_cameraPosition += m_right * deltaTime * cameraSpeedCM;
             } else if(keyFlags & KEY_LEFT)
             {
-                m_cameraPosition -= m_right * deltaTime;
+                m_cameraPosition -= m_right * deltaTime * cameraSpeedCM;
             }
 
             if(keyFlags & KEY_FORWARD)
             {
-                m_cameraPosition += m_front * deltaTime;
+                m_cameraPosition += m_front * deltaTime * cameraSpeedCM;
             } else if(keyFlags & KEY_BACKWRD)
             {
-                m_cameraPosition -= m_front * deltaTime;
+                m_cameraPosition -= m_front * deltaTime * cameraSpeedCM;
             }
             UpdateViewMatrix();
         }
@@ -687,29 +720,9 @@ void CRenWin3D::ZoomFit()
 {
     if(!m_model)
         return;
-    float lowestX  = 999999999999.0f,
-          highestX =-999999999999.0f,
-          lowestY  = 999999999999.0f,
-          highestY =-999999999999.0f,
-          fZ       =-999999999999.0f;
 
-    const glm::vec3* m_aabbox = m_model->GetAABBox();
-
-    glm::mat4 viewMxNOPOS = m_viewMatrix;
-    viewMxNOPOS[3] = glm::vec4(0, 0, 0, 1);
-
-    for(int i=0; i<8; ++i)
-    {
-        glm::vec3 v = glm::vec3(viewMxNOPOS * glm::vec4(m_aabbox[i].x, m_aabbox[i].y, m_aabbox[i].z, 1.0f));
-        lowestX = glm::min(lowestX, v.x);
-        highestX = glm::max(highestX, v.x);
-        lowestY = glm::min(lowestY, v.y);
-        highestY = glm::max(highestY, v.y);
-        fZ = glm::max(fZ, v.z);
-    }
     float oneOverTanHFOVY = 1.0f / glm::tan(glm::radians(m_fovy * 0.5f));
-    m_cameraPosition = glm::vec3((lowestX + highestX) * 0.5f, (lowestY + highestY) * 0.5f, 2.0f*(fZ + (highestX - lowestY) * 0.5f * oneOverTanHFOVY));
-    m_cameraPosition = glm::vec3(glm::inverse(viewMxNOPOS) * glm::vec4(m_cameraPosition.x, m_cameraPosition.y, m_cameraPosition.z, 1.0f));
-
+    float cameraDistance = m_model->GetBSphereRadius() * oneOverTanHFOVY;
+    m_cameraPosition = -cameraDistance * m_front + m_model->GetAABBoxCenter();
     UpdateViewMatrix();
 }

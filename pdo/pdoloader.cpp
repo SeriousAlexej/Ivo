@@ -247,7 +247,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         const PDO_2DVertex& v2 = f.vertices[1];
         float len2D = glm::distance(v1.pos, v2.pos);
         float len3D = glm::distance(vertices3D[v1.index3Dvert], vertices3D[v2.index3Dvert]);
-        real3Dscale = len2D / len3D;
+        real3Dscale = scale2d * len2D / len3D;
     }
     for(glm::vec3& v : vertices3D)
     {

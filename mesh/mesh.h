@@ -30,11 +30,12 @@ public:
                                                         const std::vector<glm::vec3>&                 vertices3D,
                                                         const std::unordered_map<unsigned, PDO_Part>& parts);
 
-    inline const std::vector<glm::vec3>&    GetNormals()   const { return m_flatNormals; }
-    inline const std::vector<glm::vec2>&    GetUVCoords()  const { return m_uvCoords; }
-    inline const std::vector<glm::vec3>&    GetVertices()  const { return m_vertices; }
-    inline const std::vector<glm::uvec4>&   GetTriangles() const { return m_triangles; }
-    inline const glm::vec3*                 GetAABBox()    const { return m_aabbox; }
+    inline const std::vector<glm::vec3>&    GetNormals()       const { return m_flatNormals; }
+    inline const std::vector<glm::vec2>&    GetUVCoords()      const { return m_uvCoords; }
+    inline const std::vector<glm::vec3>&    GetVertices()      const { return m_vertices; }
+    inline const std::vector<glm::uvec4>&   GetTriangles()     const { return m_triangles; }
+    inline const glm::vec3*                 GetAABBox()        const { return m_aabbox; }
+    inline float                            GetBSphereRadius() const { return m_bSphereRadius; }
 
     inline const std::unordered_map<unsigned, std::string>  GetMaterials() const { return m_materials; }
     inline void                                             SetMaterials(std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
@@ -53,6 +54,7 @@ public:
     void                        ApplyScale(float scale);
     void                        PackGroups(bool undoable=true);
     glm::vec3                   GetSizeMillimeters() const;
+    glm::vec3                   GetAABBoxCenter() const;
     static inline CMesh*        GetMesh() { return g_Mesh; }
 
 private:
@@ -77,6 +79,7 @@ private:
     std::list<SEdge>            m_edges;
     std::list<STriGroup>        m_groups;
     glm::vec3                   m_aabbox[8];
+    float                       m_bSphereRadius;
 
     QUndoStack                  m_undoStack;
 

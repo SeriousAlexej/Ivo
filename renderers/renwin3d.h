@@ -36,6 +36,7 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
+    void DrawBackground();
     void DrawGrid();
     void DrawAxis();
     void UpdateViewAngles();

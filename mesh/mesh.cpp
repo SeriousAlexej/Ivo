@@ -456,8 +456,6 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                     if(tr2) //if edge n has neighbour...
                     if(tr.m_edges[n]->m_angle <= maxAngleDeg) //angle between neighbour is in valid range
                     if(tr2->m_myGroup == nullptr) //neighbour is groupless
-                    //and not already in the list of candidates, then
-                    if(std::find(candNoRefls.begin(), candNoRefls.end(), tr2->m_id) == candNoRefls.end())
                     {
                         //skip first iterator, because it is to be removed from list
                         auto itNextLargerAngle = candidates.begin();
@@ -489,8 +487,6 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                                     }
 
                                     inserted = myAngle <= otherAngle;
-                                } else {
-                                    inserted = true;
                                 }
                             } else {
                                 inserted = true;
@@ -500,6 +496,18 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                             {
                                 candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, c.first));
                                 candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
+
+                                while(itNextLargerAngle != candidates.end())
+                                {
+                                    if((*itNextLargerAngle).first == tr2->m_id)
+                                    {
+                                        candidates.erase(itNextLargerAngle);
+                                        candNoRefls.erase(itNLA_NoRefls);
+                                        break;
+                                    }
+                                    itNextLargerAngle++;
+                                    itNLA_NoRefls++;
+                                }
                             } else {
                                 itNextLargerAngle++;
                                 itNLA_NoRefls++;
@@ -814,11 +822,21 @@ void CMesh::CalculateAABBox()
     m_aabbox[6] = glm::vec3(highestX, highestY, highestZ);
     m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
 
-    glm::vec3 toCenter = 0.5f * (m_aabbox[0] + m_aabbox[6]);
+    m_bSphereRadius = 0.0f;
+    glm::vec3 toCenter = GetAABBoxCenter();
+    toCenter.y = m_aabbox[0].y;
     for(int i=0; i<7; i++)
+    {
         m_aabbox[i] -= toCenter;
+        m_bSphereRadius = glm::max(glm::length(glm::vec3(m_aabbox[i].x, m_aabbox[i].y*0.5f, m_aabbox[i].z)), m_bSphereRadius);
+    }
     for(glm::vec3& v : m_vertices)
         v -= toCenter;
+}
+
+glm::vec3 CMesh::GetAABBoxCenter() const
+{
+    return 0.5f * (m_aabbox[0] + m_aabbox[6]);
 }
 
 glm::vec3 CMesh::GetSizeMillimeters() const
