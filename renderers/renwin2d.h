@@ -7,6 +7,8 @@
 #include <cstdio>
 #include "renwin.h"
 
+class Renderer3D;
+
 class CRenWin2D : public IRenWin
 {
     Q_OBJECT
@@ -43,14 +45,8 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
-    void CreateFoldTextures();
-    void RenderPaperSheets();
     void RenderSelection();
-    void RenderGroups();
-    void RenderFlaps() const;
-    void RenderEdges();
-    void RenderFlap(void *tr, int edge) const;
-    void RenderEdge(void *tr, int edge, int foldType) const;
+    void DrawParts(const unsigned char renFlags);
 
     void RecalcProjection();
     void ModeLMB();
@@ -87,6 +83,7 @@ private:
     QPointF                         m_mousePosition;
     std::list<SPaperSheet>          m_sheets;
     SPaperSheet*                    m_currSheet = nullptr;
+    Renderer3D *m_rend;
 };
 
 #endif // RENWIN2D_H

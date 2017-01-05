@@ -38,6 +38,8 @@ public:
     inline const std::vector<glm::uvec4>&   GetTriangles()     const { return m_triangles; }
     inline const glm::vec3*                 GetAABBox()        const { return m_aabbox; }
     inline float                            GetBSphereRadius() const { return m_bSphereRadius; }
+    inline const std::list<SEdge>           GetEdges()         const { return m_edges; }
+    inline const std::list<STriGroup>       GetGroups()        const { return m_groups; }
 
     inline const std::unordered_map<unsigned, std::string>  GetMaterials() const { return m_materials; }
     inline void                                             SetMaterials(std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
@@ -139,6 +141,7 @@ public:
         friend struct CMesh::STriGroup;
     };
 
+public:
     struct SEdge
     {
         enum EFlapPosition
