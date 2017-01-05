@@ -2,6 +2,7 @@
 #define MESH_H
 #include <QUndoStack>
 #include <string>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <glm/matrix.hpp>
@@ -11,6 +12,7 @@
 #include <cstdio>
 #include <assimp/scene.h>
 #include "pdo/pdotools.h"
+#include <QImage>
 
 #define IVO_VERSION 1
 
@@ -56,6 +58,8 @@ public:
     glm::vec3                   GetSizeMillimeters() const;
     glm::vec3                   GetAABBoxCenter() const;
     static inline CMesh*        GetMesh() { return g_Mesh; }
+
+    std::unordered_map<unsigned, std::unique_ptr<QImage>> textures;
 
 private:
     void                        AddMeshesFromAIScene(const aiScene* scene, const aiNode* node);

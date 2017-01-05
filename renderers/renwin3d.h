@@ -8,6 +8,7 @@
 #include "renwin.h"
 
 class CMesh;
+class Renderer3D;
 
 class CRenWin3D : public IRenWin
 {
@@ -36,12 +37,8 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
-    void DrawBackground();
-    void DrawGrid();
-    void DrawAxis();
     void UpdateViewAngles();
     void UpdateViewMatrix();
-    void RefreshPickingTexture();
 
     enum
     { CAM_FLYOVER,
@@ -51,20 +48,18 @@ private:
       CAM_ZOOM }    m_cameraMode = CAM_STILL;
     glm::vec3       m_cameraPosition = glm::vec3(0.0f,0.0f,0.0f);
     glm::vec2       m_cameraRotation = glm::vec2(0.0f,0.0f);
-    glm::mat4       m_viewMatrix = glm::mat4(1);
     glm::vec3       m_right = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3       m_front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3       m_up = glm::vec3(0.0f, 1.0f, 0.0f);
     float           m_fovy = 70.0f;
     bool            m_lighting = true;
     bool            m_grid = true;
-    QImage          m_pickingTexture;
-    bool            m_pickTexValid = false;
     EditMode        m_editMode = EM_NONE;
     QPointF         m_mousePressPoint;
     unsigned        m_width = 800;
     unsigned        m_height = 600;
     std::unordered_set<int> m_pickTriIndices;
+    Renderer3D *m_rend;
 };
 
 #endif // RENWIN3D_H
