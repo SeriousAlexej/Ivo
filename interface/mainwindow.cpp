@@ -73,8 +73,8 @@ CMainWindow::CMainWindow(QWidget *parent) :
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionOpen_obj, SIGNAL(triggered()), this, SLOT(LoadModel()));
     connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(OpenMaterialManager()));
-    connect(this, SIGNAL(UpdateTexture(QImage*, unsigned)), m_rw3, SLOT(LoadTexture(QImage*, unsigned)));
-    connect(this, SIGNAL(UpdateTexture(QImage*, unsigned)), m_rw2, SLOT(LoadTexture(QImage*, unsigned)));
+    connect(this, SIGNAL(UpdateTexture(const QImage*, unsigned)), m_rw3, SLOT(LoadTexture(const QImage*, unsigned)));
+    connect(this, SIGNAL(UpdateTexture(const QImage*, unsigned)), m_rw2, SLOT(LoadTexture(const QImage*, unsigned)));
 }
 
 CMainWindow::~CMainWindow()

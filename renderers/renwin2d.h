@@ -40,7 +40,7 @@ public:
     void AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 
 public slots:
-    void LoadTexture(QImage *img, unsigned index) override;
+    void LoadTexture(const QImage *img, unsigned index) override;
     void ClearTextures() override;
 
 protected:

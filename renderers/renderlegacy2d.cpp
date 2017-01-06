@@ -39,7 +39,7 @@ void CRenderer2DLegacy::RecalcProjection()
     glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
 }
 
-void CRenderer2DLegacy::PreDraw()
+void CRenderer2DLegacy::PreDraw() const
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -193,7 +193,7 @@ void CRenderer2DLegacy::DrawPaperSheet(const glm::vec2 &position, const glm::vec
     glEnd();
 }
 
-void CRenderer2DLegacy::DrawScene()
+void CRenderer2DLegacy::DrawScene() const
 {
     if(!m_model)
         return;
@@ -203,7 +203,7 @@ void CRenderer2DLegacy::DrawScene()
     DrawParts();
 }
 
-void CRenderer2DLegacy::DrawParts()
+void CRenderer2DLegacy::DrawParts() const
 {
     const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
 
@@ -257,7 +257,7 @@ void CRenderer2DLegacy::DrawFlaps() const
         m_texFolds->release();
 }
 
-void CRenderer2DLegacy::DrawGroups()
+void CRenderer2DLegacy::DrawGroups() const
 {
     const std::vector<glm::vec2> &uvs = m_model->GetUVCoords();
 
@@ -442,7 +442,7 @@ void CRenderer2DLegacy::RenderEdge(void *tr, int edge, int foldType) const
     glVertex3f(v2.x - vN.x, v2.y - vN.y, -dep);
 }
 
-QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos)
+QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos) const
 {
     const CSettings& sett = CSettings::GetInstance();
 
@@ -493,7 +493,7 @@ QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos)
     return img;
 }
 
-void CRenderer2DLegacy::BindTexture(unsigned id)
+void CRenderer2DLegacy::BindTexture(unsigned id) const
 {
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture && m_boundTextureID != (int)id)
@@ -511,7 +511,7 @@ void CRenderer2DLegacy::BindTexture(unsigned id)
     }
 }
 
-void CRenderer2DLegacy::UnbindTexture()
+void CRenderer2DLegacy::UnbindTexture() const
 {
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture)

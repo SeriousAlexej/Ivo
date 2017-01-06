@@ -24,7 +24,7 @@ public:
     ~CMainWindow();
 
 signals:
-    void UpdateTexture(QImage* img, unsigned index);
+    void UpdateTexture(const QImage* img, unsigned index);
 
 private slots:
     void LoadModel();

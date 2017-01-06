@@ -22,18 +22,18 @@ public:
     virtual void    ToggleLighting(bool enable) = 0;
     virtual void    ToggleGrid(bool enable) = 0;
 
-    virtual void    PreDraw();
-    virtual void    DrawScene() = 0;
-    virtual void    PostDraw();
+    virtual void    PreDraw() const;
+    virtual void    DrawScene() const = 0;
+    virtual void    PostDraw() const;
 
     virtual void    UpdateViewMatrix(const glm::mat4& viewMatrix) = 0;
     virtual QImage  GetPickingTexture() const = 0;
     virtual void    ReserveTextureID(unsigned id);
-    virtual void    LoadTexture(QImage* img, unsigned index);
+    virtual void    LoadTexture(const QImage* img, unsigned index);
     virtual void    ClearTextures();
 
 protected:
-    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
+    mutable std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
     const CMesh*    m_model = nullptr;
     glm::mat4       m_viewMatrix = glm::mat4(1);
     glm::vec3       m_cameraPosition;

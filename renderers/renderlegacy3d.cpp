@@ -59,7 +59,7 @@ void CRenderer3DLegacy::ToggleGrid(bool enable)
     IRenderer3D::ToggleGrid(enable);
 }
 
-void CRenderer3DLegacy::DrawScene()
+void CRenderer3DLegacy::DrawScene() const
 {
     DrawBackground();
     DrawModel();
@@ -67,7 +67,7 @@ void CRenderer3DLegacy::DrawScene()
     DrawAxis();
 }
 
-void CRenderer3DLegacy::DrawModel()
+void CRenderer3DLegacy::DrawModel() const
 {
     if(!m_model)
         return;
@@ -310,7 +310,7 @@ QImage CRenderer3DLegacy::GetPickingTexture() const
     return pickTexture;
 }
 
-void CRenderer3DLegacy::BindTexture(unsigned id)
+void CRenderer3DLegacy::BindTexture(unsigned id) const
 {
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture && m_boundTextureID != (int)id)
@@ -328,7 +328,7 @@ void CRenderer3DLegacy::BindTexture(unsigned id)
     }
 }
 
-void CRenderer3DLegacy::UnbindTexture()
+void CRenderer3DLegacy::UnbindTexture() const
 {
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture)

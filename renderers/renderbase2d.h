@@ -28,25 +28,25 @@ public:
     virtual void    Init() = 0;
     virtual void    ResizeView(int w, int h) = 0;
 
-    virtual void    PreDraw();
-    virtual void    DrawScene() = 0;
+    virtual void    PreDraw() const;
+    virtual void    DrawScene() const = 0;
     virtual void    DrawSelection(const SSelectionInfo& sinfo) const = 0;
     virtual void    DrawPaperSheet(const glm::vec2 &position, const glm::vec2 &size) const = 0;
-    virtual void    PostDraw();
+    virtual void    PostDraw() const;
 
     virtual void    UpdateCameraPosition(const glm::vec3& camPos);
     virtual void    RecalcProjection() = 0;
     virtual void    ReserveTextureID(unsigned id);
-    virtual void    LoadTexture(QImage* img, unsigned index);
+    virtual void    LoadTexture(const QImage* img, unsigned index);
     virtual void    ClearTextures();
 
-    virtual QImage  DrawImageFromSheet(const glm::vec2& pos) = 0;
+    virtual QImage  DrawImageFromSheet(const glm::vec2& pos) const = 0;
 
 protected:
     void            CreateFoldTextures();
 
-    std::unique_ptr<QOpenGLTexture> m_texFolds;
-    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
+    mutable std::unique_ptr<QOpenGLTexture> m_texFolds;
+    mutable std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
     const CMesh*    m_model = nullptr;
     glm::vec3       m_cameraPosition;
     unsigned        m_width = 800;

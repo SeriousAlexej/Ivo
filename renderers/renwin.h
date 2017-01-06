@@ -18,7 +18,7 @@ public:
     virtual void ReserveTextureID(unsigned id) = 0;
 
 public slots:
-    virtual void LoadTexture(QImage *img, unsigned index) = 0;
+    virtual void LoadTexture(const QImage *img, unsigned index) = 0;
     virtual void ClearTextures() = 0;
 
 protected:

@@ -38,7 +38,7 @@ void CRenWin3D::ReserveTextureID(unsigned id)
     m_renderer->ReserveTextureID(id);
 }
 
-void CRenWin3D::LoadTexture(QImage *img, unsigned index)
+void CRenWin3D::LoadTexture(const QImage *img, unsigned index)
 {
     makeCurrent();
     m_renderer->LoadTexture(img, index);

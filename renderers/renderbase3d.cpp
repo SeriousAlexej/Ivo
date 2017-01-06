@@ -32,15 +32,15 @@ void IRenderer3D::ReserveTextureID(unsigned id)
     }
 }
 
-void IRenderer3D::PreDraw()
+void IRenderer3D::PreDraw() const
 {
 }
 
-void IRenderer3D::PostDraw()
+void IRenderer3D::PostDraw() const
 {
 }
 
-void IRenderer3D::LoadTexture(QImage *img, unsigned index)
+void IRenderer3D::LoadTexture(const QImage *img, unsigned index)
 {
     if(!img)
     {

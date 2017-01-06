@@ -15,7 +15,7 @@ public:
     void    ToggleLighting(bool enable) override;
     void    ToggleGrid(bool enable) override;
 
-    void    DrawScene() override;
+    void    DrawScene() const override;
 
     void    UpdateViewMatrix(const glm::mat4& viewMatrix) override;
 
@@ -24,15 +24,15 @@ public:
     void    ClearTextures() override;
 
 private:
-    void    DrawModel();
+    void    DrawModel() const;
     void    DrawBackground() const;
     void    DrawGrid() const;
     void    DrawAxis() const;
 
-    void    BindTexture(unsigned id);
-    void    UnbindTexture();
+    void    BindTexture(unsigned id) const;
+    void    UnbindTexture() const;
 
-    int     m_boundTextureID = -1;
+    mutable int m_boundTextureID = -1;
 };
 
 #endif // RENDERLEGACY3D_H

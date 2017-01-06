@@ -26,11 +26,11 @@ void IRenderer2D::ReserveTextureID(unsigned id)
     }
 }
 
-void IRenderer2D::PreDraw()
+void IRenderer2D::PreDraw() const
 {
 }
 
-void IRenderer2D::PostDraw()
+void IRenderer2D::PostDraw() const
 {
 }
 
@@ -60,7 +60,7 @@ void IRenderer2D::CreateFoldTextures()
     m_texFolds->setWrapMode(QOpenGLTexture::Repeat);
 }
 
-void IRenderer2D::LoadTexture(QImage *img, unsigned index)
+void IRenderer2D::LoadTexture(const QImage *img, unsigned index)
 {
     if(!img)
     {

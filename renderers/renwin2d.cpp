@@ -57,7 +57,7 @@ void CRenWin2D::ReserveTextureID(unsigned id)
     m_renderer->ReserveTextureID(id);
 }
 
-void CRenWin2D::LoadTexture(QImage *img, unsigned index)
+void CRenWin2D::LoadTexture(const QImage *img, unsigned index)
 {
     makeCurrent();
     m_renderer->LoadTexture(img, index);

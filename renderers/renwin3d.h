@@ -31,7 +31,7 @@ public:
     void SetEditMode(EditMode mode);
 
 public slots:
-    void LoadTexture(QImage *img, unsigned index) override;
+    void LoadTexture(const QImage *img, unsigned index) override;
     void ClearTextures() override;
 
 protected:
