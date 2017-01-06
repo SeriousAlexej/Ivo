@@ -9,7 +9,7 @@
 #include "renwin2d.h"
 #include "settings/settings.h"
 #include "io/saferead.h"
-#include "rendererclassic.h"
+#include "renderlegacy2d.h"
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
     IRenWin(parent)
@@ -18,7 +18,14 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
     m_w = m_h = 100.0f;
     setMouseTracking(true);
 
-    m_rend = new Renderer3D();
+    m_renderer = std::unique_ptr<IRenderer2D>(new CRenderer2DLegacy());
+}
+
+CRenWin2D::~CRenWin2D()
+{
+    makeCurrent();
+    m_renderer.reset(nullptr);
+    doneCurrent();
 }
 
 void CRenWin2D::SetMode(EditMode m)
@@ -40,68 +47,57 @@ void CRenWin2D::SetModel(CMesh *mdl)
     m_currGroup = nullptr;
     m_currSheet = nullptr;
     m_model = mdl;
+    m_renderer->SetModel(mdl);
     m_sheets.clear();
-    if (m_model)
-    {
-        m_rend->SetModel(m_model);
-        ZoomFit();
-    }
+    ZoomFit();
 }
 
+void CRenWin2D::ReserveTextureID(unsigned id)
+{
+    m_renderer->ReserveTextureID(id);
+}
 
-CRenWin2D::~CRenWin2D()
+void CRenWin2D::LoadTexture(QImage *img, unsigned index)
 {
     makeCurrent();
-    if(m_texFolds)
-        m_texFolds->destroy();
-
+    m_renderer->LoadTexture(img, index);
     doneCurrent();
+    update();
+}
+
+void CRenWin2D::ClearTextures()
+{
+    makeCurrent();
+    m_renderer->ClearTextures();
+    doneCurrent();
+    update();
 }
 
 void CRenWin2D::initializeGL()
 {
     initializeOpenGLFunctions();
-    m_rend->Init2D();
-}
-
-void CRenWin2D::DrawParts(const unsigned char renFlags)
-{
-    if(renFlags & CSettings::R_FLAPS)
-    {
-        m_rend->DrawFlaps();
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
-
-    m_rend->DrawGroups();
-
-    if(renFlags & (CSettings::R_EDGES | CSettings::R_FOLDS))
-    {
-        m_rend->DrawEdges();
-    }
+    m_renderer->Init();
+    RecalcProjection();
 }
 
 void CRenWin2D::paintGL()
 {
-    if(!m_model)
-        return;
+    const SSelectionInfo selInfo {PointToWorldCoords(m_mousePosition),
+                                  (int)m_editMode,
+                                  (void*)m_currGroup,
+                                  (void*)m_currTri,
+                                  m_currEdge};
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
+    m_renderer->PreDraw();
 
     for(const SPaperSheet &ps : m_sheets)
     {
-        m_rend->DrawPaperSheet(ps.m_position, ps.m_widthHeight);
-        glClear(GL_DEPTH_BUFFER_BIT);  //todo why?
+        m_renderer->DrawPaperSheet(ps.m_position, ps.m_widthHeight);
     }
 
-    const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
-
-    DrawParts(renFlags);
-
-    RenderSelection();
+    m_renderer->DrawScene();
+    m_renderer->DrawSelection(selInfo);
+    m_renderer->PostDraw();
 }
 
 void CRenWin2D::ExportSheets(const QString baseName)
@@ -115,9 +111,9 @@ void CRenWin2D::ExportSheets(const QString baseName)
     if(!(dstFolder.endsWith("/") || dstFolder.endsWith("\\")))
         dstFolder += "/";
 
-    makeCurrent();
-
     const CSettings& sett = CSettings::GetInstance();
+
+    const unsigned char imgQuality = sett.GetImageQuality();
     QString imgFormat = "PNG";
     switch(sett.GetImageFormat())
     {
@@ -138,60 +134,30 @@ void CRenWin2D::ExportSheets(const QString baseName)
         }
         default: assert(false);
     }
-    const int papW = sett.GetPaperWidth();
-    const int papH = sett.GetPaperHeight();
-    const int fboW = (int)(papW * sett.GetResolutionScale());
-    const int fboH = (int)(papH * sett.GetResolutionScale());
-    const unsigned char renFlags = sett.GetRenderFlags();
-    const unsigned char imgQuality = sett.GetImageQuality();
 
-    glViewport(0, 0, fboW, fboH);
+    makeCurrent();
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(-papW * 0.05f, papW * 0.05f, -papH * 0.05f, papH * 0.05f, 0.1f, 2000.0f);
-
-    glMatrixMode(GL_MODELVIEW);
     int sheetNum = 1;
-    for(auto &sheet : m_sheets)
+    for(const SPaperSheet& sheet : m_sheets)
     {
-        QOpenGLFramebufferObjectFormat fboFormat;
-        fboFormat.setSamples(6);
-        fboFormat.setAttachment(QOpenGLFramebufferObject::Depth);
-        fboFormat.setTextureTarget(GL_TEXTURE_2D_MULTISAMPLE);
-        QOpenGLFramebufferObject fbo(fboW, fboH, fboFormat);
-        if(!fbo.isValid())
+        QImage img;
+        try
         {
-            QMessageBox::information(this, "Export Error", "Failed to create framebuffer object!");
-            break;
+            img = m_renderer->DrawImageFromSheet(sheet.m_position);
+        } catch(std::exception& error)
+        {
+            QMessageBox::information(this, "Export Error", error.what());
+            doneCurrent();
+            return;
         }
-        fbo.bind();
-
-        glLoadIdentity();
-        glTranslatef(-sheet.m_position.x - papW*0.05f, -sheet.m_position.y - papH*0.05f, -1.0f);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        DrawParts(renFlags);
-
-        QImage img(fbo.toImage());
-
-        assert(fbo.release());
 
         if(!img.save(dstFolder + baseName + "_" + QString::number(sheetNum++) + "." + imgFormat.toLower(), imgFormat.toStdString().c_str(), imgQuality))
         {
             QMessageBox::information(this, "Export Error", "Failed to save one of image files!");
-            break;
+            doneCurrent();
+            return;
         }
     }
-
-    glViewport(0, 0, m_w, m_h);
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
 
     doneCurrent();
 
@@ -227,131 +193,11 @@ void CRenWin2D::DeserializeSheets(FILE *f)
     }
 }
 
-void CRenWin2D::RenderSelection()
-{
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    if(m_editMode == EM_SNAP || m_editMode == EM_CHANGE_FLAPS || m_editMode == EM_ROTATE)
-    {
-        CMesh::STriangle2D *trUnderCursor = nullptr;
-        int edgeUnderCursor = 0;
-        glm::vec2 mwp = PointToWorldCoords(m_mousePosition);
-        m_model->GetStuffUnderCursor(mwp, trUnderCursor, edgeUnderCursor);
-
-        if(m_editMode == EM_ROTATE && m_currTri)
-        {
-            trUnderCursor = (CMesh::STriangle2D*)m_currTri;
-            edgeUnderCursor = m_currEdge;
-        }
-
-        //highlight edge under cursor (if it has neighbour)
-        if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() || m_editMode == EM_ROTATE))
-        {
-            if(m_editMode == EM_CHANGE_FLAPS &&
-               trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                return;
-
-            const glm::vec2 &v1 = (*trUnderCursor)[0];
-            const glm::vec2 &v2 = (*trUnderCursor)[1];
-            const glm::vec2 &v3 = (*trUnderCursor)[2];
-
-            glm::vec2 e1Middle;
-
-            if(m_editMode == EM_CHANGE_FLAPS)
-            {
-                glColor3f(0.0f, 0.0f, 1.0f);
-            } else if(m_editMode == EM_SNAP) {
-                if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                    glColor3f(1.0f, 0.0f, 0.0f);
-                else
-                    glColor3f(0.0f, 1.0f, 0.0f);
-            } else {
-                glColor3f(0.0f, 1.0f, 1.0f);
-            }
-            glLineWidth(3.0f);
-            glBegin(GL_LINES);
-            switch(edgeUnderCursor)
-            {
-                case 0:
-                    glVertex2f(v1[0], v1[1]);
-                    glVertex2f(v2[0], v2[1]);
-                    e1Middle = 0.5f*(v1+v2);
-                    break;
-                case 1:
-                    glVertex2f(v3[0], v3[1]);
-                    glVertex2f(v2[0], v2[1]);
-                    e1Middle = 0.5f*(v3+v2);
-                    break;
-                case 2:
-                    glVertex2f(v1[0], v1[1]);
-                    glVertex2f(v3[0], v3[1]);
-                    e1Middle = 0.5f*(v1+v3);
-                    break;
-                default : break;
-            }
-
-            if(m_editMode != EM_ROTATE)
-            {
-                CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
-                int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
-                const glm::vec2 &v12 = (*tr2)[0];
-                const glm::vec2 &v22 = (*tr2)[1];
-                const glm::vec2 &v32 = (*tr2)[2];
-
-                switch(e2)
-                {
-                    case 0:
-                        glVertex2f(v12[0], v12[1]);
-                        glVertex2f(v22[0], v22[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        e1Middle = 0.5f*(v12+v22);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        break;
-                    case 1:
-                        glVertex2f(v32[0], v32[1]);
-                        glVertex2f(v22[0], v22[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        e1Middle = 0.5f*(v32+v22);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        break;
-                    case 2:
-                        glVertex2f(v12[0], v12[1]);
-                        glVertex2f(v32[0], v32[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        e1Middle = 0.5f*(v12+v32);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
-                        break;
-                    default : break;
-                }
-            }
-            glEnd();
-            glLineWidth(1.0f);
-            glColor3f(1.0f, 1.0f, 1.0f);
-        }
-    } else {
-        //draw selection rectangle
-        if(m_currGroup)
-        {
-            CMesh::STriGroup *tGroup = static_cast<CMesh::STriGroup*>(m_currGroup);
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glBegin(GL_LINE_LOOP);
-            glm::vec2 pos = tGroup->GetPosition();
-            float aabbxh = tGroup->GetAABBHalfSide();
-            glVertex2f(pos[0]-aabbxh, pos[1]+aabbxh);
-            glVertex2f(pos[0]+aabbxh, pos[1]+aabbxh);
-            glVertex2f(pos[0]+aabbxh, pos[1]-aabbxh);
-            glVertex2f(pos[0]-aabbxh, pos[1]-aabbxh);
-            glEnd();
-            glColor3f(1.0f, 1.0f, 1.0f);
-        }
-    }
-}
-
 void CRenWin2D::resizeGL(int w, int h)
 {
-    glViewport(0, 0, w, h);
     m_w = w;
     m_h = h;
+    m_renderer->ResizeView(w, h);
     RecalcProjection();
 }
 
@@ -367,6 +213,7 @@ bool CRenWin2D::event(QEvent *e)
             m_cameraPosition[2] = glm::clamp(m_cameraPosition[2] + 0.01f*we->delta(), 0.1f, 1000000.0f);
             makeCurrent();
             RecalcProjection();
+            doneCurrent();
             update();
             break;
         }
@@ -432,6 +279,7 @@ bool CRenWin2D::event(QEvent *e)
                     m_cameraPosition[2] = glm::clamp(oldPos[2] - static_cast<float>(m_mousePressPoint.ry() - newPos.ry())*0.1f, 0.1f, 1000000.0f);
                     makeCurrent();
                     RecalcProjection();
+                    doneCurrent();
                     shouldUpdate = true;
                     break;
                 }
@@ -439,6 +287,7 @@ bool CRenWin2D::event(QEvent *e)
                 {
                     m_cameraPosition[0] = oldPos[0] + static_cast<float>(newPos.rx() - m_mousePressPoint.rx())*0.0025f*m_cameraPosition[2];
                     m_cameraPosition[1] = oldPos[1] - static_cast<float>(newPos.ry() - m_mousePressPoint.ry())*0.0025f*m_cameraPosition[2];
+                    m_renderer->UpdateCameraPosition(m_cameraPosition);
                     shouldUpdate = true;
                     break;
                 }
@@ -466,10 +315,8 @@ void CRenWin2D::AddSheet(const glm::vec2 &pos, const glm::vec2 &widHei)
 
 void CRenWin2D::RecalcProjection()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    float hwidth = m_cameraPosition[2] * m_w/m_h;
-    glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
+    m_renderer->UpdateCameraPosition(m_cameraPosition);
+    m_renderer->RecalcProjection();
 }
 
 glm::vec2 CRenWin2D::PointToWorldCoords(QPointF &pt) const
@@ -736,7 +583,9 @@ void CRenWin2D::ZoomFit()
           lowestY  = 99999999999999.0f,
           highestX = -99999999999999.0f,
           lowestX  = 99999999999999.0f;
-    for(const CMesh::STriGroup& grp : m_model->m_groups)
+
+    const auto groups = m_model->GetGroups();
+    for(const CMesh::STriGroup& grp : groups)
     {
         const glm::vec2 grpPos = grp.GetPosition();
         highestY = glm::max(highestY, grpPos.y + grp.GetAABBHalfSide());
@@ -749,6 +598,7 @@ void CRenWin2D::ZoomFit()
 
     makeCurrent();
     RecalcProjection();
+    doneCurrent();
     update();
 }
 

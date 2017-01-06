@@ -40,6 +40,31 @@ void CMesh::Clear()
     m_tri2D.clear();
     m_groups.clear();
     m_materials.clear();
+    ClearPickedTriangles();
+}
+
+void CMesh::ClearPickedTriangles()
+{
+    m_pickTriIndices.clear();
+}
+
+void CMesh::SetTriangleAsPicked(int index)
+{
+    m_pickTriIndices.insert(index);
+}
+
+void CMesh::SetTriangleAsUnpicked(int index)
+{
+    auto foundPos = m_pickTriIndices.find(index);
+    if(foundPos != m_pickTriIndices.end())
+    {
+        m_pickTriIndices.erase(foundPos);
+    }
+}
+
+bool CMesh::IsTrianglePicked(int index) const
+{
+    return m_pickTriIndices.find(index) != m_pickTriIndices.end();
 }
 
 void CMesh::AddMeshesFromAIScene(const aiScene* scene, const aiNode* node)
@@ -743,7 +768,7 @@ const CMesh::STriGroup* CMesh::GroupUnderCursor(glm::vec2 &curPos) const
     return nullptr;
 }
 
-void CMesh::GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D *&tr, int &e) const
+void CMesh::GetStuffUnderCursor(const glm::vec2 &curPos, CMesh::STriangle2D *&tr, int &e) const
 {
     std::list<const STriGroup*> possibleGroups;
     for(auto &grp : m_groups)

@@ -1,13 +1,13 @@
 #ifndef RENWIN2D_H
 #define RENWIN2D_H
-
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <QString>
+#include <memory>
 #include <cstdio>
 #include "renwin.h"
 
-class Renderer3D;
+class IRenderer2D;
 
 class CRenWin2D : public IRenWin
 {
@@ -26,9 +26,10 @@ public:
     };
 
     explicit CRenWin2D(QWidget *parent = nullptr);
-    ~CRenWin2D();
+    virtual ~CRenWin2D();
 
     void SetModel(CMesh *mdl) override final;
+    void ReserveTextureID(unsigned id) override final;
     void SetMode(EditMode m);
     void ExportSheets(const QString baseName);
     void UpdateSheetsSize();
@@ -38,6 +39,10 @@ public:
     void ClearSheets() { m_sheets.clear(); }
     void AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 
+public slots:
+    void LoadTexture(QImage *img, unsigned index) override;
+    void ClearTextures() override;
+
 protected:
     virtual void initializeGL() override final;
     virtual void paintGL() override final;
@@ -45,9 +50,6 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
-    void RenderSelection();
-    void DrawParts(const unsigned char renFlags);
-
     void RecalcProjection();
     void ModeLMB();
     void ModeUpdate(QPointF &mpos);
@@ -61,16 +63,15 @@ private:
         glm::vec2 m_widthHeight;
     };
 
-    std::unique_ptr<QOpenGLTexture> m_texFolds;
-    glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
-    float                           m_w;
-    float                           m_h;
-    QPointF                         m_mousePressPoint;
     enum
     { CAM_TRANSLATE,
       CAM_STILL,
       CAM_ZOOM,
       CAM_MODE }                    m_cameraMode = CAM_STILL;
+    glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
+    float                           m_w;
+    float                           m_h;
+    QPointF                         m_mousePressPoint;
     EditMode                        m_editMode = EM_MOVE;
     void*                           m_currGroup = nullptr;
     void*                           m_currTri = nullptr;
@@ -83,7 +84,7 @@ private:
     QPointF                         m_mousePosition;
     std::list<SPaperSheet>          m_sheets;
     SPaperSheet*                    m_currSheet = nullptr;
-    Renderer3D *m_rend;
+    std::unique_ptr<IRenderer2D>    m_renderer;
 };
 
 #endif // RENWIN2D_H

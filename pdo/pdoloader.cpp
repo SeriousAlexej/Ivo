@@ -15,8 +15,6 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     if(!fi)
         BadFile(fi);
 
-    m_model = new CMesh();
-
     std::vector<glm::vec3>                      vertices3D;
     std::vector<glm::vec2>                      offsets;
     std::vector<PDO_Face>                       faces;
@@ -171,7 +169,6 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             m_textureImages[j].reset(new QImage(1, 1, QImage::Format_RGB32));
             m_textureImages[j]->setPixelColor(0, 0, QColor(colR * 255, colG * 255, colB * 255));
         }
-        m_model->textures[j] = std::unique_ptr<QImage>(new QImage(*m_textureImages[j].get()));
     }
 
     int numParts = 0;
@@ -281,6 +278,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         sheetsVertical   = 1 + (int)glm::floor(-bbox.y / borderSize.y);
     }
 
+    m_model = new CMesh();
     m_rw2->SetModel(m_model);
     ((IRenWin*)m_rw3)->SetModel(m_model);
 

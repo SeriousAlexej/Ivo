@@ -41,7 +41,10 @@ SOURCES += main.cpp\
     pdo/pdotools.cpp \
     ivo/ivoloader.cpp \
     io/saferead.cpp \
-    renderers/rendererclassic.cpp
+    renderers/renderlegacy3d.cpp \
+    renderers/renderlegacy2d.cpp \
+    renderers/renderbase3d.cpp \
+    renderers/renderbase2d.cpp
 
 HEADERS  += \
     mesh/mesh.h \
@@ -56,7 +59,10 @@ HEADERS  += \
     renderers/renwin.h \
     pdo/pdotools.h \
     io/saferead.h \
-    renderers/rendererclassic.h
+    renderers/renderlegacy3d.h \
+    renderers/renderbase3d.h \
+    renderers/renderbase2d.h \
+    renderers/renderlegacy2d.h
 
 FORMS    += interface/mainwindow.ui \
     interface/settingswindow.ui \

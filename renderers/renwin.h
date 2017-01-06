@@ -3,9 +3,6 @@
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
-#include <QOpenGLTexture>
-#include <memory>
-#include <unordered_map>
 
 class CMesh;
 
@@ -15,23 +12,17 @@ class IRenWin : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
     explicit IRenWin(QWidget *parent = nullptr);
-    ~IRenWin();
+    virtual ~IRenWin();
 
     virtual void SetModel(CMesh *mdl) = 0;
-    void         ReserveTextureID(unsigned id);
+    virtual void ReserveTextureID(unsigned id) = 0;
 
 public slots:
-    void LoadTexture(QImage *img, unsigned index);
-    void ClearTextures();
+    virtual void LoadTexture(QImage *img, unsigned index) = 0;
+    virtual void ClearTextures() = 0;
 
 protected:
-    void BindTexture(unsigned id);
-    void UnbindTexture();
-
-    std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
-    int                             m_boundTextureID;
-
-    CMesh*                          m_model;
+    CMesh*  m_model;
 };
 
 #endif // IRENWIN_H

@@ -1,14 +1,13 @@
 #ifndef RENWIN3D_H
 #define RENWIN3D_H
-
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/matrix.hpp>
-#include <unordered_set>
+#include <memory>
 #include "renwin.h"
 
 class CMesh;
-class Renderer3D;
+class IRenderer3D;
 
 class CRenWin3D : public IRenWin
 {
@@ -22,13 +21,18 @@ public:
     };
 
     explicit CRenWin3D(QWidget *parent = nullptr);
-    ~CRenWin3D();
+    virtual ~CRenWin3D();
 
     void SetModel(CMesh *mdl) override final;
+    void ReserveTextureID(unsigned id) override final;
     void ZoomFit();
     void ToggleLighting(bool checked);
     void ToggleGrid(bool checked);
     void SetEditMode(EditMode mode);
+
+public slots:
+    void LoadTexture(QImage *img, unsigned index) override;
+    void ClearTextures() override;
 
 protected:
     virtual void initializeGL() override final;
@@ -52,14 +56,13 @@ private:
     glm::vec3       m_front = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3       m_up = glm::vec3(0.0f, 1.0f, 0.0f);
     float           m_fovy = 70.0f;
-    bool            m_lighting = true;
-    bool            m_grid = true;
     EditMode        m_editMode = EM_NONE;
     QPointF         m_mousePressPoint;
     unsigned        m_width = 800;
     unsigned        m_height = 600;
-    std::unordered_set<int> m_pickTriIndices;
-    Renderer3D *m_rend;
+    QImage          m_pickingTexture;
+    bool            m_pickTexValid = false;
+    std::unique_ptr<IRenderer3D> m_renderer;
 };
 
 #endif // RENWIN3D_H

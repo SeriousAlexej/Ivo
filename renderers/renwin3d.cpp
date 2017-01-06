@@ -1,13 +1,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <QOpenGLWidget>
-#include <QOpenGLFramebufferObject>
 #include <QEvent>
 #include <QMouseEvent>
 #include <chrono>
+#include <QMessageBox>
 #include "settings/settings.h"
 #include "renwin3d.h"
 #include "mesh/mesh.h"
-#include "rendererclassic.h"
+#include "renderlegacy3d.h"
 
 CRenWin3D::CRenWin3D(QWidget *parent) :
     IRenWin(parent)
@@ -15,36 +15,56 @@ CRenWin3D::CRenWin3D(QWidget *parent) :
     grabKeyboard();
     setMouseTracking(true);
 
-    m_rend = new Renderer3D();
+    m_renderer = std::unique_ptr<IRenderer3D>(new CRenderer3DLegacy());
     UpdateViewAngles();
-}
-
-//Set or clear current model.
-void CRenWin3D::SetModel(CMesh *mdl)
-{
-    m_model = mdl;
-    m_pickTriIndices.clear();
-
-    if (m_model)
-    {
-        m_rend->SetModel(m_model);
-        ZoomFit();
-    }
 }
 
 CRenWin3D::~CRenWin3D()
 {
+    makeCurrent(); //set OGL context to properly
+    m_renderer.reset(nullptr); //clears textures and other GL resources
+    doneCurrent();
+}
+
+void CRenWin3D::SetModel(CMesh *mdl)
+{
+    m_model = mdl;
+    m_renderer->SetModel(mdl);
+    ZoomFit();
+}
+
+void CRenWin3D::ReserveTextureID(unsigned id)
+{
+    m_renderer->ReserveTextureID(id);
+}
+
+void CRenWin3D::LoadTexture(QImage *img, unsigned index)
+{
+    makeCurrent();
+    m_renderer->LoadTexture(img, index);
+    doneCurrent();
+    update();
+}
+
+void CRenWin3D::ClearTextures()
+{
+    makeCurrent();
+    m_renderer->ClearTextures();
+    doneCurrent();
+    update();
 }
 
 void CRenWin3D::SetEditMode(EditMode mode)
 {
     m_editMode = mode;
+    m_pickTexValid = false;
 
     switch(m_editMode)
     {
         case EM_POLYPAINT:
         {
-            m_pickTriIndices.clear();
+            if(m_model)
+                m_model->ClearPickedTriangles();
             break;
         }
         case EM_NONE:
@@ -59,43 +79,36 @@ void CRenWin3D::SetEditMode(EditMode mode)
 void CRenWin3D::initializeGL()
 {
     initializeOpenGLFunctions();
-    m_rend->Init();
+    m_renderer->Init();
 }
 
 void CRenWin3D::ToggleLighting(bool checked)
 {
     makeCurrent();
-    m_rend->ToggleLighting(checked);
-    doneCurrent(); //is this needed?
+    m_renderer->ToggleLighting(checked);
+    doneCurrent();
 }
 
 void CRenWin3D::ToggleGrid(bool checked)
 {
-    m_grid = checked;
+    makeCurrent();
+    m_renderer->ToggleGrid(checked);
+    doneCurrent();
 }
-
 
 void CRenWin3D::paintGL()
 {
-    m_rend->DrawBackground();
-    if(!m_model)
-        return;
-
-    m_rend->DrawModel(m_pickTriIndices);
-    if(m_grid)
-    {
-        m_rend->DrawGrid(m_cameraPosition);
-    }
-
-    glm::mat4 rotMx = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), m_front, m_up);
-    m_rend->DrawAxis(rotMx);
+    m_renderer->PreDraw();
+    m_renderer->DrawScene();
+    m_renderer->PostDraw();
 }
 
 void CRenWin3D::resizeGL(int w, int h)
 {
+    m_pickTexValid = false;
     m_width = w;
     m_height = h;
-    m_rend->ResizeView(w, h);
+    m_renderer->ResizeView(w, h, m_fovy);
 }
 
 #define KEY_UP      (1u<<0u)
@@ -368,19 +381,26 @@ bool CRenWin3D::event(QEvent *e)
                     if(!m_model)
                         break;
 
-                    makeCurrent();
-                    auto pickingTexture = m_rend->RefreshPickingTexture();
-                    doneCurrent(); //is this needed?
-
-                    if (pickingTexture == nullptr)
-                        break;
+                    if(!m_pickTexValid)
+                    {
+                        try
+                        {
+                            makeCurrent();
+                            m_pickingTexture = m_renderer->GetPickingTexture();
+                            doneCurrent();
+                        } catch(std::exception& error)
+                        {
+                            QMessageBox::information(this, "Error", error.what());
+                            break;
+                        }
+                    }
 
                     QPoint p = me->pos();
 
                     if(p.x() < 0 || p.y() < 0 || p.x() >= (int)m_width || p.y() >= (int)m_height)
                         break;
 
-                    QColor col = pickingTexture->pixelColor(p.x(), p.y());
+                    QColor col = m_pickingTexture.pixelColor(p.x(), p.y());
 
                     int index = 0;
                     index |= col.red();
@@ -391,12 +411,10 @@ bool CRenWin3D::event(QEvent *e)
                     {
                         if(mouseKeyFlags & KEY_LMB)
                         {
-                            m_pickTriIndices.insert(index);
+                            m_model->SetTriangleAsPicked(index);
                         } else if(mouseKeyFlags & KEY_RMB)
                         {
-                            auto foundPos = m_pickTriIndices.find(index);
-                            if(foundPos != m_pickTriIndices.end())
-                                m_pickTriIndices.erase(foundPos);
+                            m_model->SetTriangleAsUnpicked(index);
                         }
                         update();
                     }
@@ -481,14 +499,17 @@ void CRenWin3D::UpdateViewAngles()
 
 void CRenWin3D::UpdateViewMatrix()
 {
-    auto viewMatrix = glm::lookAt(m_cameraPosition, m_cameraPosition+m_front, m_up);
-    m_rend->UpdateViewMatrix(viewMatrix);
-    m_rend->SetLightPosition(m_cameraPosition);
+    m_pickTexValid = false;
+    const glm::mat4 viewMatrix = glm::lookAt(m_cameraPosition, m_cameraPosition+m_front, m_up);
+    m_renderer->UpdateViewMatrix(viewMatrix);
     update();
 }
 
 void CRenWin3D::ZoomFit()
 {
+    if(!m_model)
+        return;
+
     float oneOverTanHFOVY = 1.0f / glm::tan(glm::radians(m_fovy * 0.5f));
     float cameraDistance = m_model->GetBSphereRadius() * oneOverTanHFOVY;
     m_cameraPosition = -cameraDistance * m_front + m_model->GetAABBoxCenter();

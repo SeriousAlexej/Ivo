@@ -2,9 +2,9 @@
 #define MESH_H
 #include <QUndoStack>
 #include <string>
-#include <memory>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
@@ -12,7 +12,6 @@
 #include <cstdio>
 #include <assimp/scene.h>
 #include "pdo/pdotools.h"
-#include <QImage>
 
 #define IVO_VERSION 1
 
@@ -38,14 +37,15 @@ public:
     inline const std::vector<glm::uvec4>&   GetTriangles()     const { return m_triangles; }
     inline const glm::vec3*                 GetAABBox()        const { return m_aabbox; }
     inline float                            GetBSphereRadius() const { return m_bSphereRadius; }
-    inline const std::list<SEdge>           GetEdges()         const { return m_edges; }
-    inline const std::list<STriGroup>       GetGroups()        const { return m_groups; }
+    inline const std::list<SEdge>&          GetEdges()         const { return m_edges; }
+    inline const std::list<STriGroup>&      GetGroups()        const { return m_groups; }
+    inline const std::unordered_set<int>&   GetPickedTris()    const { return m_pickTriIndices; }
 
-    inline const std::unordered_map<unsigned, std::string>  GetMaterials() const { return m_materials; }
-    inline void                                             SetMaterials(std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
+    inline const std::unordered_map<unsigned, std::string>& GetMaterials() const { return m_materials; }
+    inline void                                             SetMaterials(const std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
 
     const CMesh::STriGroup*     GroupUnderCursor(glm::vec2 &curPos) const;
-    void                        GetStuffUnderCursor(glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
+    void                        GetStuffUnderCursor(const glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
     void                        Undo();
     void                        Redo();
     void                        Clear();
@@ -59,9 +59,11 @@ public:
     void                        PackGroups(bool undoable=true);
     glm::vec3                   GetSizeMillimeters() const;
     glm::vec3                   GetAABBoxCenter() const;
+    void                        SetTriangleAsPicked(int index);
+    void                        SetTriangleAsUnpicked(int index);
+    bool                        IsTrianglePicked(int index) const;
+    void                        ClearPickedTriangles();
     static inline CMesh*        GetMesh() { return g_Mesh; }
-
-    std::unordered_map<unsigned, std::unique_ptr<QImage>> textures;
 
 private:
     void                        AddMeshesFromAIScene(const aiScene* scene, const aiNode* node);
@@ -78,6 +80,7 @@ private:
     std::vector<glm::vec3>      m_normals;
     std::vector<glm::vec3>      m_vertices;
     std::vector<glm::uvec4>     m_triangles; //vtx1 index, vtx2 index, vtx3 index, mtl index
+    std::unordered_set<int>     m_pickTriIndices;
     std::unordered_map<unsigned, std::string> m_materials;
     //generated stuff
     std::vector<glm::vec3>      m_flatNormals;
@@ -88,9 +91,6 @@ private:
     float                       m_bSphereRadius;
 
     QUndoStack                  m_undoStack;
-
-    friend class CRenWin3D;
-    friend class CRenWin2D;
 
 public:
     struct STriangle2D
@@ -141,7 +141,6 @@ public:
         friend struct CMesh::STriGroup;
     };
 
-public:
     struct SEdge
     {
         enum EFlapPosition
