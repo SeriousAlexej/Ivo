@@ -29,13 +29,12 @@ public:
     virtual ~CRenWin2D();
 
     void SetModel(CMesh *mdl) override final;
-    void ReserveTextureID(unsigned id) override final;
     void SetMode(EditMode m);
     void ExportSheets(const QString baseName);
     void UpdateSheetsSize();
     void SerializeSheets(FILE* f) const;
     void DeserializeSheets(FILE* f);
-    void ZoomFit();
+    void ZoomFit() override final;
     void ClearSheets() { m_sheets.clear(); }
     void AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 

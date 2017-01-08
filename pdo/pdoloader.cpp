@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include "settings/settings.h"
 #include "mesh/mesh.h"
-#include "renderers/renwin.h"
-#include "renderers/renwin2d.h"
+#include "interface/renwin.h"
+#include "interface/renwin2d.h"
 #include "interface/mainwindow.h"
 #include "io/saferead.h"
 #include "pdotools.h"
@@ -138,8 +138,6 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         SAFE_FLSCANF(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
 
         m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
-        m_rw2->ReserveTextureID(j);
-        ((IRenWin*)m_rw3)->ReserveTextureID(j);
 
         if(hasTexture != 0)
         {

@@ -7,7 +7,7 @@
 #include "settings/settings.h"
 #include "renwin3d.h"
 #include "mesh/mesh.h"
-#include "renderlegacy3d.h"
+#include "renderers/renderlegacy3d.h"
 
 CRenWin3D::CRenWin3D(QWidget *parent) :
     IRenWin(parent)
@@ -31,11 +31,6 @@ void CRenWin3D::SetModel(CMesh *mdl)
     m_model = mdl;
     m_renderer->SetModel(mdl);
     ZoomFit();
-}
-
-void CRenWin3D::ReserveTextureID(unsigned id)
-{
-    m_renderer->ReserveTextureID(id);
 }
 
 void CRenWin3D::LoadTexture(const QImage *img, unsigned index)
@@ -78,7 +73,6 @@ void CRenWin3D::SetEditMode(EditMode mode)
 
 void CRenWin3D::initializeGL()
 {
-    initializeOpenGLFunctions();
     m_renderer->Init();
 }
 

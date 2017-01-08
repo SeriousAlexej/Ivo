@@ -9,8 +9,8 @@
 #include <mutex>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "renderers/renwin3d.h"
-#include "renderers/renwin2d.h"
+#include "renwin3d.h"
+#include "renwin2d.h"
 #include "mesh/mesh.h"
 #include "settingswindow.h"
 #include "settings/settings.h"
@@ -134,8 +134,6 @@ void CMainWindow::ClearTextures()
         {
             m_textures[it->first] = "";
             m_textureImages[it->first] = nullptr;
-            m_rw2->ReserveTextureID(it->first);
-            m_rw3->ReserveTextureID(it->first);
         }
     }
 }

@@ -1,12 +1,10 @@
 #ifndef IRENWIN_H
 #define IRENWIN_H
-
 #include <QOpenGLWidget>
-#include <QOpenGLFunctions>
 
 class CMesh;
 
-class IRenWin : public QOpenGLWidget, protected QOpenGLFunctions
+class IRenWin : public QOpenGLWidget
 {
     Q_OBJECT
 
@@ -15,7 +13,8 @@ public:
     virtual ~IRenWin();
 
     virtual void SetModel(CMesh *mdl) = 0;
-    virtual void ReserveTextureID(unsigned id) = 0;
+
+    virtual void ZoomFit() = 0;
 
 public slots:
     virtual void LoadTexture(const QImage *img, unsigned index) = 0;

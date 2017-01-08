@@ -24,8 +24,7 @@ public:
     virtual ~CRenWin3D();
 
     void SetModel(CMesh *mdl) override final;
-    void ReserveTextureID(unsigned id) override final;
-    void ZoomFit();
+    void ZoomFit() override final;
     void ToggleLighting(bool checked);
     void ToggleGrid(bool checked);
     void SetEditMode(EditMode mode);

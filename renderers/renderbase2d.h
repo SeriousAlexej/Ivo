@@ -1,11 +1,9 @@
 #ifndef RENDERBASE2D_H
 #define RENDERBASE2D_H
-#include <unordered_map>
-#include <memory>
-#include <QOpenGLTexture>
 #include <QImage>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include "abstractrenderer.h"
 
 class CMesh;
 
@@ -18,39 +16,32 @@ struct SSelectionInfo
     int         m_edge;
 };
 
-class IRenderer2D
+class IRenderer2D : public IAbstractRenderer
 {
 public:
     IRenderer2D();
     virtual ~IRenderer2D();
 
-    virtual void    SetModel(const CMesh* mdl);
-    virtual void    Init() = 0;
+    virtual void    SetModel(const CMesh* mdl) override;
+    virtual void    Init() override = 0;
     virtual void    ResizeView(int w, int h) = 0;
 
-    virtual void    PreDraw() const;
-    virtual void    DrawScene() const = 0;
+    virtual void    PreDraw() const override;
+    virtual void    DrawScene() const override = 0;
     virtual void    DrawSelection(const SSelectionInfo& sinfo) const = 0;
     virtual void    DrawPaperSheet(const glm::vec2 &position, const glm::vec2 &size) const = 0;
-    virtual void    PostDraw() const;
+    virtual void    PostDraw() const override;
 
     virtual void    UpdateCameraPosition(const glm::vec3& camPos);
     virtual void    RecalcProjection() = 0;
-    virtual void    ReserveTextureID(unsigned id);
-    virtual void    LoadTexture(const QImage* img, unsigned index);
-    virtual void    ClearTextures();
 
     virtual QImage  DrawImageFromSheet(const glm::vec2& pos) const = 0;
 
 protected:
     void            CreateFoldTextures();
 
-    mutable std::unique_ptr<QOpenGLTexture> m_texFolds;
-    mutable std::unordered_map<unsigned, std::unique_ptr<QOpenGLTexture>> m_textures;
-    const CMesh*    m_model = nullptr;
     glm::vec3       m_cameraPosition;
-    unsigned        m_width = 800;
-    unsigned        m_height = 600;
+    mutable std::unique_ptr<QOpenGLTexture> m_texFolds;
 };
 
 #endif // RENDERBASE2D_H

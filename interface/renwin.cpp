@@ -1,5 +1,4 @@
 #include "renwin.h"
-#include "settings/settings.h"
 
 IRenWin::IRenWin(QWidget* parent) :
     QOpenGLWidget(parent), m_model(nullptr)

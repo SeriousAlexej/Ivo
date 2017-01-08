@@ -9,7 +9,7 @@
 #include "renwin2d.h"
 #include "settings/settings.h"
 #include "io/saferead.h"
-#include "renderlegacy2d.h"
+#include "renderers/renderlegacy2d.h"
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
     IRenWin(parent)
@@ -52,11 +52,6 @@ void CRenWin2D::SetModel(CMesh *mdl)
     ZoomFit();
 }
 
-void CRenWin2D::ReserveTextureID(unsigned id)
-{
-    m_renderer->ReserveTextureID(id);
-}
-
 void CRenWin2D::LoadTexture(const QImage *img, unsigned index)
 {
     makeCurrent();
@@ -75,7 +70,6 @@ void CRenWin2D::ClearTextures()
 
 void CRenWin2D::initializeGL()
 {
-    initializeOpenGLFunctions();
     m_renderer->Init();
     RecalcProjection();
 }

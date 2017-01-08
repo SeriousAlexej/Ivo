@@ -3,8 +3,8 @@
 #include "io/saferead.h"
 #include "mesh/mesh.h"
 #include "settings/settings.h"
-#include "renderers/renwin.h"
-#include "renderers/renwin2d.h"
+#include "interface/renwin.h"
+#include "interface/renwin2d.h"
 
 void CMainWindow::SaveToIVO(const char* filename)
 {
@@ -186,9 +186,6 @@ void CMainWindow::LoadFromIVO(const char* filename)
 
                 materials[key] = name.get();
                 m_textures[key] = path.get();
-
-                m_rw2->ReserveTextureID(key);
-                ((IRenWin*)m_rw3)->ReserveTextureID(key);
 
                 if(hasTexture == 1)
                     emit UpdateTexture(m_textureImages[key].get(), key);
