@@ -54,20 +54,8 @@ void CRenWin3D::SetEditMode(EditMode mode)
     m_editMode = mode;
     m_pickTexValid = false;
 
-    switch(m_editMode)
-    {
-        case EM_POLYPAINT:
-        {
-            if(m_model)
-                m_model->ClearPickedTriangles();
-            break;
-        }
-        case EM_NONE:
-        {
-            break;
-        }
-        default : assert(false);
-    }
+    if(m_model)
+        m_model->ClearPickedTriangles();
     update();
 }
 
@@ -213,6 +201,16 @@ bool CRenWin3D::event(QEvent *e)
             QKeyEvent *ke = static_cast<QKeyEvent*>(e);
             switch(ke->key())
             {
+                case Qt::Key_Return :
+                {
+                    if(m_editMode == EM_POLYPAINT)
+                    {
+                        if(m_model)
+                            m_model->GroupPickedTriangles();
+                        update();
+                    }
+                    break;
+                }
                 case Qt::Key_Escape :
                 {
                     keyFlags = 0u;

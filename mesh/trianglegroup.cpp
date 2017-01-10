@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <functional>
 #include "mesh/mesh.h"
 #include "mesh/command.h"
 #include "io/saferead.h"
@@ -240,34 +241,48 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
 
     assert(e2 > -1);
 
-    if(tr->GetGroup() == tr2->GetGroup())
-    {
-        const glm::vec2& tr1V2 = tr->m_vtxRT[e];
-        const glm::vec2& tr1V1 = tr->m_vtxRT[(e+1)%3];
-        const glm::vec2& tr2V1 = tr2->m_vtxRT[e2];
-        const glm::vec2& tr2V2 = tr2->m_vtxRT[(e2+1)%3];
-
-        static const float epsilon = 0.001f;
-
-        if(fabs(tr1V1.x - tr2V1.x) < epsilon &&
-           fabs(tr1V1.y - tr2V1.y) < epsilon &&
-           fabs(tr1V2.x - tr2V2.x) < epsilon &&
-           fabs(tr1V2.y - tr2V2.y) < epsilon)
+    std::function<CIvoCommand*(STriangle2D*, STriangle2D*, int, int)>
+            getSnapCommand = [this](STriangle2D* tr, STriangle2D* tr2, int e, int e2) -> CIvoCommand*
         {
-            CAtomicCommand cmdSnp(CT_SNAP_EDGE);
-            cmdSnp.SetEdge(e2);
-            cmdSnp.SetTriangle(tr2);
+            if(!tr || !tr2 || e < 0 || e2 < 0 || e > 2 || e2 > 2)
+                return nullptr;
+            if(tr->GetGroup() != tr2->GetGroup())
+                return nullptr;
+            if(tr->m_edges[e]->IsSnapped())
+                return nullptr;
 
-            CIvoCommand* cmd = new CIvoCommand();
-            cmd->AddAction(cmdSnp);
+            const glm::vec2& tr1V2 = tr->m_vtxRT[e];
+            const glm::vec2& tr1V1 = tr->m_vtxRT[(e+1)%3];
+            const glm::vec2& tr2V1 = tr2->m_vtxRT[e2];
+            const glm::vec2& tr2V2 = tr2->m_vtxRT[(e2+1)%3];
 
-            CMesh::g_Mesh->m_undoStack.push(cmd);
-        }
+            static const float epsilon = 0.001f;
+
+            if(fabs(tr1V1.x - tr2V1.x) < epsilon &&
+               fabs(tr1V1.y - tr2V1.y) < epsilon &&
+               fabs(tr1V2.x - tr2V2.x) < epsilon &&
+               fabs(tr1V2.y - tr2V2.y) < epsilon)
+            {
+                CAtomicCommand cmdSnp(CT_SNAP_EDGE);
+                cmdSnp.SetEdge(e2);
+                cmdSnp.SetTriangle(tr2);
+
+                CIvoCommand* cmd = new CIvoCommand();
+                cmd->AddAction(cmdSnp);
+
+                return cmd;
+            }
+            return nullptr;
+        };
+
+    CIvoCommand* snapCmd = getSnapCommand(tr, tr2, e, e2);
+    if(snapCmd)
+    {
+        CMesh::g_Mesh->m_undoStack.push(snapCmd);
         return;
     }
 
     STriGroup *grp = tr2->m_myGroup;
-
 
     CAtomicCommand cmdRot(CT_ROTATE);
     CAtomicCommand cmdMov(CT_MOVE);
@@ -277,8 +292,8 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     cmdMov.SetTriangle(tr2);
     cmdSnp.SetTriangle(tr2);
     cmdSnp.SetEdge(e2);
-    cmdAtt.SetTriangle(tr2);
-    cmdAtt.SetEdge(e2);
+    cmdAtt.SetTriangle(tr);
+    cmdAtt.SetEdge(e);
 
     float oldrot = grp->m_rotation;
     float newRotation = grp->m_rotation - tr2->m_rotation + tr2->m_angleOY[e2] + 180.0f - tr->m_angleOY[e] + tr->m_rotation;
@@ -294,6 +309,35 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     cmd->AddAction(cmdMov);
     cmd->AddAction(cmdSnp);
     cmd->AddAction(cmdAtt);
+
+    //if there are triangles, that can be potentially snapped...
+    if(m_tris.size() > 1 || grp->m_tris.size() > 1)
+    {
+        //apply current command to update positions
+        cmd->redo();// 'grp' is no longer valid
+
+        for(STriangle2D* tri : m_tris)
+        {
+            for(int e=0; e<3; e++)
+            {
+                STriangle2D* tri2 = tri->m_edges[e]->GetOtherTriangle(tri);
+                int e2 = tri->m_edges[e]->GetOtherTriIndex(tri);
+
+                //check if triangles can be snapped
+                CIvoCommand* snapCmd = getSnapCommand(tri, tri2, e, e2);
+                if(snapCmd)
+                {
+                    //if so, do this to make sure it's done only once
+                    snapCmd->redo();
+                    cmd->AddAction(std::move(*snapCmd));
+                    delete snapCmd;
+                }
+            }
+        }
+
+        //return back to the beginning
+        cmd->undo();
+    }
 
     CMesh::g_Mesh->m_undoStack.push(cmd);
     CMesh::g_Mesh->UpdateGroupDepth();

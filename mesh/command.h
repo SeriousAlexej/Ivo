@@ -42,6 +42,7 @@ class CIvoCommand : public QUndoCommand
 {
 public:
     void AddAction(const CAtomicCommand& action);
+    void AddAction(CIvoCommand&& cmd);
 
     virtual void undo() override;
     virtual void redo() override;

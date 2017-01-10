@@ -157,6 +157,12 @@ void CIvoCommand::AddAction(const CAtomicCommand &action)
     m_actions.push_back(action);
 }
 
+void CIvoCommand::AddAction(CIvoCommand&& cmd)
+{
+    m_actions.insert(m_actions.end(), cmd.m_actions.begin(), cmd.m_actions.end());
+    cmd.m_actions.clear();
+}
+
 void CIvoCommand::undo()
 {
     for(auto it = m_actions.rbegin(); it != m_actions.rend(); ++it)

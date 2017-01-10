@@ -162,6 +162,7 @@
    <addaction name="actionExport_Sheets"/>
    <addaction name="actionScale"/>
    <addaction name="actionSettings"/>
+   <addaction name="separator"/>
    <addaction name="actionPolypaint"/>
   </widget>
   <action name="actionOpen_obj">
@@ -394,6 +395,9 @@
    <property name="text">
     <string>&amp;Zoom fit</string>
    </property>
+   <property name="toolTip">
+    <string>Zoom fit windows</string>
+   </property>
   </action>
   <action name="actionZoom_2D">
    <property name="icon">
@@ -403,6 +407,9 @@
    <property name="text">
     <string>Zoom &amp;2D</string>
    </property>
+   <property name="toolTip">
+    <string>Zoom fit 2D window</string>
+   </property>
   </action>
   <action name="actionZoom_3D">
    <property name="icon">
@@ -411,6 +418,9 @@
    </property>
    <property name="text">
     <string>Zoom &amp;3D</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom fit 3D window</string>
    </property>
   </action>
   <action name="actionUndo">
@@ -467,7 +477,7 @@
     <string>&amp;Auto Pack</string>
    </property>
    <property name="toolTip">
-    <string>Automatically arrange groups in 2D window</string>
+    <string>Automatically arrange parts in 2D window</string>
    </property>
   </action>
   <action name="actionShow_Grid">
@@ -516,8 +526,15 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Polypaint.png</normaloff>:/icons/icons/48px-Polypaint.png</iconset>
+   </property>
    <property name="text">
     <string>Polypaint</string>
+   </property>
+   <property name="toolTip">
+    <string>Enter Polypaint mode</string>
    </property>
   </action>
  </widget>

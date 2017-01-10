@@ -63,6 +63,7 @@ public:
     void                        SetTriangleAsUnpicked(int index);
     bool                        IsTrianglePicked(int index) const;
     void                        ClearPickedTriangles();
+    void                        GroupPickedTriangles();
     static inline CMesh*        GetMesh() { return g_Mesh; }
 
 private:
@@ -109,7 +110,7 @@ public:
         STriGroup*              GetGroup() const;
         bool                    IsFlapSharp(size_t index) const;
         SEdge*                  GetEdge(size_t index) const;
-        glm::vec2               GetNormal(size_t index) const;
+        const glm::vec2&        GetNormal(size_t index) const;
         float                   GetEdgeLen(size_t index) const;
 
     private:

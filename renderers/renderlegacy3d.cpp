@@ -22,12 +22,12 @@ void CRenderer3DLegacy::Init()
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glEnable(GL_MULTISAMPLE);
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
-    glShadeModel(GL_FLAT);
+    glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT1);
     glShadeModel(GL_SMOOTH);
     glm::vec4 diff = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec4 ambi = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+    glm::vec4 ambi = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, &diff[0]);
     glLightfv(GL_LIGHT1, GL_AMBIENT, &ambi[0]);
 }
@@ -106,17 +106,17 @@ void CRenderer3DLegacy::DrawModel() const
         glNormal3f(faceNormal[0], faceNormal[1], faceNormal[2]);
 
         if(faceSelected)
-            glTexCoord2f(0.0f, 0.0f);
+            glColor3ub(255, 0, 0);
         else
-            glTexCoord2f(uv1[0], uv1[1]);
+            glColor3ub(255, 255, 255);
+
+        glTexCoord2f(uv1[0], uv1[1]);
         glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
 
-        if(!faceSelected)
-            glTexCoord2f(uv2[0], uv2[1]);
+        glTexCoord2f(uv2[0], uv2[1]);
         glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
 
-        if(!faceSelected)
-            glTexCoord2f(uv3[0], uv3[1]);
+        glTexCoord2f(uv3[0], uv3[1]);
         glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
     }
 

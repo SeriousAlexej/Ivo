@@ -551,6 +551,11 @@ void CMesh::GroupTriangles(float maxAngleDeg)
     UpdateGroupDepth();
 }
 
+void CMesh::GroupPickedTriangles()
+{
+    ClearPickedTriangles();
+}
+
 void CMesh::PackGroups(bool undoable)
 {
     struct SGroupBBox

@@ -372,8 +372,8 @@ void CRenderer2DLegacy::RenderFlap(void *tr, int edge) const
         y[3] = v2.y;
     }
 
-    static const glm::mat2 rotMx90deg = glm::mat2( 0, 1,
-                                                  -1, 0);
+    static const glm::mat2 rotMx90deg = glm::mat2(glm::vec2(0.0f, 1.0f),
+                                                  glm::vec2(-1.0f, 0.0f));
     const float normalScaler = 0.015f * CSettings::GetInstance().GetLineWidth();
 
     //render inner part of flap

@@ -249,10 +249,10 @@ CMesh::SEdge* CMesh::STriangle2D::GetEdge(size_t index) const
     return m_edges[index];
 }
 
-glm::vec2 CMesh::STriangle2D::GetNormal(size_t index) const
+const glm::vec2& CMesh::STriangle2D::GetNormal(size_t index) const
 {
     assert(index < 3);
-    return m_normR[index] / (m_flapSharp[index] ? 0.5f : 0.75f);
+    return m_normR[index];
 }
 
 void CMesh::STriangle2D::ComputeNormals()
@@ -265,10 +265,8 @@ void CMesh::STriangle2D::ComputeNormals()
         if(m_edgeLen[i] < 2.0f)
         {
             m_flapSharp[i] = true;
-            m_norm[i] = m_normR[i] = nrm*0.5f;
-        } else {
-            m_norm[i] = m_normR[i] = nrm*0.75f;
         }
+        m_norm[i] = m_normR[i] = nrm;
     }
 }
 
