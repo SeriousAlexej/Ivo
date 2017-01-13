@@ -226,7 +226,7 @@ void CRenderer2DLegacy::DrawFlaps() const
     if(m_texFolds)
         m_texFolds->bind();
 
-    const auto edges = m_model->GetEdges();
+    const std::list<CMesh::SEdge>& edges = m_model->GetEdges();
 
     glBegin(GL_QUADS);
     for(const CMesh::SEdge &e : edges)
@@ -300,7 +300,9 @@ void CRenderer2DLegacy::DrawGroups() const
 
 void CRenderer2DLegacy::DrawEdges() const
 {
-    const unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
+    const CSettings& sett = CSettings::GetInstance();
+    const unsigned char renFlags = sett.GetRenderFlags();
+    const float maxFlatAngle = (float)sett.GetFoldMaxFlatAngle();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
@@ -308,7 +310,7 @@ void CRenderer2DLegacy::DrawEdges() const
     if(m_texFolds)
         m_texFolds->bind();
 
-    const auto edges = m_model->GetEdges();
+    const std::list<CMesh::SEdge>& edges = m_model->GetEdges();
 
     glBegin(GL_QUADS);
     for(const CMesh::SEdge &e : edges)
@@ -321,7 +323,10 @@ void CRenderer2DLegacy::DrawEdges() const
      {
          if(e.IsSnapped() && (renFlags & CSettings::R_FOLDS))
          {
-             RenderEdge(e.GetTriangle(0), e.GetTriIndex(0), foldType);
+             if(e.GetAngle() > maxFlatAngle)
+             {
+                RenderEdge(e.GetTriangle(0), e.GetTriIndex(0), foldType);
+             }
          } else if(!e.IsSnapped() && (renFlags & CSettings::R_EDGES)) {
              RenderEdge(e.GetTriangle(0), e.GetTriIndex(0), CMesh::SEdge::FT_FLAT);
              RenderEdge(e.GetTriangle(1), e.GetTriIndex(1), CMesh::SEdge::FT_FLAT);

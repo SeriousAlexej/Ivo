@@ -28,6 +28,13 @@ CRenWin2D::~CRenWin2D()
     doneCurrent();
 }
 
+void CRenWin2D::ClearSelection()
+{
+    m_currGroup = nullptr;
+    m_currSheet = nullptr;
+    update();
+}
+
 void CRenWin2D::SetMode(EditMode m)
 {
     if(m_cameraMode == CAM_MODE)
@@ -578,7 +585,7 @@ void CRenWin2D::ZoomFit()
           highestX = -99999999999999.0f,
           lowestX  = 99999999999999.0f;
 
-    const auto groups = m_model->GetGroups();
+    const std::list<CMesh::STriGroup>& groups = m_model->GetGroups();
     for(const CMesh::STriGroup& grp : groups)
     {
         const glm::vec2 grpPos = grp.GetPosition();

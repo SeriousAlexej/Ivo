@@ -16,8 +16,8 @@ public:
     explicit CScaleWindow(QWidget *parent = 0);
     ~CScaleWindow();
 
-    void     SetOutputScalePtr(float* scaPtr);
-    void     SetInitialScale(glm::vec3 initSca);
+    void SetOutputScalePtr(float* scaPtr);
+    void SetInitialScale(glm::vec3 initSca);
 
 private slots:
     void on_buttonBox_accepted();

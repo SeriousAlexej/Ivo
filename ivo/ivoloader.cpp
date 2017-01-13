@@ -23,6 +23,7 @@ void CMainWindow::SaveToIVO(const char* filename)
     unsigned char imageQlt = CSettings::GetInstance().GetImageQuality();
     float         lineWidt = CSettings::GetInstance().GetLineWidth();
     unsigned      stipplLp = CSettings::GetInstance().GetStippleLoop();
+    unsigned char maxFlAng = CSettings::GetInstance().GetFoldMaxFlatAngle();
 
 
     //header + version
@@ -37,6 +38,7 @@ void CMainWindow::SaveToIVO(const char* filename)
     std::fwrite(&imageQlt, sizeof(imageQlt), 1, f);
     std::fwrite(&lineWidt, sizeof(lineWidt), 1, f);
     std::fwrite(&stipplLp, sizeof(stipplLp), 1, f);
+    std::fwrite(&maxFlAng, sizeof(maxFlAng), 1, f);
     //mesh data
     m_model->Serialize(f);
 
@@ -115,6 +117,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
             unsigned char imageQlt;
             float         lineWidt;
             unsigned      stipplLp;
+            unsigned char maxFlAng;
 
             SAFE_FREAD(&renFlags, sizeof(renFlags), 1, f);
             SAFE_FREAD(&paperWid, sizeof(paperWid), 1, f);
@@ -124,6 +127,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
             SAFE_FREAD(&imageQlt, sizeof(imageQlt), 1, f);
             SAFE_FREAD(&lineWidt, sizeof(lineWidt), 1, f);
             SAFE_FREAD(&stipplLp, sizeof(stipplLp), 1, f);
+            SAFE_FREAD(&maxFlAng, sizeof(maxFlAng), 1, f);
 
             std::unique_ptr<CMesh> newModelUP(new CMesh());
             newModelUP->Deserialize(f);
@@ -203,6 +207,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
             sett.SetImageQuality( imageQlt );
             sett.SetLineWidth( lineWidt );
             sett.SetStippleLoop( stipplLp );
+            sett.SetFoldMaxFlatAngle( maxFlAng );
             m_rw2->UpdateSheetsSize();
 
             break;

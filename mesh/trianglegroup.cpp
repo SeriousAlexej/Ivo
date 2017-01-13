@@ -226,15 +226,15 @@ void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
     CMesh::g_Mesh->UpdateGroupDepth();
 }
 
-void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
+CIvoCommand* CMesh::STriGroup::GetJoinEdgeCmd(STriangle2D *tr, int e)
 {
     assert(e >= 0 && e < 3 && tr);
-    if(!tr->m_edges[e]->HasTwoTriangles()) return;
+    if(!tr->m_edges[e]->HasTwoTriangles()) return nullptr;
 
     //get triangle at the other side of edge 'e'
     STriangle2D *tr2 = tr->m_edges[e]->GetOtherTriangle(tr);
 
-    if(!tr2) return;
+    if(!tr2) return nullptr;
 
     //get index of the other side of edge 'e'
     int e2 = tr->m_edges[e]->GetOtherTriIndex(tr);
@@ -278,9 +278,10 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
     CIvoCommand* snapCmd = getSnapCommand(tr, tr2, e, e2);
     if(snapCmd)
     {
-        CMesh::g_Mesh->m_undoStack.push(snapCmd);
-        return;
+        return snapCmd;
     }
+    if(tr->GetGroup() == tr2->GetGroup())
+        return nullptr;
 
     STriGroup *grp = tr2->m_myGroup;
 
@@ -339,6 +340,16 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
         cmd->undo();
     }
 
+    return cmd;
+}
+
+void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
+{
+    CIvoCommand* cmd = GetJoinEdgeCmd(tr, e);
+
+    if(!cmd)
+        return;
+
     CMesh::g_Mesh->m_undoStack.push(cmd);
     CMesh::g_Mesh->UpdateGroupDepth();
 }
@@ -385,7 +396,7 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
         currLevel = nextLevel;
     }
 
-    CMesh::g_Mesh->m_groups.push_back(STriGroup());
+    CMesh::g_Mesh->m_groups.emplace_back();
     STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
 
     newGroup.m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
@@ -413,14 +424,14 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     tr->m_edges[e]->m_flapPosition = SEdge::FP_LEFT;
 }
 
-void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
+CIvoCommand* CMesh::STriGroup::GetBreakEdgeCmd(STriangle2D *tr, int e)
 {
     assert(e >= 0 && e < 3 && tr);
-    if(!tr->m_edges[e]->HasTwoTriangles()) return;
+    if(!tr->m_edges[e]->HasTwoTriangles()) return nullptr;
 
     //get triangle at the other side of edge 'e'
     STriangle2D *tr2 = tr->m_edges[e]->GetOtherTriangle(tr);
-    if(!tr2) return;
+    if(!tr2) return nullptr;
     //get index of the other side of edge 'e'
     int e2 = tr->m_edges[e]->GetOtherTriIndex(tr);
     assert(e2 > -1);
@@ -499,6 +510,16 @@ void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
         cmd->AddAction(cmdMv1);
         cmd->AddAction(cmdMv2);
     }
+
+    return cmd;
+}
+
+void CMesh::STriGroup::BreakEdge(STriangle2D *tr, int e)
+{
+    CIvoCommand* cmd = GetBreakEdgeCmd(tr, e);
+
+    if(!cmd)
+        return;
 
     CMesh::g_Mesh->m_undoStack.push(cmd);
     CMesh::g_Mesh->UpdateGroupDepth();

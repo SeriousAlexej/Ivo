@@ -20,8 +20,11 @@ public slots:
     virtual void LoadTexture(const QImage *img, unsigned index) = 0;
     virtual void ClearTextures() = 0;
 
+signals:
+    void         RequestFullRedraw();
+
 protected:
-    CMesh*  m_model;
+    CMesh*       m_model;
 };
 
 #endif // IRENWIN_H

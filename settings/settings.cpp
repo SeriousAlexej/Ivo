@@ -10,7 +10,8 @@ CSettings::CSettings() :
     m_imgQuality(100),
     m_lineWidth(1.0f),
     m_stippleLoop(2),
-    m_detachAngle(70)
+    m_detachAngle(70),
+    m_foldMaxFlatAngle(1)
 {
 }
 
@@ -114,4 +115,15 @@ unsigned char CSettings::GetDetachAngle() const
 void CSettings::SetDetachAngle(unsigned char aDetachAngle)
 {
     m_detachAngle = aDetachAngle;
+}
+
+unsigned char CSettings::GetFoldMaxFlatAngle() const
+{
+    return m_foldMaxFlatAngle;
+}
+
+void CSettings::SetFoldMaxFlatAngle(unsigned char aFoldFlatAngle)
+{
+    assert(aFoldFlatAngle < 180);
+    m_foldMaxFlatAngle = aFoldFlatAngle;
 }

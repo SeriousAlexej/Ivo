@@ -25,6 +25,9 @@ public:
 
     static CSettings&   GetInstance();
 
+    unsigned char       GetFoldMaxFlatAngle() const;
+    void                SetFoldMaxFlatAngle(unsigned char aFoldFlatAngle);
+
     unsigned char       GetRenderFlags() const;
     void                SetRenderFlags(unsigned char aFlags);
 
@@ -64,6 +67,7 @@ private:
     float         m_lineWidth;
     unsigned      m_stippleLoop;
     unsigned char m_detachAngle;
+    unsigned char m_foldMaxFlatAngle;
 };
 
 #endif // SETTINGS_H

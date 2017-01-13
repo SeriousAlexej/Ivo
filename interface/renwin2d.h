@@ -28,19 +28,20 @@ public:
     explicit CRenWin2D(QWidget *parent = nullptr);
     virtual ~CRenWin2D();
 
-    void SetModel(CMesh *mdl) override final;
-    void SetMode(EditMode m);
-    void ExportSheets(const QString baseName);
-    void UpdateSheetsSize();
-    void SerializeSheets(FILE* f) const;
-    void DeserializeSheets(FILE* f);
-    void ZoomFit() override final;
-    void ClearSheets() { m_sheets.clear(); }
-    void AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
+    void         SetModel(CMesh *mdl) override final;
+    void         SetMode(EditMode m);
+    void         ExportSheets(const QString baseName);
+    void         UpdateSheetsSize();
+    void         SerializeSheets(FILE* f) const;
+    void         DeserializeSheets(FILE* f);
+    void         ZoomFit() override final;
+    void         ClearSheets() { m_sheets.clear(); }
+    void         AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 
 public slots:
-    void LoadTexture(const QImage *img, unsigned index) override;
-    void ClearTextures() override;
+    void         LoadTexture(const QImage *img, unsigned index) override;
+    void         ClearTextures() override;
+    void         ClearSelection();
 
 protected:
     virtual void initializeGL() override final;
@@ -49,11 +50,11 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
-    void RecalcProjection();
-    void ModeLMB();
-    void ModeUpdate(QPointF &mpos);
-    void ModeEnd();
-    glm::vec2 PointToWorldCoords(QPointF &pt) const;
+    void         RecalcProjection();
+    void         ModeLMB();
+    void         ModeUpdate(QPointF &mpos);
+    void         ModeEnd();
+    glm::vec2    PointToWorldCoords(QPointF &pt) const;
 
 private:
     struct SPaperSheet

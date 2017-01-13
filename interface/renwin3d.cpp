@@ -207,7 +207,7 @@ bool CRenWin3D::event(QEvent *e)
                     {
                         if(m_model)
                             m_model->GroupPickedTriangles();
-                        update();
+                        emit RequestFullRedraw();
                     }
                     break;
                 }

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <assimp/Importer.hpp>
@@ -228,7 +229,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
     {
         const PDO_Edge& edge = *e;
 
-        m_edges.push_back(SEdge());
+        m_edges.emplace_back();
         SEdge &edg = m_edges.back();
 
         edg.m_left = &m_tri2D[edge.face1ID];
@@ -275,7 +276,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
     for(auto it=parts.begin(); it!=parts.end(); it++)
     {
         const PDO_Part& part = it->second;
-        m_groups.push_back(STriGroup());
+        m_groups.emplace_back();
         STriGroup& grp = m_groups.back();
 
         for(const PDO_Face* fc : part.faces)
@@ -344,7 +345,7 @@ void CMesh::FillAdjTri_Gen2DTri()
         {
             if(m_tri2D[i].m_edges[j] == nullptr)
             {
-                m_edges.push_back(SEdge());
+                m_edges.emplace_back();
                 SEdge &edg = m_edges.back();
                 m_tri2D[i].m_edges[j] = &edg;
                 edg.m_left = &m_tri2D[i];
@@ -415,7 +416,7 @@ void CMesh::SetFoldType(SEdge &edg)
 // e1, e2 - indices of edges in range [ 0, 2 ]
 void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
 {
-    m_edges.push_back(SEdge());
+    m_edges.emplace_back();
     SEdge &edg = m_edges.back();
     edg.m_left = &m_tri2D[i];
     edg.m_right = &m_tri2D[j];
@@ -453,7 +454,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
         if(m_tri2D[i].m_myGroup != nullptr)
             continue;
         //we found first ungrouped triangle! Create new group
-        m_groups.push_back(STriGroup());
+        m_groups.emplace_back();
         //list of candidates contains triangles that might get in group
         std::list<std::pair<int, int>> candidates;
         std::list<int> candNoRefls;
@@ -490,6 +491,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
 
                         const float myAngle = tr.m_edges[n]->m_angle;
 
+                        //insertion to 'sorted' list
                         bool inserted = false;
                         do
                         {
@@ -522,6 +524,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                                 candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, c.first));
                                 candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
 
+                                //remove possible duplicates
                                 while(itNextLargerAngle != candidates.end())
                                 {
                                     if((*itNextLargerAngle).first == tr2->m_id)
@@ -553,6 +556,150 @@ void CMesh::GroupTriangles(float maxAngleDeg)
 
 void CMesh::GroupPickedTriangles()
 {
+    //this functions similar to CMesh::GroupTriangles but with some differences
+    CIvoCommand* cmd = new CIvoCommand();
+
+    //first, break all picked triangles
+    for(int i : m_pickTriIndices)
+    {
+        for(int e=0; e<3; e++)
+        {
+            if(m_tri2D[i].m_edges[e]->IsSnapped())
+            {
+                CIvoCommand* breakCmd = m_tri2D[i].m_myGroup->GetBreakEdgeCmd(&m_tri2D[i], e);
+                if(breakCmd)
+                {
+                    breakCmd->redo();
+                    cmd->AddAction(std::move(*breakCmd));
+                    delete breakCmd;
+                }
+            }
+        }
+    }
+
+    std::unordered_set<int> processedTris;
+
+    //then, try to group them
+    for(int i : m_pickTriIndices)
+    {
+        if(processedTris.find(i) != processedTris.end())
+            continue;
+        //list of candidates contains triangles that might get in group
+        std::list<std::pair<int, int>> candidates;
+        std::list<int> candNoRefls;
+        candidates.push_front(std::make_pair(i, -1));
+        candNoRefls.push_front(i);
+
+        std::function<void(STriangle2D&)> addNeighbours = [this, &processedTris, &candidates, &candNoRefls](STriangle2D& tr)
+        {
+            STriangle2D *tr2 = nullptr;
+            for(int n=0; n<3; ++n)
+            {
+                if(!tr.m_edges[n]->HasTwoTriangles())
+                    continue;
+
+                tr2 = tr.m_edges[n]->GetOtherTriangle(&tr);
+
+                if(tr2)
+                if(m_pickTriIndices.find(tr2->ID()) != m_pickTriIndices.end() && processedTris.find(tr2->ID()) == processedTris.end())
+                {
+                    //skip first iterator, because it is to be removed from list
+                    auto itNextLargerAngle = candidates.begin();
+                    auto itNLA_NoRefls = candNoRefls.begin();
+                    itNextLargerAngle++;
+                    itNLA_NoRefls++;
+
+                    const float myAngle = tr.m_edges[n]->m_angle;
+
+                    //insertion to 'sorted' list
+                    bool inserted = false;
+                    do
+                    {
+                        float otherAngle = -999.0f;
+
+                        if(itNextLargerAngle != candidates.end())
+                        {
+                            const STriangle2D &othTr = m_tri2D[(*itNextLargerAngle).first];
+
+                            if((*itNextLargerAngle).second > -1)
+                            {
+                                for(int oInd=0; oInd<3; ++oInd)
+                                {
+                                    const STriangle2D *othTr2 = othTr.m_edges[oInd]->GetOtherTriangle(&othTr);
+                                    if(othTr2 && othTr2->ID() == (*itNextLargerAngle).second)
+                                    {
+                                        otherAngle = othTr.m_edges[oInd]->m_angle;
+                                        break;
+                                    }
+                                }
+
+                                inserted = myAngle <= otherAngle;
+                            }
+                        } else {
+                            inserted = true;
+                        }
+
+                        if(inserted)
+                        {
+                            candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, tr.m_edges[n]->GetOtherTriIndex(&tr)));
+                            candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
+
+                            //remove possible duplicates
+                            while(itNextLargerAngle != candidates.end())
+                            {
+                                if((*itNextLargerAngle).first == tr2->m_id)
+                                {
+                                    candidates.erase(itNextLargerAngle);
+                                    candNoRefls.erase(itNLA_NoRefls);
+                                    break;
+                                }
+                                itNextLargerAngle++;
+                                itNLA_NoRefls++;
+                            }
+                        } else {
+                            itNextLargerAngle++;
+                            itNLA_NoRefls++;
+                        }
+
+                    } while(!inserted);
+                }
+            }
+        };
+
+        //because this method does not create groups directly
+        //and instead uses 'join' and 'break' commands,
+        //use triangle's existing group. Add it's neighbours
+        //and remove self, because it is already in it's group
+        processedTris.insert(i);
+        addNeighbours(m_tri2D[i]);
+        candidates.pop_front();
+        candNoRefls.pop_front();
+
+        while(!candidates.empty())
+        {
+            std::pair<int, int> &c = candidates.front();
+
+            CIvoCommand* joinCmd = m_tri2D[c.first].m_myGroup->GetJoinEdgeCmd(&m_tri2D[c.first], c.second);
+            if(joinCmd)
+            {
+                joinCmd->redo();
+                cmd->AddAction(std::move(*joinCmd));
+                delete joinCmd;
+            }
+
+            processedTris.insert(c.first);
+
+            addNeighbours(m_tri2D[c.first]);
+
+            candidates.pop_front();
+            candNoRefls.pop_front();
+        }
+    }
+
+    cmd->undo();
+
+    CMesh::g_Mesh->m_undoStack.push(cmd);
+    UpdateGroupDepth();
     ClearPickedTriangles();
 }
 
@@ -1037,14 +1184,14 @@ void CMesh::Deserialize(FILE *f)
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; ++i)
     {
-        m_edges.push_back(SEdge());
+        m_edges.emplace_back();
         m_edges.back().Deserialize(f);
     }
 
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; i++)
     {
-        m_groups.push_back(STriGroup());
+        m_groups.emplace_back();
         m_groups.back().Deserialize(f);
     }
 
