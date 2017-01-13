@@ -457,9 +457,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
         m_groups.emplace_back();
         //list of candidates contains triangles that might get in group
         std::list<std::pair<int, int>> candidates;
-        std::list<int> candNoRefls;
         candidates.push_front(std::make_pair(i, -1));
-        candNoRefls.push_front(i);
         STriGroup &grp = m_groups.back();
 
         while(!candidates.empty())
@@ -485,9 +483,7 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                     {
                         //skip first iterator, because it is to be removed from list
                         auto itNextLargerAngle = candidates.begin();
-                        auto itNLA_NoRefls = candNoRefls.begin();
                         itNextLargerAngle++;
-                        itNLA_NoRefls++;
 
                         const float myAngle = tr.m_edges[n]->m_angle;
 
@@ -522,7 +518,6 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                             if(inserted)
                             {
                                 candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, c.first));
-                                candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
 
                                 //remove possible duplicates
                                 while(itNextLargerAngle != candidates.end())
@@ -530,15 +525,12 @@ void CMesh::GroupTriangles(float maxAngleDeg)
                                     if((*itNextLargerAngle).first == tr2->m_id)
                                     {
                                         candidates.erase(itNextLargerAngle);
-                                        candNoRefls.erase(itNLA_NoRefls);
                                         break;
                                     }
                                     itNextLargerAngle++;
-                                    itNLA_NoRefls++;
                                 }
                             } else {
                                 itNextLargerAngle++;
-                                itNLA_NoRefls++;
                             }
 
                         } while(!inserted);
@@ -547,7 +539,6 @@ void CMesh::GroupTriangles(float maxAngleDeg)
             }
             //this candidate has been processed
             candidates.pop_front();
-            candNoRefls.pop_front();
         }
         grp.CentrateOrigin();
     }
@@ -586,11 +577,9 @@ void CMesh::GroupPickedTriangles()
             continue;
         //list of candidates contains triangles that might get in group
         std::list<std::pair<int, int>> candidates;
-        std::list<int> candNoRefls;
         candidates.push_front(std::make_pair(i, -1));
-        candNoRefls.push_front(i);
 
-        std::function<void(STriangle2D&)> addNeighbours = [this, &processedTris, &candidates, &candNoRefls](STriangle2D& tr)
+        std::function<void(STriangle2D&)> addNeighbours = [this, &processedTris, &candidates](STriangle2D& tr)
         {
             STriangle2D *tr2 = nullptr;
             for(int n=0; n<3; ++n)
@@ -605,9 +594,7 @@ void CMesh::GroupPickedTriangles()
                 {
                     //skip first iterator, because it is to be removed from list
                     auto itNextLargerAngle = candidates.begin();
-                    auto itNLA_NoRefls = candNoRefls.begin();
                     itNextLargerAngle++;
-                    itNLA_NoRefls++;
 
                     const float myAngle = tr.m_edges[n]->m_angle;
 
@@ -642,7 +629,6 @@ void CMesh::GroupPickedTriangles()
                         if(inserted)
                         {
                             candidates.insert(itNextLargerAngle, std::make_pair(tr2->m_id, tr.m_edges[n]->GetOtherTriIndex(&tr)));
-                            candNoRefls.insert(itNLA_NoRefls, tr2->m_id);
 
                             //remove possible duplicates
                             while(itNextLargerAngle != candidates.end())
@@ -650,15 +636,12 @@ void CMesh::GroupPickedTriangles()
                                 if((*itNextLargerAngle).first == tr2->m_id)
                                 {
                                     candidates.erase(itNextLargerAngle);
-                                    candNoRefls.erase(itNLA_NoRefls);
                                     break;
                                 }
                                 itNextLargerAngle++;
-                                itNLA_NoRefls++;
                             }
                         } else {
                             itNextLargerAngle++;
-                            itNLA_NoRefls++;
                         }
 
                     } while(!inserted);
@@ -673,7 +656,6 @@ void CMesh::GroupPickedTriangles()
         processedTris.insert(i);
         addNeighbours(m_tri2D[i]);
         candidates.pop_front();
-        candNoRefls.pop_front();
 
         while(!candidates.empty())
         {
@@ -692,7 +674,6 @@ void CMesh::GroupPickedTriangles()
             addNeighbours(m_tri2D[c.first]);
 
             candidates.pop_front();
-            candNoRefls.pop_front();
         }
     }
 
