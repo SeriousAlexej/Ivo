@@ -14,6 +14,21 @@
 #include "settings/settings.h"
 #include "io/saferead.h"
 
+using glm::uvec4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
+using glm::dot;
+using glm::distance;
+using glm::clamp;
+using glm::degrees;
+using glm::inverse;
+using glm::max;
+using glm::min;
+using glm::sqrt;
+
 CMesh* CMesh::g_Mesh = nullptr;
 
 CMesh::CMesh()
@@ -23,6 +38,7 @@ CMesh::CMesh()
 
 CMesh::~CMesh()
 {
+    g_Mesh = nullptr;
 }
 
 bool CMesh::IsModified() const
@@ -97,7 +113,7 @@ void CMesh::AddMeshesFromAIScene(const aiScene* scene, const aiNode* node)
 
             assert(face->mNumIndices == 3);
 
-            glm::uvec4 tr;
+            uvec4 tr;
             for(int i=0; i<3; ++i)
             {
                 unsigned newIndex = m_uvCoords.size();
@@ -107,12 +123,12 @@ void CMesh::AddMeshesFromAIScene(const aiScene* scene, const aiNode* node)
                 {
                     if(mesh->HasTextureCoords(0))
                     {
-                        m_uvCoords.push_back(glm::vec2(mesh->mTextureCoords[0][vertexIndex].x, mesh->mTextureCoords[0][vertexIndex].y));
+                        m_uvCoords.push_back(vec2(mesh->mTextureCoords[0][vertexIndex].x, mesh->mTextureCoords[0][vertexIndex].y));
                     } else {
-                        m_uvCoords.push_back(glm::vec2(0.0f, 0.0f));
+                        m_uvCoords.push_back(vec2(0.0f, 0.0f));
                     }
-                    m_normals.push_back(glm::vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z));
-                    m_vertices.push_back(glm::vec3(mesh->mVertices[vertexIndex].x, mesh->mVertices[vertexIndex].y, mesh->mVertices[vertexIndex].z));
+                    m_normals.push_back(vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z));
+                    m_vertices.push_back(vec3(mesh->mVertices[vertexIndex].x, mesh->mVertices[vertexIndex].y, mesh->mVertices[vertexIndex].z));
 
                     indicesRemap[vertexIndex] = newIndex;
                 } else {
@@ -167,7 +183,7 @@ void CMesh::LoadMesh(const std::string& path)
 
 void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
                         const std::vector<std::unique_ptr<PDO_Edge>>& edges,
-                        const std::vector<glm::vec3>&                 vertices3D,
+                        const std::vector<vec3>&                 vertices3D,
                         const std::unordered_map<unsigned, PDO_Part>& parts)
 {
     Clear();
@@ -179,9 +195,9 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
     {
         const PDO_Face& face = faces[f];
         STriangle2D&    tr2D = m_tri2D[f];
-        glm::uvec4&     tr = m_triangles[f];
+        uvec4&     tr = m_triangles[f];
 
-        glm::vec2 averageTri2DPos(0.0f, 0.0f);
+        vec2 averageTri2DPos(0.0f, 0.0f);
         for(int i=0; i<3; ++i)
         {
             const PDO_2DVertex& vertex = face.vertices[i];
@@ -189,7 +205,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
             unsigned newIndex = m_uvCoords.size();
 
             m_uvCoords.push_back(vertex.uv);
-            m_normals.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+            m_normals.push_back(vec3(0.0f, 1.0f, 0.0f));
             m_vertices.push_back(vertices3D[vertex.index3Dvert]);
 
             tr[i] = newIndex;
@@ -204,7 +220,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
         tr2D.m_position = averageTri2DPos;
         tr2D.m_rotation = 0.0f;
         tr2D.m_myGroup = nullptr;
-        tr2D.m_relativeMx = glm::mat3(1);
+        tr2D.m_relativeMx = mat3(1);
         for(int i=0; i<3; i++)
         {
             tr2D.m_edges[i] = nullptr;
@@ -214,11 +230,11 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
         }
         for(int i=0; i<3; i++)
         {
-            tr2D.m_edgeLen[i] = glm::distance(tr2D.m_vtx[i], tr2D.m_vtx[(i+1)%3]);
+            tr2D.m_edgeLen[i] = distance(tr2D.m_vtx[i], tr2D.m_vtx[(i+1)%3]);
 
-            glm::vec2 vecAngle = tr2D.m_vtx[(i+1)%3] - tr2D.m_vtx[i];
+            vec2 vecAngle = tr2D.m_vtx[(i+1)%3] - tr2D.m_vtx[i];
             float sgnX = (vecAngle.x < 0.0f ? -1.0f : 1.0f);
-            tr2D.m_angleOY[i] = sgnX * glm::degrees(glm::acos(glm::clamp(vecAngle.y / glm::length(vecAngle), -1.0f, 1.0f)));
+            tr2D.m_angleOY[i] = sgnX * degrees(acos(clamp(vecAngle.y / length(vecAngle), -1.0f, 1.0f)));
         }
         tr2D.ComputeNormals();
     }
@@ -255,7 +271,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
                 }
             }
             edg.m_right->m_edges[edg.m_rightIndex] = &edg;
-            edg.m_angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[edge.face1ID], m_flatNormals[edge.face2ID]), -1.0f, 1.0f)));
+            edg.m_angle = degrees(acos(clamp(dot(m_flatNormals[edge.face1ID], m_flatNormals[edge.face2ID]), -1.0f, 1.0f)));
 
             const PDO_2DVertex& v1 = faces[edge.face1ID].vertices[edg.m_leftIndex];
             const PDO_2DVertex& v2 = faces[edge.face2ID].vertices[edg.m_rightIndex];
@@ -302,17 +318,17 @@ void CMesh::FillAdjTri_Gen2DTri()
 
     for(int i = m_triangles.size()-1; i>=0; --i)
     {
-        const glm::uvec4 &t = m_triangles[i];
-        const glm::vec3 *v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
-        const glm::vec3 *n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
+        const uvec4 &t = m_triangles[i];
+        const vec3 *v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
+        const vec3 *n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
 
-        float v1v2cos = glm::clamp(glm::dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(glm::distance(*v1[2], *v1[0])*glm::distance(*v1[1], *v1[0])), -1.0f, 1.0f);
-        m_tri2D[i].m_vtx[0] = glm::vec2(0.0f, 0.0f);
-        m_tri2D[i].m_vtx[1] = glm::vec2(glm::sin(glm::acos(v1v2cos)), v1v2cos)*glm::distance(*v1[1], *v1[0]);
-        m_tri2D[i].m_vtx[2] = glm::vec2(0.0f, glm::distance(*v1[0], *v1[2]));
+        float v1v2cos = clamp(dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(distance(*v1[2], *v1[0])*distance(*v1[1], *v1[0])), -1.0f, 1.0f);
+        m_tri2D[i].m_vtx[0] = vec2(0.0f, 0.0f);
+        m_tri2D[i].m_vtx[1] = vec2(sin(acos(v1v2cos)), v1v2cos)*distance(*v1[1], *v1[0]);
+        m_tri2D[i].m_vtx[2] = vec2(0.0f, distance(*v1[0], *v1[2]));
 
-        m_tri2D[i].m_angleOY[0] = glm::degrees(glm::acos(v1v2cos));
-        m_tri2D[i].m_angleOY[1] = -glm::degrees(glm::acos(glm::clamp(glm::dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(glm::distance(*v1[2],*v1[0])*glm::distance(*v1[2],*v1[1])), -1.0f, 1.0f) ));
+        m_tri2D[i].m_angleOY[0] = degrees(acos(v1v2cos));
+        m_tri2D[i].m_angleOY[1] = -degrees(acos(clamp(dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(distance(*v1[2],*v1[0])*distance(*v1[2],*v1[1])), -1.0f, 1.0f) ));
         m_tri2D[i].m_angleOY[2] = 180.0f;
 
         m_tri2D[i].Init();
@@ -328,9 +344,9 @@ void CMesh::FillAdjTri_Gen2DTri()
                m_tri2D[i].m_edges[2] != nullptr)
                 break;
 
-            const glm::uvec4 &t2 = m_triangles[j];
-            const glm::vec3 *v2[3] = { &m_vertices[t2[0]], &m_vertices[t2[1]], &m_vertices[t2[2]] };
-            const glm::vec3 *n2[3] = { &m_normals[t2[0]], &m_normals[t2[1]], &m_normals[t2[2]] };
+            const uvec4 &t2 = m_triangles[j];
+            const vec3 *v2[3] = { &m_vertices[t2[0]], &m_vertices[t2[1]], &m_vertices[t2[2]] };
+            const vec3 *n2[3] = { &m_normals[t2[0]], &m_normals[t2[1]], &m_normals[t2[2]] };
 
             //9 cases edges of 2 triangles can be adjacent:
             for(int e1=0; e1<3; ++e1)
@@ -371,17 +387,17 @@ void CMesh::SetFoldType(SEdge &edg)
 
     int i = edg.m_left->m_id;
     int j = edg.m_right->m_id;
-    glm::vec3 &v0 = m_vertices[m_triangles[i][0]];
-    glm::vec3 &v1 = m_vertices[m_triangles[i][1]];
-    glm::vec3 &up = m_flatNormals[i];
-    glm::vec3 front = glm::normalize(v0 - v1);
-    glm::vec3 right = glm::cross(front, up);
-    glm::mat4 triBasis;
-    triBasis[0] = glm::vec4(right[0], right[1], right[2], 0.0f);
-    triBasis[1] = glm::vec4(up[0],    up[1],    up[2],    0.0f);
-    triBasis[2] = glm::vec4(front[0], front[1], front[2], 0.0f);
-    triBasis[3] = glm::vec4(v1[0],    v1[1],    v1[2],    1.0f);
-    glm::vec3 *toCheck = nullptr;
+    vec3 &v0 = m_vertices[m_triangles[i][0]];
+    vec3 &v1 = m_vertices[m_triangles[i][1]];
+    vec3 &up = m_flatNormals[i];
+    vec3 front = normalize(v0 - v1);
+    vec3 right = cross(front, up);
+    mat4 triBasis;
+    triBasis[0] = vec4(right[0], right[1], right[2], 0.0f);
+    triBasis[1] = vec4(up[0],    up[1],    up[2],    0.0f);
+    triBasis[2] = vec4(front[0], front[1], front[2], 0.0f);
+    triBasis[3] = vec4(v1[0],    v1[1],    v1[2],    1.0f);
+    vec3 *toCheck = nullptr;
     //pick vertex of second triangle, that does not belong to the edge between triangles i and j
     switch(edg.m_rightIndex)
     {
@@ -396,7 +412,7 @@ void CMesh::SetFoldType(SEdge &edg)
             break;
         default: exit(42);
     }
-    float pHeight = ( glm::inverse(triBasis) * glm::vec4((*toCheck)[0], (*toCheck)[1], (*toCheck)[2], 1.0f) )[1];
+    float pHeight = ( inverse(triBasis) * vec4((*toCheck)[0], (*toCheck)[1], (*toCheck)[2], 1.0f) )[1];
     static const float epsilon = 0.0001f;
     //if third vertex from triangle j in basis of triangle i is above xz plane, then this is a valley-fold
     if(pHeight > epsilon)
@@ -427,7 +443,7 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     m_tri2D[i].m_edges[e1] = &edg;
     m_tri2D[j].m_edges[e2] = &edg;
 
-    float angle = glm::degrees(glm::acos(glm::clamp(glm::dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
+    float angle = degrees(acos(clamp(dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
     edg.m_angle = angle;
 
     m_tri2D[j].m_id = j;
@@ -436,13 +452,13 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
 
 void CMesh::CalculateFlatNormals()
 {
-    for(const glm::uvec4 &t : m_triangles)
+    for(const uvec4 &t : m_triangles)
     {
-        const glm::vec3 &vertex1 = m_vertices[t[0]];
-        const glm::vec3 &vertex2 = m_vertices[t[1]];
-        const glm::vec3 &vertex3 = m_vertices[t[2]];
+        const vec3 &vertex1 = m_vertices[t[0]];
+        const vec3 &vertex2 = m_vertices[t[1]];
+        const vec3 &vertex3 = m_vertices[t[2]];
 
-        glm::vec3 faceNormal = glm::normalize(glm::cross((vertex2-vertex1), (vertex3-vertex1)));
+        vec3 faceNormal = normalize(cross((vertex2-vertex1), (vertex3-vertex1)));
         m_flatNormals.push_back(faceNormal);
     }
 }
@@ -602,25 +618,13 @@ void CMesh::GroupPickedTriangles()
                     bool inserted = false;
                     do
                     {
-                        float otherAngle = -999.0f;
-
                         if(itNextLargerAngle != candidates.end())
                         {
                             const STriangle2D &othTr = m_tri2D[(*itNextLargerAngle).first];
 
                             if((*itNextLargerAngle).second > -1)
                             {
-                                for(int oInd=0; oInd<3; ++oInd)
-                                {
-                                    const STriangle2D *othTr2 = othTr.m_edges[oInd]->GetOtherTriangle(&othTr);
-                                    if(othTr2 && othTr2->ID() == (*itNextLargerAngle).second)
-                                    {
-                                        otherAngle = othTr.m_edges[oInd]->m_angle;
-                                        break;
-                                    }
-                                }
-
-                                inserted = myAngle <= otherAngle;
+                                inserted = myAngle <= othTr.m_edges[(*itNextLargerAngle).second]->m_angle;
                             }
                         } else {
                             inserted = true;
@@ -688,24 +692,24 @@ void CMesh::PackGroups(bool undoable)
 {
     struct SGroupBBox
     {
-        glm::vec2 topLeft;
-        glm::vec2 rightDown;
-        glm::vec2 position;
+        vec2 topLeft;
+        vec2 rightDown;
+        vec2 position;
         float area;
         float width;
         float height;
         CMesh::STriGroup *grp;
 
-        glm::vec2 GetFinalPosition(glm::vec2 offset)
+        vec2 GetFinalPosition(vec2 offset)
         {
-            const float groupGap1x = 0.75f;//grp->aabbHSide*0.1f;
+            const float groupGap1x = 0.75f;;
             position += offset;
-            glm::vec2 grpCenterOffset(grp->GetPosition().x - topLeft.x, grp->GetPosition().y - rightDown.y);
-            return grpCenterOffset + glm::vec2(position[0]+groupGap1x, position[1]+groupGap1x);
+            vec2 grpCenterOffset(grp->GetPosition().x - topLeft.x, grp->GetPosition().y - rightDown.y);
+            return grpCenterOffset + vec2(position[0]+groupGap1x, position[1]+groupGap1x);
         }
         void FillArea()
         {
-            const float groupGap2x = 1.5f;//grp->aabbHSide*0.2f;
+            const float groupGap2x = 1.5f;
             width = rightDown[0]-topLeft[0]+groupGap2x;
             height = topLeft[1]-rightDown[1]+groupGap2x;
             area = width*height;
@@ -736,7 +740,7 @@ void CMesh::PackGroups(bool undoable)
     };
 
     SGroupBBox dummy;
-    dummy.topLeft = dummy.rightDown = dummy.position = glm::vec2(0.0f, 0.0f);
+    dummy.topLeft = dummy.rightDown = dummy.position = vec2(0.0f, 0.0f);
     std::vector<SGroupBBox> bboxes(m_groups.size(), dummy);
     float binWidth = 0.0f;
     float binHeight = 0.0f;
@@ -751,10 +755,10 @@ void CMesh::PackGroups(bool undoable)
         bbox.rightDown = grp.m_toRightDown;
         bbox.FillArea();
         binWidth += bbox.area;
-        maxWidth = glm::max(bbox.width, maxWidth);
+        maxWidth = max(bbox.width, maxWidth);
         ++i;
     }
-    binWidth = glm::max(glm::sqrt(binWidth), maxWidth);
+    binWidth = max(sqrt(binWidth), maxWidth);
 
     std::sort(bboxes.begin(), bboxes.end(),
          [](const SGroupBBox &i, const SGroupBBox &j) { return i.height < j.height; } );
@@ -784,7 +788,7 @@ void CMesh::PackGroups(bool undoable)
 
                 if(binWidth - x >= bbx.width)
                 {
-                    bbx.position = glm::vec2(x, lvl.floorHeight);
+                    bbx.position = vec2(x, lvl.floorHeight);
                     bool intersects = false;
                     for(auto &ceilBBX : lvl.ceiling)
                     {
@@ -812,7 +816,7 @@ void CMesh::PackGroups(bool undoable)
 
                 if(x >= bbx.width)
                 {
-                    bbx.position = glm::vec2(x - bbx.width, lvl.floorHeight + lvl.ceilHeight - bbx.height);
+                    bbx.position = vec2(x - bbx.width, lvl.floorHeight + lvl.ceilHeight - bbx.height);
                     bool intersects = false;
                     for(auto &floorBBX : lvl.floor)
                     {
@@ -842,13 +846,13 @@ void CMesh::PackGroups(bool undoable)
                 lvl.ceilHeight = bbx.height;
                 lvl.floorHeight = (prev ? prev->ceilHeight + prev->floorHeight : 0.0f);
                 lvl.floor.push_front(&bbx);
-                bbx.position = glm::vec2(0.0f, lvl.floorHeight);
+                bbx.position = vec2(0.0f, lvl.floorHeight);
             }
         }
 
         binHeight = levels.back().floorHeight + levels.back().ceilHeight;
         //adjust width for the next pass of FCNR
-        binWidth = glm::max(maxWidth, (binWidth + binHeight) * 0.5f);
+        binWidth = max(maxWidth, (binWidth + binHeight) * 0.5f);
     }
 
     CIvoCommand* cmd = nullptr;
@@ -859,7 +863,7 @@ void CMesh::PackGroups(bool undoable)
 
     for(SGroupBBox &b : bboxes)
     {
-        glm::vec2 finalPos = b.GetFinalPosition(glm::vec2(-binWidth*0.5f, -binHeight*0.5f));
+        vec2 finalPos = b.GetFinalPosition(vec2(-binWidth*0.5f, -binHeight*0.5f));
         if(undoable)
         {
             CAtomicCommand cmdMov(CT_MOVE);
@@ -877,10 +881,10 @@ void CMesh::PackGroups(bool undoable)
     }
 }
 
-const CMesh::STriGroup* CMesh::GroupUnderCursor(glm::vec2 &curPos) const
+CMesh::STriGroup* CMesh::GroupUnderCursor(vec2 &curPos)
 {
-    std::list<const STriGroup*> possibleGroups;
-    for(auto &grp : m_groups)
+    std::list<STriGroup*> possibleGroups;
+    for(STriGroup& grp : m_groups)
     {
         float gLX = grp.m_position[0] - grp.m_aabbHSide;
         float gRX = grp.m_position[0] + grp.m_aabbHSide;
@@ -901,7 +905,7 @@ const CMesh::STriGroup* CMesh::GroupUnderCursor(glm::vec2 &curPos) const
     return nullptr;
 }
 
-void CMesh::GetStuffUnderCursor(const glm::vec2 &curPos, CMesh::STriangle2D *&tr, int &e) const
+void CMesh::GetStuffUnderCursor(const vec2 &curPos, CMesh::STriangle2D *&tr, int &e) const
 {
     std::list<const STriGroup*> possibleGroups;
     for(auto &grp : m_groups)
@@ -962,44 +966,44 @@ void CMesh::CalculateAABBox()
           highestY =-999999999999.0f,
           lowestZ  = 999999999999.0f,
           highestZ =-999999999999.0f;
-    for(const glm::vec3& v : m_vertices)
+    for(const vec3& v : m_vertices)
     {
-        lowestX = glm::min(lowestX, v.x);
-        highestX = glm::max(highestX, v.x);
-        lowestY = glm::min(lowestY, v.y);
-        highestY = glm::max(highestY, v.y);
-        lowestZ = glm::min(lowestZ, v.z);
-        highestZ = glm::max(highestZ, v.z);
+        lowestX = min(lowestX, v.x);
+        highestX = max(highestX, v.x);
+        lowestY = min(lowestY, v.y);
+        highestY = max(highestY, v.y);
+        lowestZ = min(lowestZ, v.z);
+        highestZ = max(highestZ, v.z);
     }
-    m_aabbox[0] = glm::vec3(lowestX, lowestY, lowestZ);
-    m_aabbox[1] = glm::vec3(lowestX, lowestY, highestZ);
-    m_aabbox[2] = glm::vec3(highestX, lowestY, highestZ);
-    m_aabbox[3] = glm::vec3(highestX, lowestY, lowestZ);
-    m_aabbox[4] = glm::vec3(lowestX, highestY, lowestZ);
-    m_aabbox[5] = glm::vec3(lowestX, highestY, highestZ);
-    m_aabbox[6] = glm::vec3(highestX, highestY, highestZ);
-    m_aabbox[7] = glm::vec3(highestX, highestY, lowestZ);
+    m_aabbox[0] = vec3(lowestX, lowestY, lowestZ);
+    m_aabbox[1] = vec3(lowestX, lowestY, highestZ);
+    m_aabbox[2] = vec3(highestX, lowestY, highestZ);
+    m_aabbox[3] = vec3(highestX, lowestY, lowestZ);
+    m_aabbox[4] = vec3(lowestX, highestY, lowestZ);
+    m_aabbox[5] = vec3(lowestX, highestY, highestZ);
+    m_aabbox[6] = vec3(highestX, highestY, highestZ);
+    m_aabbox[7] = vec3(highestX, highestY, lowestZ);
 
     m_bSphereRadius = 0.0f;
-    glm::vec3 toCenter = GetAABBoxCenter();
+    vec3 toCenter = GetAABBoxCenter();
     toCenter.y = m_aabbox[0].y;
     for(int i=0; i<7; i++)
     {
         m_aabbox[i] -= toCenter;
-        m_bSphereRadius = glm::max(glm::length(glm::vec3(m_aabbox[i].x, m_aabbox[i].y*0.5f, m_aabbox[i].z)), m_bSphereRadius);
+        m_bSphereRadius = max(length(vec3(m_aabbox[i].x, m_aabbox[i].y*0.5f, m_aabbox[i].z)), m_bSphereRadius);
     }
-    for(glm::vec3& v : m_vertices)
+    for(vec3& v : m_vertices)
         v -= toCenter;
 }
 
-glm::vec3 CMesh::GetAABBoxCenter() const
+vec3 CMesh::GetAABBoxCenter() const
 {
     return 0.5f * (m_aabbox[0] + m_aabbox[6]);
 }
 
-glm::vec3 CMesh::GetSizeMillimeters() const
+vec3 CMesh::GetSizeMillimeters() const
 {
-    glm::vec3 sizeMm;
+    vec3 sizeMm;
     sizeMm.x = m_aabbox[6].x - m_aabbox[0].x;
     sizeMm.y = m_aabbox[6].y - m_aabbox[0].y;
     sizeMm.z = m_aabbox[6].z - m_aabbox[0].z;
@@ -1025,7 +1029,7 @@ void CMesh::Redo()
     }
 }
 
-void CMesh::NotifyGroupMovement(STriGroup &grp, const glm::vec2& oldPos)
+void CMesh::NotifyGroupMovement(STriGroup &grp, const vec2& oldPos)
 {
     CAtomicCommand cmdMov(CT_MOVE);
     cmdMov.SetTriangle(grp.m_tris.front());
@@ -1057,19 +1061,19 @@ void CMesh::Serialize(FILE *f) const
 
     sizeVar = m_uvCoords.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_uvCoords.data(), sizeof(glm::vec2), sizeVar, f);
+    std::fwrite(m_uvCoords.data(), sizeof(vec2), sizeVar, f);
 
     sizeVar = m_normals.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_normals.data(), sizeof(glm::vec3), sizeVar, f);
+    std::fwrite(m_normals.data(), sizeof(vec3), sizeVar, f);
 
     sizeVar = m_vertices.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_vertices.data(), sizeof(glm::vec3), sizeVar, f);
+    std::fwrite(m_vertices.data(), sizeof(vec3), sizeVar, f);
 
     sizeVar = m_triangles.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
-    std::fwrite(m_triangles.data(), sizeof(glm::uvec4), sizeVar, f);
+    std::fwrite(m_triangles.data(), sizeof(uvec4), sizeVar, f);
 
     sizeVar = m_tri2D.size();
     std::fwrite(&sizeVar, sizeof(sizeVar), 1, f);
@@ -1126,32 +1130,32 @@ void CMesh::Deserialize(FILE *f)
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; i++)
     {
-        glm::vec2 uv;
-        SAFE_FREAD(&uv, sizeof(glm::vec2), 1, f);
+        vec2 uv;
+        SAFE_FREAD(&uv, sizeof(vec2), 1, f);
         m_uvCoords.push_back(uv);
     }
 
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; i++)
     {
-        glm::vec3 norm;
-        SAFE_FREAD(&norm, sizeof(glm::vec3), 1, f);
+        vec3 norm;
+        SAFE_FREAD(&norm, sizeof(vec3), 1, f);
         m_normals.push_back(norm);
     }
 
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; i++)
     {
-        glm::vec3 vert;
-        SAFE_FREAD(&vert, sizeof(glm::vec3), 1, f);
+        vec3 vert;
+        SAFE_FREAD(&vert, sizeof(vec3), 1, f);
         m_vertices.push_back(vert);
     }
 
     SAFE_FREAD(&sizeVar, sizeof(sizeVar), 1, f);
     for(int i=0; i<sizeVar; i++)
     {
-        glm::uvec4 tri;
-        SAFE_FREAD(&tri, sizeof(glm::uvec4), 1, f);
+        uvec4 tri;
+        SAFE_FREAD(&tri, sizeof(uvec4), 1, f);
         m_triangles.push_back(tri);
     }
 
@@ -1216,7 +1220,7 @@ void CMesh::Deserialize(FILE *f)
 
 void CMesh::ApplyScale(float scale)
 {
-    for(glm::vec3& vtx : m_vertices)
+    for(vec3& vtx : m_vertices)
         vtx *= scale;
     for(STriGroup& grp : m_groups)
         grp.Scale(scale);

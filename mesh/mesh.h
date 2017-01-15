@@ -52,8 +52,10 @@ public:
 
     const std::unordered_map
         <unsigned,std::string>& GetMaterials()     const { return m_materials; }
+
     void                        SetMaterials(const std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
-    const CMesh::STriGroup*     GroupUnderCursor(glm::vec2 &curPos) const;
+
+    CMesh::STriGroup*           GroupUnderCursor(glm::vec2 &curPos);
     void                        GetStuffUnderCursor(const glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
     void                        Undo();
     void                        Redo();
@@ -64,7 +66,6 @@ public:
     void                        Serialize(FILE* f) const;
     void                        Deserialize(FILE* f);
     void                        Scale(float scale);
-    void                        ApplyScale(float scale);
     void                        PackGroups(bool undoable=true);
     glm::vec3                   GetSizeMillimeters() const;
     glm::vec3                   GetAABBoxCenter() const;
@@ -73,9 +74,10 @@ public:
     bool                        IsTrianglePicked(int index) const;
     void                        ClearPickedTriangles();
     void                        GroupPickedTriangles();
-    static inline CMesh*        GetMesh() { return g_Mesh; }
 
 private:
+    static CMesh*               GetMesh() { return g_Mesh; }
+    void                        ApplyScale(float scale);
     void                        AddMeshesFromAIScene(const aiScene* scene, const aiNode* node);
     void                        CalculateFlatNormals();
     void                        FillAdjTri_Gen2DTri();
@@ -103,15 +105,14 @@ private:
 
     QUndoStack                  m_undoStack;
 
+    friend class CAtomicCommand;
+
 public:
     struct STriangle2D
     {
         STriangle2D() = default;
 
-        void                    SetRelMx(glm::mat3 &invParentMx);
         glm::mat3               GetMatrix() const;
-        void                    SetRotation(float degCCW);
-        void                    SetPosition(glm::vec2 pos);
         bool                    Intersect(const STriangle2D &other) const;
         bool                    PointInside(const glm::vec2 &point) const;
         bool                    PointIsNearEdge(const glm::vec2 &point, const int &e, float &score) const;
@@ -127,6 +128,9 @@ public:
 
     private:
         void                    Init();
+        void                    SetRelMx(glm::mat3 &invParentMx);
+        void                    SetRotation(float degCCW);
+        void                    SetPosition(glm::vec2 pos);
         void                    Scale(float scale);
         void                    ComputeNormals();
         void                    GroupHasTransformed(const glm::mat3 &parMx);
@@ -216,13 +220,8 @@ public:
         STriGroup& operator=(const STriGroup& o) = delete;
         STriGroup& operator=(const STriGroup&& o) = delete;
 
-        void                    AttachGroup(STriangle2D* tr2, int e2);
-        void                    BreakGroup(STriangle2D* tr2, int e2);
         void                    JoinEdge(STriangle2D* tr, int e);
         void                    BreakEdge(STriangle2D* tr, int e);
-        void                    CentrateOrigin();
-        bool                    AddTriangle(STriangle2D* tr, STriangle2D* referal);
-        void                    RemTriangle(STriangle2D* tr);
         void                    SetRotation(float angle);
         void                    SetPosition(float x, float y);
         inline glm::vec2        GetPosition() const { return m_position; }
@@ -236,6 +235,10 @@ public:
         static float            GetDepthStep();
 
     private:
+        void                    CentrateOrigin();
+        bool                    AddTriangle(STriangle2D* tr, STriangle2D* referal);
+        void                    AttachGroup(STriangle2D* tr2, int e2);
+        void                    BreakGroup(STriangle2D* tr2, int e2);
         CIvoCommand*            GetJoinEdgeCmd(STriangle2D* tr, int e);
         CIvoCommand*            GetBreakEdgeCmd(STriangle2D* tr, int e);
         void                    Serialize(FILE *f) const;
@@ -254,6 +257,7 @@ public:
         static float            ms_depthStep;
 
         friend class CMesh;
+        friend class CAtomicCommand;
     };
 };
 

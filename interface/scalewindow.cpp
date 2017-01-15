@@ -3,7 +3,7 @@
 
 CScaleWindow::CScaleWindow(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::CScaleWindow),
+    ui(new Ui::ScaleWindow),
     m_currentScale(1.0f),
     m_likeAMutex(false),
     m_outputScale(nullptr)

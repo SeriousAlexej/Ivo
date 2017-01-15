@@ -346,8 +346,8 @@ void CRenWin2D::ModeLMB()
             CMesh::STriangle2D *trUnderCursor = nullptr;
             m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, m_currEdge);
 
-            const CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-            m_currGroup = static_cast<void*>(const_cast<CMesh::STriGroup*>(tGroup));
+            CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
+            m_currGroup = static_cast<void*>(tGroup);
             if(!tGroup)
             {
                 m_cameraMode = CAM_STILL;
@@ -366,8 +366,8 @@ void CRenWin2D::ModeLMB()
         }
         case EM_MOVE :
         {
-            const CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-            m_currGroup = static_cast<void*>(const_cast<CMesh::STriGroup*>(tGroup));
+            CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
+            m_currGroup = static_cast<void*>(tGroup);
             if(!tGroup)
             {
                 m_cameraMode = CAM_STILL;

@@ -90,7 +90,7 @@ void CAtomicCommand::Redo() const
             grp->BreakGroup(tr->GetEdge(m_edge)->GetOtherTriangle(tr), tr->GetEdge(m_edge)->GetOtherTriIndex(tr));
             break;
         }
-        default : throw;
+        default : assert(false);
     }
 }
 
@@ -148,7 +148,7 @@ void CAtomicCommand::Undo() const
             grp->AttachGroup(tr->GetEdge(m_edge)->GetOtherTriangle(tr), tr->GetEdge(m_edge)->GetOtherTriIndex(tr));
             break;
         }
-        default : throw;
+        default : assert(false);
     }
 }
 

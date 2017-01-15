@@ -53,7 +53,7 @@ void CSettingsWindow::LoadSettings()
         {
             ui->comboBoxFormat->setCurrentIndex(0);
         }
-        default:;
+        default: assert(false);
     }
 }
 

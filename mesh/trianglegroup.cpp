@@ -9,10 +9,20 @@
 #include "mesh/command.h"
 #include "io/saferead.h"
 
+using glm::mat3;
+using glm::vec2;
+using glm::vec3;
+using glm::sin;
+using glm::cos;
+using glm::min;
+using glm::max;
+using glm::radians;
+using glm::sqrt;
+
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
 CMesh::STriGroup::STriGroup() :
-    m_position(glm::vec2(0.0f,0.0f)),
+    m_position(vec2(0.0f,0.0f)),
     m_rotation(0.0f),
     m_matrix(1)
 {
@@ -24,15 +34,15 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
     {
         m_tris.push_front(tr);
         tr->m_myGroup = this;
-        glm::mat3 id(1);
+        mat3 id(1);
         tr->SetRelMx(id);
         for(int v=0; v<3; ++v)
         {
-            const glm::vec2 &vert = tr->m_vtxRT[v];
-            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+            const vec2 &vert = tr->m_vtxRT[v];
+            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
         }
         return true;
     }
@@ -52,7 +62,7 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
     //rotate and translate tr to match referal's edge
     float trNewRotation = referal->m_rotation + 180.0f + tr->m_angleOY[e1] - referal->m_angleOY[e2];
     tr->SetRotation(trNewRotation);
-    glm::vec2 trNewPosition = referal->m_position - tr->m_vtxR[e1] + referal->m_vtxR[(e2+1)%3];
+    vec2 trNewPosition = referal->m_position - tr->m_vtxR[e1] + referal->m_vtxR[(e2+1)%3];
     tr->SetPosition(trNewPosition);
 
     //now check if tr overlaps any triangle in group
@@ -69,16 +79,16 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
     }
     tr->m_edges[e1]->m_snapped = true;
     m_tris.push_front(tr);
-    glm::mat3 id(1);
+    mat3 id(1);
     tr->SetRelMx(id);
     tr->m_myGroup = this;
     for(int v=0; v<3; ++v)
     {
-        const glm::vec2 &vert = tr->m_vtxRT[v];
-        m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
-        m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
-        m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
-        m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+        const vec2 &vert = tr->m_vtxRT[v];
+        m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+        m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+        m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+        m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
     }
 
     //check if other edges can be snapped
@@ -96,10 +106,10 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
 
         int i2 = tr->m_edges[i]->GetOtherTriIndex(tr);
 
-        const glm::vec2& tr1V2 = tr->m_vtxRT[i];
-        const glm::vec2& tr1V1 = tr->m_vtxRT[(i+1)%3];
-        const glm::vec2& tr2V1 = otherTri->m_vtxRT[i2];
-        const glm::vec2& tr2V2 = otherTri->m_vtxRT[(i2+1)%3];
+        const vec2& tr1V2 = tr->m_vtxRT[i];
+        const vec2& tr1V1 = tr->m_vtxRT[(i+1)%3];
+        const vec2& tr2V1 = otherTri->m_vtxRT[i2];
+        const vec2& tr2V2 = otherTri->m_vtxRT[(i2+1)%3];
 
         static const float epsilon = 0.001f;
 
@@ -121,22 +131,22 @@ void CMesh::STriGroup::SetRotation(float angle)
         m_rotation -= 360.0f;
     while(m_rotation < 0.0f)
         m_rotation += 360.0f;
-    float rotRAD = glm::radians(m_rotation);
-    m_matrix[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
-    m_matrix[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
+    float rotRAD = radians(m_rotation);
+    m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
+    m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
 
-    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
     for(STriangle2D *t : m_tris)
     {
         t->GroupHasTransformed(m_matrix);
         for(int v=0; v<3; ++v)
         {
-            const glm::vec2 &vert = t->m_vtxRT[v];
-            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+            const vec2 &vert = t->m_vtxRT[v];
+            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
         }
     }
 }
@@ -157,7 +167,7 @@ void CMesh::STriGroup::SetPosition(float x, float y)
 
 void CMesh::STriGroup::CentrateOrigin()
 {
-    m_position = glm::vec2(0.0f, 0.0f);
+    m_position = vec2(0.0f, 0.0f);
     for(const auto tri : m_tris)
     {
         const STriangle2D& tr = *tri;
@@ -180,13 +190,13 @@ void CMesh::STriGroup::CentrateOrigin()
             }
         }
     }
-    m_aabbHSide = glm::sqrt(aabbHSideSQR);
+    m_aabbHSide = sqrt(aabbHSideSQR);
 
-    float rotRAD = glm::radians(m_rotation);
-    m_matrix[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
-    m_matrix[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
-    m_matrix[2] = glm::vec3(m_position[0], m_position[1], 1.0f);
-    glm::mat3 pinv = glm::inverse(m_matrix);
+    float rotRAD = radians(m_rotation);
+    m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
+    m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
+    m_matrix[2] = vec3(m_position[0], m_position[1], 1.0f);
+    mat3 pinv = inverse(m_matrix);
 
     for(STriangle2D *t : m_tris)
         t->SetRelMx(pinv);
@@ -199,18 +209,18 @@ void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
 
     m_tris.insert(m_tris.end(), grp->m_tris.begin(), grp->m_tris.end());
 
-    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
     for(STriangle2D*& t : m_tris)
     {
         t->m_myGroup = this;
         for(int v=0; v<3; ++v)
         {
-            const glm::vec2 &vert = t->m_vtxRT[v];
-            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+            const vec2 &vert = t->m_vtxRT[v];
+            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
         }
     }
     CentrateOrigin();
@@ -251,10 +261,10 @@ CIvoCommand* CMesh::STriGroup::GetJoinEdgeCmd(STriangle2D *tr, int e)
             if(tr->m_edges[e]->IsSnapped())
                 return nullptr;
 
-            const glm::vec2& tr1V2 = tr->m_vtxRT[e];
-            const glm::vec2& tr1V1 = tr->m_vtxRT[(e+1)%3];
-            const glm::vec2& tr2V1 = tr2->m_vtxRT[e2];
-            const glm::vec2& tr2V2 = tr2->m_vtxRT[(e2+1)%3];
+            const vec2& tr1V2 = tr->m_vtxRT[e];
+            const vec2& tr1V1 = tr->m_vtxRT[(e+1)%3];
+            const vec2& tr2V1 = tr2->m_vtxRT[e2];
+            const vec2& tr2V2 = tr2->m_vtxRT[(e2+1)%3];
 
             static const float epsilon = 0.001f;
 
@@ -301,7 +311,7 @@ CIvoCommand* CMesh::STriGroup::GetJoinEdgeCmd(STriangle2D *tr, int e)
     cmdRot.SetRotation(newRotation - grp->GetRotation());
     grp->SetRotation(newRotation);
 
-    glm::vec2 newPos = tr->m_vtxRT[e] - tr2->m_vtxRT[(e2+1)%3]/*(glm::mat2(matrix) * tr2->m_vtx[(e2+1)%3] + glm::vec2(matrix[2][0], matrix[2][1]))*/ + grp->m_position;
+    vec2 newPos = tr->m_vtxRT[e] - tr2->m_vtxRT[(e2+1)%3]/*(mat2(matrix) * tr2->m_vtx[(e2+1)%3] + vec2(matrix[2][0], matrix[2][1]))*/ + grp->m_position;
     cmdMov.SetTranslation(newPos - grp->GetPosition());
     grp->SetRotation(oldrot);
 
@@ -399,8 +409,8 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     CMesh::g_Mesh->m_groups.emplace_back();
     STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
 
-    newGroup.m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
-    newGroup.m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+    newGroup.m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
+    newGroup.m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
     for(STriangle2D*& t : m_tris)
     {
         if(std::find(trAndCompany.begin(), trAndCompany.end(), t) == trAndCompany.end())
@@ -410,8 +420,8 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     }
     newGroup.CentrateOrigin();
 
-    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
     m_tris.clear();
 
     for(STriangle2D*& t : trAndCompany)
@@ -495,12 +505,12 @@ CIvoCommand* CMesh::STriGroup::GetBreakEdgeCmd(STriangle2D *tr, int e)
         cmdMv1.SetTriangle(tr);
         cmdMv2.SetTriangle(tr2);
 
-        glm::vec2 oldTRN = tr->m_normR[e];
-        glm::vec2 oldTR2V0 = tr2->m_vtxRT[0];
-        glm::vec2 oldTRV0 = tr->m_vtxRT[0];
+        vec2 oldTRN = tr->m_normR[e];
+        vec2 oldTR2V0 = tr2->m_vtxRT[0];
+        vec2 oldTRV0 = tr->m_vtxRT[0];
 
         STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
-        glm::vec2 newPos = newGroup.m_position + oldTRN + oldTR2V0 - tr2->m_vtxRT[0];
+        vec2 newPos = newGroup.m_position + oldTRN + oldTR2V0 - tr2->m_vtxRT[0];
         cmdMv2.SetTranslation(newPos - newGroup.GetPosition());
 
         newPos = m_position - oldTRN + oldTRV0 - tr->m_vtxRT[0];
@@ -539,12 +549,12 @@ void CMesh::STriGroup::Serialize(FILE *f) const
     }
     std::fwrite(trInds.data(), sizeof(int), triSize, f);
 
-    std::fwrite(&m_toTopLeft, sizeof(glm::vec2), 1, f);
-    std::fwrite(&m_toRightDown, sizeof(glm::vec2), 1, f);
+    std::fwrite(&m_toTopLeft, sizeof(vec2), 1, f);
+    std::fwrite(&m_toRightDown, sizeof(vec2), 1, f);
     std::fwrite(&m_aabbHSide, sizeof(float), 1, f);
-    std::fwrite(&m_position, sizeof(glm::vec2), 1, f);
+    std::fwrite(&m_position, sizeof(vec2), 1, f);
     std::fwrite(&m_rotation, sizeof(float), 1, f);
-    std::fwrite(&m_matrix, sizeof(glm::mat3), 1, f);
+    std::fwrite(&m_matrix, sizeof(mat3), 1, f);
 }
 
 void CMesh::STriGroup::Deserialize(FILE *f)
@@ -563,29 +573,29 @@ void CMesh::STriGroup::Deserialize(FILE *f)
         m_tris.back()->m_myGroup = this;
     }
 
-    SAFE_FREAD(&m_toTopLeft, sizeof(glm::vec2), 1, f);
-    SAFE_FREAD(&m_toRightDown, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_toTopLeft, sizeof(vec2), 1, f);
+    SAFE_FREAD(&m_toRightDown, sizeof(vec2), 1, f);
     SAFE_FREAD(&m_aabbHSide, sizeof(float), 1, f);
-    SAFE_FREAD(&m_position, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_position, sizeof(vec2), 1, f);
     SAFE_FREAD(&m_rotation, sizeof(float), 1, f);
-    SAFE_FREAD(&m_matrix, sizeof(glm::mat3), 1, f);
+    SAFE_FREAD(&m_matrix, sizeof(mat3), 1, f);
 }
 
 void CMesh::STriGroup::Scale(float scale)
 {
-    m_toTopLeft = glm::vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = glm::vec2(-99999999999999.0f, 99999999999999.0f);
+    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
+    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
 
     for(STriangle2D* tri : m_tris)
     {
         tri->Scale(scale);
         for(int v=0; v<3; ++v)
         {
-            const glm::vec2 &vert = tri->m_vtxRT[v];
-            m_toTopLeft[0] = glm::min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = glm::max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = glm::max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = glm::min(m_toRightDown[1], vert[1]);
+            const vec2 &vert = tri->m_vtxRT[v];
+            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
         }
     }
 

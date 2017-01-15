@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 
 namespace Ui {
-class CScaleWindow;
+class ScaleWindow;
 }
 
 class CScaleWindow : public QDialog
@@ -30,7 +30,7 @@ private slots:
     void on_spinLength_valueChanged(double i);
 
 private:
-    Ui::CScaleWindow *ui;
+    Ui::ScaleWindow *ui;
     void ResetUI();
     void SetEditingAsAbsolute(bool absolute);
 

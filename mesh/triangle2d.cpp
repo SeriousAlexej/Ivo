@@ -3,6 +3,19 @@
 #include "mesh/mesh.h"
 #include "io/saferead.h"
 
+using glm::clamp;
+using glm::degrees;
+using glm::acos;
+using glm::asin;
+using glm::sign;
+using glm::sin;
+using glm::vec3;
+using glm::vec2;
+using glm::mat3;
+using glm::mat2;
+using glm::radians;
+using glm::min;
+
 void CMesh::SEdge::NextFlapPosition()
 {
     switch(m_flapPosition)
@@ -87,12 +100,11 @@ CMesh::SEdge::EFoldType CMesh::SEdge::GetFoldType() const
     return m_foldType;
 }
 
-void CMesh::STriangle2D::GroupHasTransformed(const glm::mat3 &parMx)
+void CMesh::STriangle2D::GroupHasTransformed(const mat3 &parMx)
 {
-    using namespace glm;
     mat3 newMx = parMx * m_relativeMx;
 
-    //glm::acos(1.000000012f) == nan!       x_x 5+ hours of debugging
+    //acos(1.000000012f) == nan!       x_x 5+ hours of debugging
     newMx[0][0] = clamp(newMx[0][0], -1.0f, 1.0f);
     newMx[1][0] = clamp(newMx[1][0], -1.0f, 1.0f);
     newMx[1][1] = clamp(newMx[1][1], -1.0f, 1.0f);
@@ -111,18 +123,18 @@ void CMesh::STriangle2D::GroupHasTransformed(const glm::mat3 &parMx)
     }
 }
 
-void CMesh::STriangle2D::SetRelMx(glm::mat3 &invParentMx)
+void CMesh::STriangle2D::SetRelMx(mat3 &invParentMx)
 {
     m_relativeMx = invParentMx * GetMatrix();
 }
 
-glm::mat3 CMesh::STriangle2D::GetMatrix() const
+mat3 CMesh::STriangle2D::GetMatrix() const
 {
-    float rotRAD = glm::radians(m_rotation);
-    glm::mat3 mx;
-    mx[0] = glm::vec3(glm::cos(rotRAD), glm::sin(rotRAD), 0.0f);
-    mx[1] = glm::vec3(-glm::sin(rotRAD), glm::cos(rotRAD), 0.0f);
-    mx[2] = glm::vec3(m_position[0], m_position[1], 1.0f);
+    float rotRAD = radians(m_rotation);
+    mat3 mx;
+    mx[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
+    mx[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
+    mx[2] = vec3(m_position[0], m_position[1], 1.0f);
     return mx;
 }
 
@@ -146,12 +158,12 @@ void CMesh::STriangle2D::Init()
         m_flapSharp[i] = false;
     }
     m_myGroup = nullptr;
-    m_position = glm::vec2(0.0f, 0.0f);
+    m_position = vec2(0.0f, 0.0f);
     m_rotation = 0.0f;
-    m_relativeMx = glm::mat3(1);
-    m_edgeLen[0] = glm::distance(m_vtx[0], m_vtx[1]);
-    m_edgeLen[1] = glm::distance(m_vtx[1], m_vtx[2]);
-    m_edgeLen[2] = glm::distance(m_vtx[2], m_vtx[0]);
+    m_relativeMx = mat3(1);
+    m_edgeLen[0] = distance(m_vtx[0], m_vtx[1]);
+    m_edgeLen[1] = distance(m_vtx[1], m_vtx[2]);
+    m_edgeLen[2] = distance(m_vtx[2], m_vtx[0]);
     ComputeNormals();
 }
 
@@ -162,10 +174,10 @@ void CMesh::STriangle2D::SetRotation(float degCCW)
         m_rotation -= 360.0f;
     while(m_rotation < 0.0f)
         m_rotation += 360.0f;
-    float rotRAD = glm::radians(m_rotation);
-    glm::mat2 rotMx;
-    rotMx[0] = glm::vec2(glm::cos(rotRAD), glm::sin(rotRAD));
-    rotMx[1] = glm::vec2(-glm::sin(rotRAD), glm::cos(rotRAD));
+    float rotRAD = radians(m_rotation);
+    mat2 rotMx;
+    rotMx[0] = vec2(cos(rotRAD), sin(rotRAD));
+    rotMx[1] = vec2(-sin(rotRAD), cos(rotRAD));
     for(int i=0; i<3; ++i)
     {
         m_normR[i] = rotMx*m_norm[i];
@@ -174,7 +186,7 @@ void CMesh::STriangle2D::SetRotation(float degCCW)
     }
 }
 
-void CMesh::STriangle2D::SetPosition(glm::vec2 pos)
+void CMesh::STriangle2D::SetPosition(vec2 pos)
 {
     m_position = pos;
     for(int i=0; i<3; ++i)
@@ -190,26 +202,26 @@ bool CMesh::STriangle2D::Intersect(const STriangle2D &other) const
     return false;
 }
 
-bool CMesh::STriangle2D::PointInside(const glm::vec2 &point) const
+bool CMesh::STriangle2D::PointInside(const vec2 &point) const
 {
     for(int i=0; i<3; ++i)
     {
-        glm::vec2 vB = point - m_vtxRT[i];
-        glm::vec2 vA = m_vtxRT[(i+1)%3] - m_vtxRT[i];
+        vec2 vB = point - m_vtxRT[i];
+        vec2 vA = m_vtxRT[(i+1)%3] - m_vtxRT[i];
         if(vA[0]*vB[1] - vB[0]*vA[1] < 0.0f)
             return false;
     }
     return true;
 }
 
-bool CMesh::STriangle2D::PointIsNearEdge(const glm::vec2 &point, const int &i, float &score) const
+bool CMesh::STriangle2D::PointIsNearEdge(const vec2 &point, const int &i, float &score) const
 {
-    float dv[2] = { glm::distance(point, m_vtxRT[i]),
-                    glm::distance(point, m_vtxRT[(i+1)%3]) };
+    float dv[2] = { distance(point, m_vtxRT[i]),
+                    distance(point, m_vtxRT[(i+1)%3]) };
 
     if(m_edgeLen[i]*1.01f >= dv[0]+dv[1])
     {
-        score = glm::abs(((m_vtxRT[(i+1)%3].x-m_vtxRT[i].x)*(point.y-m_vtxRT[i].y)-(m_vtxRT[(i+1)%3].y-m_vtxRT[i].y)*(point.x-m_vtxRT[i].x))/m_edgeLen[i]); //distance to edge
+        score = abs(((m_vtxRT[(i+1)%3].x-m_vtxRT[i].x)*(point.y-m_vtxRT[i].y)-(m_vtxRT[(i+1)%3].y-m_vtxRT[i].y)*(point.x-m_vtxRT[i].x))/m_edgeLen[i]); //distance to edge
         return true;
     }
     return false;
@@ -221,7 +233,7 @@ float CMesh::STriangle2D::GetEdgeLen(size_t index) const
     return m_edgeLen[index];
 }
 
-const glm::vec2& CMesh::STriangle2D::operator[](size_t index) const
+const vec2& CMesh::STriangle2D::operator[](size_t index) const
 {
     assert(index < 3);
     return m_vtxRT[index];
@@ -249,7 +261,7 @@ CMesh::SEdge* CMesh::STriangle2D::GetEdge(size_t index) const
     return m_edges[index];
 }
 
-const glm::vec2& CMesh::STriangle2D::GetNormal(size_t index) const
+const vec2& CMesh::STriangle2D::GetNormal(size_t index) const
 {
     assert(index < 3);
     return m_normR[index];
@@ -259,9 +271,9 @@ void CMesh::STriangle2D::ComputeNormals()
 {
     for(int i=0; i<3; ++i)
     {
-        glm::vec3 vFront = glm::vec3(m_vtx[(i+1)%3][0], m_vtx[(i+1)%3][1], 0.0f) - glm::vec3(m_vtx[i][0], m_vtx[i][1], 0.0f);
-        glm::vec3 vRight = glm::normalize(glm::cross(vFront, glm::vec3(0.0f, 0.0f, 1.0f)));
-        glm::vec2 nrm = glm::normalize(glm::vec2(vRight[0], vRight[1]));//*edgeLen[i]*0.1f;
+        vec3 vFront = vec3(m_vtx[(i+1)%3][0], m_vtx[(i+1)%3][1], 0.0f) - vec3(m_vtx[i][0], m_vtx[i][1], 0.0f);
+        vec3 vRight = normalize(cross(vFront, vec3(0.0f, 0.0f, 1.0f)));
+        vec2 nrm = normalize(vec2(vRight[0], vRight[1]));//*edgeLen[i]*0.1f;
         if(m_edgeLen[i] < 2.0f)
         {
             m_flapSharp[i] = true;
@@ -270,17 +282,17 @@ void CMesh::STriangle2D::ComputeNormals()
     }
 }
 
-bool CMesh::STriangle2D::EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2)
+bool CMesh::STriangle2D::EdgesIntersect(const vec2 &e1v1, const vec2 &e1v2, const vec2 &e2v1, const vec2 &e2v2)
 {
-    float smallestEdgeLength = 0.01f*glm::min(glm::distance(e1v1, e1v2), glm::distance(e2v1, e2v2));
-    if(glm::distance(e1v1, e2v1) < smallestEdgeLength ||
-       glm::distance(e1v1, e2v2) < smallestEdgeLength ||
-       glm::distance(e1v2, e2v1) < smallestEdgeLength ||
-       glm::distance(e1v2, e2v2) < smallestEdgeLength)
+    float smallestEdgeLength = 0.01f*min(distance(e1v1, e1v2), distance(e2v1, e2v2));
+    if(distance(e1v1, e2v1) < smallestEdgeLength ||
+       distance(e1v1, e2v2) < smallestEdgeLength ||
+       distance(e1v2, e2v1) < smallestEdgeLength ||
+       distance(e1v2, e2v2) < smallestEdgeLength)
         return false;
-    glm::vec2 A = e1v2 - e1v1;
-    glm::vec2 B1 = e2v1 - e1v1;
-    glm::vec2 B2 = e2v2 - e1v1;
+    vec2 A = e1v2 - e1v1;
+    vec2 B1 = e2v1 - e1v1;
+    vec2 B2 = e2v2 - e1v1;
     bool b1 = (A[0]*B1[1] - B1[0]*A[1]) > 0.0f;
     bool b2 = (A[0]*B2[1] - B2[0]*A[1]) > 0.0f;
     A = e2v2 - e2v1;
@@ -295,33 +307,33 @@ bool CMesh::STriangle2D::EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &
 void CMesh::STriangle2D::Serialize(FILE *f) const
 {
     std::fwrite(&m_id, sizeof(int), 1, f);
-    std::fwrite(m_vtx, sizeof(glm::vec2), 3, f);
-    std::fwrite(m_vtxR, sizeof(glm::vec2), 3, f);
-    std::fwrite(m_vtxRT, sizeof(glm::vec2), 3, f);
-    std::fwrite(m_norm, sizeof(glm::vec2), 3, f);
-    std::fwrite(m_normR, sizeof(glm::vec2), 3, f);
+    std::fwrite(m_vtx, sizeof(vec2), 3, f);
+    std::fwrite(m_vtxR, sizeof(vec2), 3, f);
+    std::fwrite(m_vtxRT, sizeof(vec2), 3, f);
+    std::fwrite(m_norm, sizeof(vec2), 3, f);
+    std::fwrite(m_normR, sizeof(vec2), 3, f);
     std::fwrite(m_flapSharp, sizeof(bool), 3, f);
     std::fwrite(m_edgeLen, sizeof(float), 3, f);
-    std::fwrite(&m_position, sizeof(glm::vec2), 1, f);
+    std::fwrite(&m_position, sizeof(vec2), 1, f);
     std::fwrite(&m_rotation, sizeof(float), 1, f);
     std::fwrite(m_angleOY, sizeof(float), 3, f);
-    std::fwrite(&m_relativeMx, sizeof(glm::mat3), 1, f);
+    std::fwrite(&m_relativeMx, sizeof(mat3), 1, f);
 }
 
 void CMesh::STriangle2D::Deserialize(FILE *f)
 {
     SAFE_FREAD(&m_id, sizeof(int), 1, f);
-    SAFE_FREAD(m_vtx, sizeof(glm::vec2), 3, f);
-    SAFE_FREAD(m_vtxR, sizeof(glm::vec2), 3, f);
-    SAFE_FREAD(m_vtxRT, sizeof(glm::vec2), 3, f);
-    SAFE_FREAD(m_norm, sizeof(glm::vec2), 3, f);
-    SAFE_FREAD(m_normR, sizeof(glm::vec2), 3, f);
+    SAFE_FREAD(m_vtx, sizeof(vec2), 3, f);
+    SAFE_FREAD(m_vtxR, sizeof(vec2), 3, f);
+    SAFE_FREAD(m_vtxRT, sizeof(vec2), 3, f);
+    SAFE_FREAD(m_norm, sizeof(vec2), 3, f);
+    SAFE_FREAD(m_normR, sizeof(vec2), 3, f);
     SAFE_FREAD(m_flapSharp, sizeof(bool), 3, f);
     SAFE_FREAD(m_edgeLen, sizeof(float), 3, f);
-    SAFE_FREAD(&m_position, sizeof(glm::vec2), 1, f);
+    SAFE_FREAD(&m_position, sizeof(vec2), 1, f);
     SAFE_FREAD(&m_rotation, sizeof(float), 1, f);
     SAFE_FREAD(m_angleOY, sizeof(float), 3, f);
-    SAFE_FREAD(&m_relativeMx, sizeof(glm::mat3), 1, f);
+    SAFE_FREAD(&m_relativeMx, sizeof(mat3), 1, f);
 }
 
 void CMesh::SEdge::Serialize(FILE *f) const
