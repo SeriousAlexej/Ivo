@@ -10,7 +10,7 @@ class IRenWin : public QOpenGLWidget
 
 public:
     explicit IRenWin(QWidget *parent = nullptr);
-    virtual ~IRenWin();
+    virtual ~IRenWin() = default;
 
     virtual void SetModel(CMesh *mdl) = 0;
 

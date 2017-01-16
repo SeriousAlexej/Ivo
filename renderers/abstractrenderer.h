@@ -10,7 +10,7 @@ class CMesh;
 class IAbstractRenderer
 {
 public:
-    IAbstractRenderer();
+    IAbstractRenderer() = default;
     virtual ~IAbstractRenderer();
 
     virtual void    SetModel(const CMesh* mdl) = 0;

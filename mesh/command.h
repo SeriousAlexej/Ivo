@@ -18,7 +18,7 @@ enum ECommandType
 class CAtomicCommand
 {
 public:
-    CAtomicCommand(ECommandType actionType);
+    explicit CAtomicCommand(ECommandType actionType);
 
     void SetTriangle(void* tr);
     void SetEdge(int e);

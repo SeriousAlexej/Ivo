@@ -8,10 +8,13 @@
 struct PDO_Face;
 struct PDO_Edge;
 
+namespace PdoTools
+{
 extern glm::vec2 GetPDOPaperSize(int paperType);
 extern int       GetVersionPDO(const char *filename);
 extern void      TriangulateFaces(std::vector<PDO_Face>&                  faces,
                                   std::vector<std::unique_ptr<PDO_Edge>>& edges);
+}
 
 struct PDO_Edge
 {

@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <stdexcept>
 
+namespace SafeRead
+{
+
 void BadFile(std::FILE* fi)
 {
     if(fi)
@@ -24,3 +27,5 @@ std::string ReadLine(std::FILE* fi)
     }
     return line;
 }
+
+}//namespace SafeRead

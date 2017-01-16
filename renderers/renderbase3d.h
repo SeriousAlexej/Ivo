@@ -11,8 +11,8 @@ class CMesh;
 class IRenderer3D : public IAbstractRenderer
 {
 public:
-    IRenderer3D();
-    virtual ~IRenderer3D();
+    IRenderer3D() = default;
+    virtual ~IRenderer3D() = default;
 
     virtual void    SetModel(const CMesh* mdl) override;
     virtual void    Init() override = 0;

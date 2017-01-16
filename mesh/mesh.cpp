@@ -702,7 +702,7 @@ void CMesh::PackGroups(bool undoable)
 
         vec2 GetFinalPosition(vec2 offset)
         {
-            const float groupGap1x = 0.75f;;
+            const float groupGap1x = 0.75f;
             position += offset;
             vec2 grpCenterOffset(grp->GetPosition().x - topLeft.x, grp->GetPosition().y - rightDown.y);
             return grpCenterOffset + vec2(position[0]+groupGap1x, position[1]+groupGap1x);

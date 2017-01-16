@@ -2,50 +2,6 @@
 #include <cstring>
 #include "pdotools.h"
 
-int GetVersionPDO(const char *filename)
-{
-    FILE* f = std::fopen(filename, "rb");
-    if(!f)
-        return -1;
-
-    char head[36];
-    head[35] = '\0';
-    size_t read = std::fread(head, sizeof(char), 35, f);
-    std::fclose(f);
-
-    if(read != 35)
-    {
-        return -1;
-    }
-
-    if(std::strcmp(head, "# Pepakura Designer Work Info ver 2") == 0)
-    {
-        return 20;
-    }
-
-    head[10] = '\0';
-    if(std::strcmp(head, "version 3\n") == 0)
-    {
-        return 30;
-    }
-
-    return -1;
-}
-
-glm::vec2 GetPDOPaperSize(int paperType)
-{
-    switch(paperType)
-    {
-    case 1: return glm::vec2(29.7f, 21.0f);
-    case 2: return glm::vec2(29.7f, 42.0f);
-    case 3: return glm::vec2(42.0f, 29.7f);
-    case 4: return glm::vec2(18.2f, 25.7f);
-    case 5: return glm::vec2(25.7f, 18.2f);
-    case 6: return glm::vec2(25.7f, 36.4f);
-    case 7: return glm::vec2(36.4f, 25.7f);
-    default:return glm::vec2(21.0f, 29.7f);
-    }
-}
 
 void PDO_Part::AddFace(PDO_Face *f)
 {
@@ -105,6 +61,54 @@ static bool VertexIsEar(const std::vector<PDO_2DVertex>& verts, int index)
     }
 
     return true;
+}
+
+namespace PdoTools
+{
+
+int GetVersionPDO(const char *filename)
+{
+    FILE* f = std::fopen(filename, "rb");
+    if(!f)
+        return -1;
+
+    char head[36];
+    head[35] = '\0';
+    size_t read = std::fread(head, sizeof(char), 35, f);
+    std::fclose(f);
+
+    if(read != 35)
+    {
+        return -1;
+    }
+
+    if(std::strcmp(head, "# Pepakura Designer Work Info ver 2") == 0)
+    {
+        return 20;
+    }
+
+    head[10] = '\0';
+    if(std::strcmp(head, "version 3\n") == 0)
+    {
+        return 30;
+    }
+
+    return -1;
+}
+
+glm::vec2 GetPDOPaperSize(int paperType)
+{
+    switch(paperType)
+    {
+    case 1: return glm::vec2(29.7f, 21.0f);
+    case 2: return glm::vec2(29.7f, 42.0f);
+    case 3: return glm::vec2(42.0f, 29.7f);
+    case 4: return glm::vec2(18.2f, 25.7f);
+    case 5: return glm::vec2(25.7f, 18.2f);
+    case 6: return glm::vec2(25.7f, 36.4f);
+    case 7: return glm::vec2(36.4f, 25.7f);
+    default:return glm::vec2(21.0f, 29.7f);
+    }
 }
 
 void TriangulateFaces(std::vector<PDO_Face>& faces, std::vector<std::unique_ptr<PDO_Edge>>& edges)
@@ -181,3 +185,5 @@ void TriangulateFaces(std::vector<PDO_Face>& faces, std::vector<std::unique_ptr<
         }
     }
 }
+
+}//namespace PdoTools

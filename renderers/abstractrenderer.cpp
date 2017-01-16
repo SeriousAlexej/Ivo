@@ -1,13 +1,9 @@
 #include <QImage>
 #include "abstractrenderer.h"
 
-IAbstractRenderer::IAbstractRenderer()
-{
-}
-
 IAbstractRenderer::~IAbstractRenderer()
 {
-    ClearTextures();
+    IAbstractRenderer::ClearTextures();
 }
 
 void IAbstractRenderer::SetModel(const CMesh *mdl)

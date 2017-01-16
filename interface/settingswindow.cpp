@@ -52,6 +52,7 @@ void CSettingsWindow::LoadSettings()
         case CSettings::IF_PNG :
         {
             ui->comboBoxFormat->setCurrentIndex(0);
+            break;
         }
         default: assert(false);
     }

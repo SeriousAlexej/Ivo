@@ -6,12 +6,12 @@
 #include <memory>
 #include <unordered_map>
 
-class CMesh;
 
 namespace Ui {
 class MainWindow;
 }
 
+class CMesh;
 class CRenWin3D;
 class CRenWin2D;
 

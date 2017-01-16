@@ -2,10 +2,6 @@
 #include "mesh/mesh.h"
 #include "renderbase2d.h"
 
-IRenderer2D::IRenderer2D()
-{
-}
-
 IRenderer2D::~IRenderer2D()
 {
     if(m_texFolds)
@@ -20,10 +16,12 @@ void IRenderer2D::SetModel(const CMesh *mdl)
 
 void IRenderer2D::PreDraw() const
 {
+    //nothing
 }
 
 void IRenderer2D::PostDraw() const
 {
+    //nothing
 }
 
 void IRenderer2D::UpdateCameraPosition(const glm::vec3 &camPos)

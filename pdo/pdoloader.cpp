@@ -13,7 +13,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
 {
     FILE* fi = std::fopen(filename, "rb");
     if(!fi)
-        BadFile(fi);
+        SafeRead::BadFile(fi);
 
     std::vector<glm::vec3>                      vertices3D;
     std::vector<glm::vec2>                      offsets;
@@ -22,13 +22,13 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     std::unordered_map<unsigned, std::string>   materialNames;
     std::unordered_map<unsigned, PDO_Part>      parts;
 
-    ReadLine(fi);//# Pepakura Designer Work Info ver 2
-    ReadLine(fi);//#
-    ReadLine(fi);//
-    ReadLine(fi);//version 2
-    ReadLine(fi);//min_version 2
-    ReadLine(fi);//
-    ReadLine(fi);//model %f %f %f %f %f %f
+    SafeRead::ReadLine(fi);//# Pepakura Designer Work Info ver 2
+    SafeRead::ReadLine(fi);//#
+    SafeRead::ReadLine(fi);//
+    SafeRead::ReadLine(fi);//version 2
+    SafeRead::ReadLine(fi);//min_version 2
+    SafeRead::ReadLine(fi);//
+    SafeRead::ReadLine(fi);//model %f %f %f %f %f %f
 
     int solids = 0;
     SAFE_FLSCANF(fi, "solids %d", &solids);
@@ -40,8 +40,8 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         bool skip = false;
         {
             int doNotSkip = 1;
-            ReadLine(fi);//solid
-            ReadLine(fi);//name
+            SafeRead::ReadLine(fi);//solid
+            SafeRead::ReadLine(fi);//name
             SAFE_FLSCANF(fi, "%d", &doNotSkip);
             skip = doNotSkip == 0;
         }
@@ -116,17 +116,17 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         }
     }
 
-    ReadLine(fi);//defaultmaterial
-    ReadLine(fi);//material
-    ReadLine(fi);//
-    ReadLine(fi);//default material settings, ignore
+    SafeRead::ReadLine(fi);//defaultmaterial
+    SafeRead::ReadLine(fi);//material
+    SafeRead::ReadLine(fi);//
+    SafeRead::ReadLine(fi);//default material settings, ignore
 
     int materials = 0;
     SAFE_FLSCANF(fi, "materials %d", &materials);
     for(int j=0; j<materials; j++)
     {
-        ReadLine(fi);//material
-        std::string matName = ReadLine(fi);
+        SafeRead::ReadLine(fi);//material
+        std::string matName = SafeRead::ReadLine(fi);
         if(matName.empty())
         {
             matName = std::string("<unnamed_material_") + std::to_string(j+1) + ">";
@@ -141,7 +141,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
 
         if(hasTexture != 0)
         {
-            ReadLine(fi);//
+            SafeRead::ReadLine(fi);//
 
             int texWidth=0;
             int texHeight=0;
@@ -151,7 +151,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
             std::unique_ptr<unsigned char[]> imgBuffer(new unsigned char[texWidth * texHeight * 3]);
             SAFE_FREAD(imgBuffer.get(), sizeof(unsigned char), texWidth * texHeight * 3, fi);
 
-            ReadLine(fi);//
+            SafeRead::ReadLine(fi);//
 
             m_textureImages[j].reset(new QImage(texWidth, texHeight, QImage::Format_RGB32));
 
@@ -184,10 +184,10 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     SAFE_FLSCANF(fi, "text %d", &texts);
     for(int j=0; j<texts; ++j)
     {
-        ReadLine(fi);//%d //???
-        ReadLine(fi);//font name
-        ReadLine(fi);//string
-        ReadLine(fi);//params...
+        SafeRead::ReadLine(fi);//%d //???
+        SafeRead::ReadLine(fi);//font name
+        SafeRead::ReadLine(fi);//string
+        SafeRead::ReadLine(fi);//params...
     }
 
     int pageType = 0;
@@ -195,32 +195,32 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     float scale3d = 1.0f;
     glm::vec2 margins(0.0f, 0.0f);
 
-    ReadLine(fi);//info
-    ReadLine(fi);//key
-    ReadLine(fi);//iLlevel
+    SafeRead::ReadLine(fi);//info
+    SafeRead::ReadLine(fi);//key
+    SafeRead::ReadLine(fi);//iLlevel
     SAFE_FLSCANF(fi, "dMag3d %f", &scale3d);
     SAFE_FLSCANF(fi, "dMag2d %f", &scale2d);
-    ReadLine(fi);//"dTenkaizuX %f
-    ReadLine(fi);//"dTenkaizuY %f
-    ReadLine(fi);//"dTenkaizuWidth %f"  - 2D pattern width
-    ReadLine(fi);//"dTenkaizuHeight %f" - 2D pattern height
-    ReadLine(fi);//"dTenkaizuMargin %f
-    ReadLine(fi);//"bReverse %d
-    ReadLine(fi);//"bFinished %d
-    ReadLine(fi);//"iAngleEps %d
-    ReadLine(fi);//"iTaniLineType %d
-    ReadLine(fi);//"iYamaLineType %d
-    ReadLine(fi);//"iCutLineType %d
-    ReadLine(fi);//"bTextureCoodinates %d
-    ReadLine(fi);//"bDrawFlap %d"           - show flaps
-    ReadLine(fi);//"bDrawNumber %d"         - show edge ID
-    ReadLine(fi);//"bUseMaterial %d
-    ReadLine(fi);//"iEdgeNumberFontSize %d" - edge ID font size
-    ReadLine(fi);//"bNorishiroReverse %d
-    ReadLine(fi);//"bEdgeIdReverse %d"      - place edge ID outside face
-    ReadLine(fi);//"bEnableLineAlpha %d
-    ReadLine(fi);//"dTextureLineAlpha %f
-    ReadLine(fi);//"bCullEdge %d
+    SafeRead::ReadLine(fi);//"dTenkaizuX %f
+    SafeRead::ReadLine(fi);//"dTenkaizuY %f
+    SafeRead::ReadLine(fi);//"dTenkaizuWidth %f"  - 2D pattern width
+    SafeRead::ReadLine(fi);//"dTenkaizuHeight %f" - 2D pattern height
+    SafeRead::ReadLine(fi);//"dTenkaizuMargin %f
+    SafeRead::ReadLine(fi);//"bReverse %d
+    SafeRead::ReadLine(fi);//"bFinished %d
+    SafeRead::ReadLine(fi);//"iAngleEps %d
+    SafeRead::ReadLine(fi);//"iTaniLineType %d
+    SafeRead::ReadLine(fi);//"iYamaLineType %d
+    SafeRead::ReadLine(fi);//"iCutLineType %d
+    SafeRead::ReadLine(fi);//"bTextureCoodinates %d
+    SafeRead::ReadLine(fi);//"bDrawFlap %d"           - show flaps
+    SafeRead::ReadLine(fi);//"bDrawNumber %d"         - show edge ID
+    SafeRead::ReadLine(fi);//"bUseMaterial %d
+    SafeRead::ReadLine(fi);//"iEdgeNumberFontSize %d" - edge ID font size
+    SafeRead::ReadLine(fi);//"bNorishiroReverse %d
+    SafeRead::ReadLine(fi);//"bEdgeIdReverse %d"      - place edge ID outside face
+    SafeRead::ReadLine(fi);//"bEnableLineAlpha %d
+    SafeRead::ReadLine(fi);//"dTextureLineAlpha %f
+    SafeRead::ReadLine(fi);//"bCullEdge %d
     SAFE_FLSCANF(fi, "iPageType %d", &pageType);//"iPageType %d
     SAFE_FLSCANF(fi, "dPageMarginSide %f", &margins.x);
     SAFE_FLSCANF(fi, "dPageMarginTop %f", &margins.y);
@@ -228,10 +228,10 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     std::fclose(fi);
 
     //pdo v2 likes to store quads and such...
-    TriangulateFaces(faces, edges);
+    PdoTools::TriangulateFaces(faces, edges);
 
     glm::vec2 bbox(0.0f, 0.0f);
-    glm::vec2 pageSize = GetPDOPaperSize(pageType);
+    glm::vec2 pageSize = PdoTools::GetPDOPaperSize(pageType);
     glm::vec2 borderSize = pageSize - margins*2.0f;
 
     //apply paper size

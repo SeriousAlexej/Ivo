@@ -18,10 +18,13 @@
 #include "interface/materialmanager.h"
 #include "pdo/pdotools.h"
 
-extern QString g_GetSupported3DFormats();
+namespace Formats3D
+{
+extern QString GetSupported3DFormats();
+}
 
-bool g_rw3IsValid = true;
-std::mutex g_rw3Mutex;
+static bool g_rw3IsValid = true;
+static std::mutex g_rw3Mutex;
 
 CMainWindow::CMainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -146,7 +149,7 @@ void CMainWindow::LoadModel()
     std::string modelPath = QFileDialog::getOpenFileName(this,
                                                          "Open Model",
                                                          "",
-                                                         g_GetSupported3DFormats()).toStdString();
+                                                         Formats3D::GetSupported3DFormats()).toStdString();
     if(modelPath.empty())
         return;
 
@@ -344,7 +347,7 @@ void CMainWindow::on_actionLoad_Model_triggered()
         {
             LoadFromIVO(ivoModelPath.c_str());
         } else {
-            switch(GetVersionPDO(ivoModelPath.c_str()))
+            switch(PdoTools::GetVersionPDO(ivoModelPath.c_str()))
             {
             case 20:
                 LoadFromPDOv2_0(ivoModelPath.c_str());

@@ -10,7 +10,3 @@ IRenWin::IRenWin(QWidget* parent) :
     format.setSamples(6);
     setFormat(format);
 }
-
-IRenWin::~IRenWin()
-{
-}

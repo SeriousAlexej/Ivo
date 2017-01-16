@@ -90,7 +90,7 @@ void CMainWindow::LoadFromIVO(const char* filename)
 {
     FILE* f = std::fopen(filename, "rb");
     if(!f)
-        BadFile(f);
+        SafeRead::BadFile(f);
 
     char ivo[4];
     int version = -1;

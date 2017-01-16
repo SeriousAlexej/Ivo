@@ -2,7 +2,10 @@
 #include <unordered_map>
 #include <string>
 
-QString g_GetSupported3DFormats()
+namespace Formats3D
+{
+
+QString GetSupported3DFormats()
 {
     static std::string supportedFormats = "";
     if(supportedFormats.empty())
@@ -51,3 +54,5 @@ QString g_GetSupported3DFormats()
     }
     return supportedFormats.c_str();
 }
+
+}//namespace Formats3D

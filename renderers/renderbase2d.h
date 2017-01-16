@@ -19,7 +19,7 @@ struct SSelectionInfo
 class IRenderer2D : public IAbstractRenderer
 {
 public:
-    IRenderer2D();
+    IRenderer2D() = default;
     virtual ~IRenderer2D();
 
     virtual void    SetModel(const CMesh* mdl) override;
