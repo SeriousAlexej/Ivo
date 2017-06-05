@@ -3,6 +3,7 @@
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <assimp/Importer.hpp>
@@ -28,6 +29,9 @@ using glm::inverse;
 using glm::max;
 using glm::min;
 using glm::sqrt;
+using glm::length;
+using glm::cross;
+using glm::normalize;
 
 CMesh* CMesh::g_Mesh = nullptr;
 

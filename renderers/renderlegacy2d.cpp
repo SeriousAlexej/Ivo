@@ -51,6 +51,8 @@ void CRenderer2DLegacy::PreDraw() const
 void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 {
     glClear(GL_DEPTH_BUFFER_BIT);
+    if(!m_model)
+        return;
 
     if(sinfo.m_editMode == (int)CRenWin2D::EM_SNAP ||
        sinfo.m_editMode == (int)CRenWin2D::EM_CHANGE_FLAPS ||

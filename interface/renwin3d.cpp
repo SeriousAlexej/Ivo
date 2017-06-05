@@ -392,7 +392,7 @@ bool CRenWin3D::event(QEvent *e)
                     if(p.x() < 0 || p.y() < 0 || p.x() >= (int)m_width || p.y() >= (int)m_height)
                         break;
 
-                    QColor col = m_pickingTexture.pixelColor(p.x(), p.y());
+                    QColor col = QColor::fromRgb(m_pickingTexture.pixel(p.x(), p.y()));
 
                     int index = 0;
                     index |= col.red();

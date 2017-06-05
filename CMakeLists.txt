@@ -9,14 +9,17 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5OpenGL REQUIRED)
-find_package(assimp REQUIRED)
-find_package(glm REQUIRED)
+find_package(Qt5Core       5.5 REQUIRED)
+find_package(Qt5Gui        5.5 REQUIRED)
+find_package(Qt5Widgets    5.5 REQUIRED)
+find_package(Qt5OpenGL     5.5 REQUIRED)
+find_package(assimp            REQUIRED)
+find_package(glm               REQUIRED)
 
-include_directories(${assimp_INCLUDE_DIRS} ${glm_INCLUDE_DIRS})
+include_directories(
+    ${assimp_INCLUDE_DIRS}
+    ${glm_INCLUDE_DIRS}
+)
 
 if(WIN32)
     list(APPEND ADDITIONAL_LIBRARIES opengl32)
@@ -81,6 +84,22 @@ set(RESOURCES
     "res.qrc"
 )
 
-add_executable(Ivo ${SRC_LIST_C} ${SRC_LIST_H} ${UIS} ${RESOURCES})
+add_executable(Ivo
+    ${SRC_LIST_C}
+    ${SRC_LIST_H}
+    ${UIS}
+    ${RESOURCES}
+)
 
-target_link_libraries(Ivo Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL ${assimp_LIBRARIES} ${ADDITIONAL_LIBRARIES})
+target_link_libraries(Ivo
+    Qt5::Core
+    Qt5::Gui
+    Qt5::Widgets
+    Qt5::OpenGL
+    ${assimp_LIBRARIES}
+    ${ADDITIONAL_LIBRARIES}
+)
+
+if(MSVC)
+    target_compile_definitions(Ivo PUBLIC "-D_CRT_SECURE_NO_WARNINGS")
+endif()

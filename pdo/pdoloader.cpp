@@ -161,11 +161,11 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
                 unsigned char r = imgBuffer[y*texWidth*3 + x*3+0];
                 unsigned char g = imgBuffer[y*texWidth*3 + x*3+1];
                 unsigned char b = imgBuffer[y*texWidth*3 + x*3+2];
-                m_textureImages[j]->setPixelColor(x, y, QColor(r, g, b));
+                m_textureImages[j]->setPixel(x, y, QColor(r, g, b).rgb());
             }
         } else {
             m_textureImages[j].reset(new QImage(1, 1, QImage::Format_RGB32));
-            m_textureImages[j]->setPixelColor(0, 0, QColor(colR * 255, colG * 255, colB * 255));
+            m_textureImages[j]->setPixel(0, 0, QColor(colR * 255, colG * 255, colB * 255).rgb());
         }
     }
 

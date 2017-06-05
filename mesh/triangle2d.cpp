@@ -15,6 +15,9 @@ using glm::mat3;
 using glm::mat2;
 using glm::radians;
 using glm::min;
+using glm::distance;
+using glm::cross;
+using glm::normalize;
 
 void CMesh::SEdge::NextFlapPosition()
 {

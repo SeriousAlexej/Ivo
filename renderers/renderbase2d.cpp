@@ -36,14 +36,14 @@ void IRenderer2D::CreateFoldTextures()
 
     for(int i=0; i<6; ++i)
     {
-        imgFolds.setPixelColor(i, 1, QColor(0,0,0,0));
-        imgFolds.setPixelColor(i, 2, QColor(0,0,0,0));
+        imgFolds.setPixel(i, 1, QColor(0,0,0,0).rgb());
+        imgFolds.setPixel(i, 2, QColor(0,0,0,0).rgb());
     }
     for(int i=0; i<16; ++i)
     {
-        imgFolds.setPixelColor(i, 3, QColor(255, 255, 255, 255));
+        imgFolds.setPixel(i, 3, QColor(255, 255, 255, 255).rgb());
     }
-    imgFolds.setPixelColor(3, 2, QColor(0,0,0,255));
+    imgFolds.setPixel(3, 2, QColor(0,0,0,255).rgb());
 
     m_texFolds.reset(new QOpenGLTexture(imgFolds));
     m_texFolds->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);

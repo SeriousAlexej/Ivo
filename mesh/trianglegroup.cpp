@@ -18,6 +18,7 @@ using glm::min;
 using glm::max;
 using glm::radians;
 using glm::sqrt;
+using glm::inverse;
 
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
