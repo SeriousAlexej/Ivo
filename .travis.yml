@@ -1,0 +1,31 @@
+language: c++
+
+dist: trusty
+
+branches:
+  only:
+    - master
+
+compiler:
+  - gcc
+
+os:
+  - linux
+
+before_install:
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt571-trusty
+  - sudo apt-get update
+  - sudo apt-get install -qq mesa-common-dev qt57-meta-full libglm-dev libassimp-dev
+  - CMAKE_URL="http://www.cmake.org/files/v3.3/cmake-3.3.1-Linux-x86_64.tar.gz"
+  - mkdir cmake && travis_retry wget --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
+  - export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+  - cmake --version
+  - git clone https://github.com/g-truc/glm.git
+  - cd glm && cmake -G "Unix Makefiles" && sudo make install && cd ..
+
+before_script:
+  - QT_ENV_SCRIPT=$(find /opt -name 'qt*-env.sh')
+  - source $QT_ENV_SCRIPT
+
+script:
+  - . ./.travis.sh
