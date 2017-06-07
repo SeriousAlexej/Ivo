@@ -1,6 +1,5 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
-#include <QOpenGLWidget>
 #include <QOpenGLFramebufferObject>
 #include "settings/settings.h"
 #include "mesh/mesh.h"

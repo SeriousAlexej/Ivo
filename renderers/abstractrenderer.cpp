@@ -28,6 +28,7 @@ void IAbstractRenderer::LoadTexture(const QImage *img, unsigned index)
 
 void IAbstractRenderer::ClearTextures()
 {
+    /*
     for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
     {
         std::unique_ptr<QOpenGLTexture>& texPtr = it->second;
@@ -37,5 +38,6 @@ void IAbstractRenderer::ClearTextures()
             texPtr.reset(nullptr);
         }
     }
+    */
     m_textures.clear();
 }

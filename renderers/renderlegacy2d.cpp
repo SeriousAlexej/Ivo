@@ -1,4 +1,3 @@
-#include <QOpenGLWidget>
 #include <QOpenGLFramebufferObject>
 #include <stdexcept>
 #include "renderlegacy2d.h"

@@ -1,5 +1,4 @@
 #include <glm/gtc/matrix_transform.hpp>
-#include <QOpenGLWidget>
 #include <QEvent>
 #include <QMouseEvent>
 #include <chrono>
