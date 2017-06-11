@@ -141,7 +141,7 @@ mat3 CMesh::STriangle2D::GetMatrix() const
     return mx;
 }
 
-void CMesh::STriangle2D::Scale(float scale)
+void CMesh::STriangle2D::Scale(const float scale)
 {
     for(int i=0; i<3; ++i)
     {

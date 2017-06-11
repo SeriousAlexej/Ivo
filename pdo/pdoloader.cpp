@@ -1,6 +1,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <stdexcept>
+#include <clocale>
 #include "settings/settings.h"
 #include "mesh/mesh.h"
 #include "interface/renwin.h"
@@ -11,6 +12,8 @@
 
 void CMainWindow::LoadFromPDOv2_0(const char *filename)
 {
+    std::setlocale(LC_NUMERIC, "C");
+
     FILE* fi = std::fopen(filename, "rb");
     if(!fi)
         SafeRead::BadFile(fi);

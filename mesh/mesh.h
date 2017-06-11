@@ -65,7 +65,7 @@ public:
     void                        NotifyGroupRotation(STriGroup& grp, float oldRot);
     void                        Serialize(FILE* f) const;
     void                        Deserialize(FILE* f);
-    void                        Scale(float scale);
+    void                        Scale(const float scale);
     void                        PackGroups(bool undoable=true);
     glm::vec3                   GetSizeMillimeters() const;
     glm::vec3                   GetAABBoxCenter() const;
@@ -77,7 +77,7 @@ public:
 
 private:
     static CMesh*               GetMesh() { return g_Mesh; }
-    void                        ApplyScale(float scale);
+    void                        ApplyScale(const float scale);
     void                        AddMeshesFromAIScene(const aiScene* scene, const aiNode* node);
     void                        CalculateFlatNormals();
     void                        FillAdjTri_Gen2DTri();
@@ -131,7 +131,7 @@ public:
         void                    SetRelMx(glm::mat3 &invParentMx);
         void                    SetRotation(float degCCW);
         void                    SetPosition(glm::vec2 pos);
-        void                    Scale(float scale);
+        void                    Scale(const float scale);
         void                    ComputeNormals();
         void                    GroupHasTransformed(const glm::mat3 &parMx);
         static bool             EdgesIntersect(const glm::vec2 &e1v1, const glm::vec2 &e1v2, const glm::vec2 &e2v1, const glm::vec2 &e2v2);
@@ -243,7 +243,7 @@ public:
         CIvoCommand*            GetBreakEdgeCmd(STriangle2D* tr, int e);
         void                    Serialize(FILE *f) const;
         void                    Deserialize(FILE *f);
-        void                    Scale(float scale);
+        void                    Scale(const float scale);
 
         std::list<STriangle2D*> m_tris;
         glm::vec2               m_toTopLeft;

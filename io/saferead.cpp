@@ -18,6 +18,8 @@ std::string ReadLine(std::FILE* fi)
     char tmp;
     while(1)
     {
+        if(std::feof(fi))
+            break;
         size_t read = std::fread(&tmp, 1, 1, fi);
         if(read != 1)
             BadFile(fi);

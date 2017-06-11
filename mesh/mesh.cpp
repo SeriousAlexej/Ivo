@@ -42,7 +42,7 @@ CMesh::CMesh()
 
 CMesh::~CMesh()
 {
-    g_Mesh = nullptr;
+//    g_Mesh = nullptr;
 }
 
 bool CMesh::IsModified() const
@@ -1222,7 +1222,7 @@ void CMesh::Deserialize(FILE *f)
     UpdateGroupDepth();
 }
 
-void CMesh::ApplyScale(float scale)
+void CMesh::ApplyScale(const float scale)
 {
     for(vec3& vtx : m_vertices)
         vtx *= scale;
@@ -1233,7 +1233,7 @@ void CMesh::ApplyScale(float scale)
     UpdateGroupDepth();
 }
 
-void CMesh::Scale(float scale)
+void CMesh::Scale(const float scale)
 {
     CAtomicCommand cmdSca(CT_SCALE);
     cmdSca.SetScale(scale);

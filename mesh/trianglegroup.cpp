@@ -47,6 +47,9 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
         }
         return true;
     }
+    if(tr->m_myGroup == referal->m_myGroup)
+        return false;
+
     //find adjacent edges
     int e1=-1, e2=-1;
     for(int i=0; i<3; ++i)
@@ -582,7 +585,7 @@ void CMesh::STriGroup::Deserialize(FILE *f)
     SAFE_FREAD(&m_matrix, sizeof(mat3), 1, f);
 }
 
-void CMesh::STriGroup::Scale(float scale)
+void CMesh::STriGroup::Scale(const float scale)
 {
     m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
     m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
