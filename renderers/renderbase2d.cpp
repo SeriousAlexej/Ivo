@@ -4,10 +4,6 @@
 
 IRenderer2D::~IRenderer2D()
 {
-    /*
-    if(m_texFolds)
-        m_texFolds->destroy();
-    */
     m_texFolds.reset(nullptr);
 }
 

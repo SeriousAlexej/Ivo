@@ -34,9 +34,6 @@ private slots:
     void on_actionModeSnap_triggered();
     void on_actionModeMove_triggered();
     void on_actionModeFlaps_triggered();
-    void on_actionModeAddSheet_triggered();
-    void on_actionModeMoveSheet_triggered();
-    void on_actionModeRemSheet_triggered();
     void on_actionExport_Sheets_triggered();
     void on_actionSettings_triggered();
     void on_actionZoom_fit_triggered();
@@ -65,7 +62,7 @@ private:
     void LoadFromPDOv2_0(const char* filename);
 
     Ui::MainWindow*                         ui;
-    CMesh*                                  m_model;
+    std::unique_ptr<CMesh>                  m_model;
     CRenWin3D*                              m_rw3;
     CRenWin2D*                              m_rw2;
     std::string                             m_openedModel = "";

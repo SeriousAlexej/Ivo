@@ -51,6 +51,7 @@ set(SRC_LIST_C
     "interface/renwin2d.cpp"
     "interface/renwin3d.cpp"
     "renderers/abstractrenderer.cpp"
+    "geometric/aabbox.cpp"
 )
 
 set(SRC_LIST_H
@@ -71,6 +72,7 @@ set(SRC_LIST_H
     "interface/renwin2d.h"
     "interface/renwin3d.h"
     "renderers/abstractrenderer.h"
+    "geometric/aabbox.h"
 )
 
 set(UIS

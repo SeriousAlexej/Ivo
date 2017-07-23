@@ -14,7 +14,7 @@ public:
     void    PreDraw() const override;
     void    DrawScene() const override;
     void    DrawSelection(const SSelectionInfo& sinfo) const override;
-    void    DrawPaperSheet(const glm::vec2 &position, const glm::vec2 &size) const override;
+    void    DrawPaperSheets(std::size_t numHorizontal, std::size_t numVertical) const override;
 
     void    RecalcProjection() override;
 

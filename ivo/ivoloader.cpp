@@ -42,8 +42,6 @@ void CMainWindow::SaveToIVO(const char* filename)
     //mesh data
     m_model->Serialize(f);
 
-    m_rw2->SerializeSheets(f);
-
     auto materials = m_model->GetMaterials();
     unsigned char numTextures = (unsigned char)materials.size();
     std::fwrite(&numTextures, sizeof(numTextures), 1, f);
@@ -129,21 +127,15 @@ void CMainWindow::LoadFromIVO(const char* filename)
             SAFE_FREAD(&stipplLp, sizeof(stipplLp), 1, f);
             SAFE_FREAD(&maxFlAng, sizeof(maxFlAng), 1, f);
 
-            std::unique_ptr<CMesh> newModelUP(new CMesh());
-            newModelUP->Deserialize(f);
-            CMesh* newModel = newModelUP.release();
+            std::unique_ptr<CMesh> newModel(new CMesh());
+            newModel->Deserialize(f);
 
             m_openedModel = filename;
 
-            m_rw2->SetModel(newModel);
-            ((IRenWin*)m_rw3)->SetModel(newModel);
-            if(m_model)
-                delete m_model;
-            m_model = newModel;
+            m_rw2->SetModel(newModel.get());
+            ((IRenWin*)m_rw3)->SetModel(newModel.get());
+            m_model = std::move(newModel);
             ClearTextures();
-
-            m_rw2->DeserializeSheets(f);
-            m_rw2->UpdateSheetsSize();
 
             std::unordered_map<unsigned, std::string> materials;
 
@@ -208,7 +200,6 @@ void CMainWindow::LoadFromIVO(const char* filename)
             sett.SetLineWidth( lineWidt );
             sett.SetStippleLoop( stipplLp );
             sett.SetFoldMaxFlatAngle( maxFlAng );
-            m_rw2->UpdateSheetsSize();
 
             break;
         }

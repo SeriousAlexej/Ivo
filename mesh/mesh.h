@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <assimp/scene.h>
 #include "pdo/pdotools.h"
+#include "geometric/aabbox.h"
 
 #define IVO_VERSION 1
 
@@ -74,6 +75,8 @@ public:
     bool                        IsTrianglePicked(int index) const;
     void                        ClearPickedTriangles();
     void                        GroupPickedTriangles();
+    SAABBox2D                   GetAABBox2D() const;
+    bool                        Intersects(const SAABBox2D& bbox) const;
 
 private:
     static CMesh*               GetMesh() { return g_Mesh; }
@@ -256,6 +259,7 @@ public:
 
         static float            ms_depthStep;
 
+        friend class CRenderer2DLegacy;
         friend class CMesh;
         friend class CAtomicCommand;
     };

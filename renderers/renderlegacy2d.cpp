@@ -45,6 +45,28 @@ void CRenderer2DLegacy::PreDraw() const
     glLoadIdentity();
 
     glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
+
+    const float hheight = m_cameraPosition[2];
+    const float hwidth = hheight * float(m_width)/float(m_height);
+    if(m_cameraPosition.y - hheight < 0.0f && m_cameraPosition.y + hheight > 0.0f)
+    {
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_LINES);
+        glVertex3f(-m_cameraPosition.x - hwidth, 0.0f, -10.0f);
+        glVertex3f(-m_cameraPosition.x + hwidth, 0.0f, -10.0f);
+        glEnd();
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+    if(m_cameraPosition.x - hwidth < 0.0f && m_cameraPosition.x + hwidth > 0.0f)
+    {
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0.0f, -m_cameraPosition.y - hheight, -10.0f);
+        glVertex3f(0.0f, -m_cameraPosition.y + hheight, -10.0f);
+        glEnd();
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+    glColor3f(1.0f, 1.0f, 1.0f);
 }
 
 void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
@@ -171,14 +193,36 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
     }
 }
 
-void CRenderer2DLegacy::DrawPaperSheet(const glm::vec2 &position, const glm::vec2 &size) const
+void CRenderer2DLegacy::DrawPaperSheets(std::size_t numHorizontal, std::size_t numVertical) const
 {
+    if(numHorizontal == 0 || numVertical == 0)
+        return;
+
+    const CSettings& sett = CSettings::GetInstance();
+    const float papHeight = sett.GetPaperHeight() * 0.1f;
+    const float papWidth = sett.GetPaperWidth() * 0.1f;
+    const glm::vec2 size = glm::vec2(papWidth * numHorizontal, papHeight * numVertical);
+    const glm::vec2 position(0.0f, -size.y);
+
     glColor3f(0.0f, 0.0f, 0.0f);
     glBegin(GL_LINE_LOOP);
     glVertex3f(position.x, position.y, -3.0f);
     glVertex3f(position.x+size.x, position.y, -3.0f);
     glVertex3f(position.x+size.x, position.y+size.y, -3.0f);
     glVertex3f(position.x, position.y+size.y, -3.0f);
+    glEnd();
+    glColor3f(0.7f, 0.7f, 0.7f);
+    glBegin(GL_LINES);
+    for(std::size_t i=1; i<numHorizontal; i++)
+    {
+        glVertex3f(position.x + papWidth * i, position.y, -2.0f);
+        glVertex3f(position.x + papWidth * i, 0.0f, -2.0f);
+    }
+    for(std::size_t i=1; i<numVertical; i++)
+    {
+        glVertex3f(position.x, -papHeight * i, -2.0f);
+        glVertex3f(position.x + size.x, -papHeight * i, -2.0f);
+    }
     glEnd();
     glColor3f(0.2f, 0.2f, 0.2f);
     glBegin(GL_QUADS);

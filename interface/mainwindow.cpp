@@ -68,9 +68,6 @@ CMainWindow::CMainWindow(QWidget *parent) :
     ag->addAction(ui->actionModeRotate);
     ag->addAction(ui->actionModeSnap);
     ag->addAction(ui->actionModeFlaps);
-    ag->addAction(ui->actionModeAddSheet);
-    ag->addAction(ui->actionModeMoveSheet);
-    ag->addAction(ui->actionModeRemSheet);
     ui->actionModeMove->setChecked(true);
 
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
@@ -86,8 +83,6 @@ CMainWindow::CMainWindow(QWidget *parent) :
 CMainWindow::~CMainWindow()
 {
     delete ui;
-    if(m_model)
-        delete m_model;
 }
 
 void CMainWindow::closeEvent(QCloseEvent *event)
@@ -155,17 +150,15 @@ void CMainWindow::LoadModel()
 
     try
     {
-        CMesh *newModel = new CMesh();
+        std::unique_ptr<CMesh> newModel(new CMesh());
 
         newModel->LoadMesh(modelPath);
 
         AskToSaveChanges();
         m_openedModel = "";
-        m_rw2->SetModel(newModel);
-        m_rw3->SetModel(newModel);
-        if(m_model)
-            delete m_model;
-        m_model = newModel;
+        m_rw2->SetModel(newModel.get());
+        m_rw3->SetModel(newModel.get());
+        m_model = std::move(newModel);
         ClearTextures();
 
         m_rw2->ZoomFit();
@@ -214,21 +207,6 @@ void CMainWindow::on_actionModeFlaps_triggered()
     m_rw2->SetMode(CRenWin2D::EM_CHANGE_FLAPS);
 }
 
-void CMainWindow::on_actionModeAddSheet_triggered()
-{
-    m_rw2->SetMode(CRenWin2D::EM_ADD_SHEET);
-}
-
-void CMainWindow::on_actionModeMoveSheet_triggered()
-{
-    m_rw2->SetMode(CRenWin2D::EM_MOVE_SHEET);
-}
-
-void CMainWindow::on_actionModeRemSheet_triggered()
-{
-    m_rw2->SetMode(CRenWin2D::EM_REM_SHEET);
-}
-
 void CMainWindow::on_actionExport_Sheets_triggered()
 {
     if(m_openedModel.empty())
@@ -245,7 +223,6 @@ void CMainWindow::on_actionSettings_triggered()
     CSettingsWindow sw(this);
     sw.LoadSettings();
     sw.exec();
-    m_rw2->UpdateSheetsSize();
     UpdateView();
     m_rw3->grabKeyboard();
 }
@@ -319,12 +296,9 @@ void CMainWindow::on_actionSave_triggered()
 void CMainWindow::ClearModel()
 {
     m_openedModel = "";
-    if(m_model)
-        delete m_model;
-    m_model = nullptr;
+    m_model.reset(nullptr);
     m_rw2->SetModel(nullptr);
     m_rw3->SetModel(nullptr);
-    m_rw2->ClearSheets();
     ClearTextures();
 }
 

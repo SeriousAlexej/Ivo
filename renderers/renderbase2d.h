@@ -29,7 +29,7 @@ public:
     virtual void    PreDraw() const override;
     virtual void    DrawScene() const override = 0;
     virtual void    DrawSelection(const SSelectionInfo& sinfo) const = 0;
-    virtual void    DrawPaperSheet(const glm::vec2 &position, const glm::vec2 &size) const = 0;
+    virtual void    DrawPaperSheets(std::size_t numHorizontal, std::size_t numVertical) const = 0;
     virtual void    PostDraw() const override;
 
     virtual void    UpdateCameraPosition(const glm::vec3& camPos);

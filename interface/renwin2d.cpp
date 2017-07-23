@@ -8,7 +8,6 @@
 #include "mesh/mesh.h"
 #include "renwin2d.h"
 #include "settings/settings.h"
-#include "io/saferead.h"
 #include "renderers/renderlegacy2d.h"
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
@@ -31,7 +30,6 @@ CRenWin2D::~CRenWin2D()
 void CRenWin2D::ClearSelection()
 {
     m_currGroup = nullptr;
-    m_currSheet = nullptr;
     update();
 }
 
@@ -45,17 +43,14 @@ void CRenWin2D::SetMode(EditMode m)
     m_editMode = m;
     m_cameraMode = CAM_STILL;
     m_currGroup = nullptr;
-    m_currSheet = nullptr;
     update();
 }
 
 void CRenWin2D::SetModel(CMesh *mdl)
 {
     m_currGroup = nullptr;
-    m_currSheet = nullptr;
     m_model = mdl;
     m_renderer->SetModel(mdl);
-    m_sheets.clear();
     ZoomFit();
 }
 
@@ -81,6 +76,25 @@ void CRenWin2D::initializeGL()
     RecalcProjection();
 }
 
+void CRenWin2D::FillOccupiedSheetsSize(unsigned &horizontal, unsigned &vertical) const
+{
+    horizontal = 0u;
+    vertical = 0u;
+
+    if(!m_model)
+        return;
+
+    const CSettings& sett = CSettings::GetInstance();
+    unsigned papHeight = sett.GetPaperHeight();
+    unsigned papWidth = sett.GetPaperWidth();
+    const glm::vec2& rightBottom = m_model->GetAABBox2D().m_rightBottom;
+    if(rightBottom.x > 0.0f && rightBottom.y < 0.0f)
+    {
+        horizontal = 1u + static_cast<unsigned>(rightBottom.x * 10.0f) / papWidth;
+        vertical   = 1u + static_cast<unsigned>(-rightBottom.y * 10.0f) / papHeight;
+    }
+}
+
 void CRenWin2D::paintGL()
 {
     const SSelectionInfo selInfo {PointToWorldCoords(m_mousePosition),
@@ -91,10 +105,10 @@ void CRenWin2D::paintGL()
 
     m_renderer->PreDraw();
 
-    for(const SPaperSheet &ps : m_sheets)
-    {
-        m_renderer->DrawPaperSheet(ps.m_position, ps.m_widthHeight);
-    }
+    unsigned papHorizontal;
+    unsigned papVertical;
+    FillOccupiedSheetsSize(papHorizontal, papVertical);
+    m_renderer->DrawPaperSheets(papHorizontal, papVertical);
 
     m_renderer->DrawScene();
     m_renderer->DrawSelection(selInfo);
@@ -103,7 +117,14 @@ void CRenWin2D::paintGL()
 
 void CRenWin2D::ExportSheets(const QString baseName)
 {
-    if(m_sheets.empty()) return;
+    if(!m_model)
+        return;
+
+    unsigned papHorizontal;
+    unsigned papVertical;
+    FillOccupiedSheetsSize(papHorizontal, papVertical);
+    if(papHorizontal == 0 || papVertical == 0)
+        return;
 
     QString dstFolder = QFileDialog::getExistingDirectory(this, "Save directory");
 
@@ -113,7 +134,8 @@ void CRenWin2D::ExportSheets(const QString baseName)
         dstFolder += "/";
 
     const CSettings& sett = CSettings::GetInstance();
-
+    unsigned papHeight = sett.GetPaperHeight();
+    unsigned papWidth = sett.GetPaperWidth();
     const unsigned char imgQuality = sett.GetImageQuality();
     QString imgFormat = "PNG";
     switch(sett.GetImageFormat())
@@ -139,12 +161,20 @@ void CRenWin2D::ExportSheets(const QString baseName)
     makeCurrent();
 
     int sheetNum = 1;
-    for(const SPaperSheet& sheet : m_sheets)
+    for(int x=0; x<papHorizontal; x++)
+    for(int y=0; y<papVertical; y++)
     {
+        const glm::vec2 sheetPos(x * papWidth * 0.1f, -(y+1) * (papHeight * 0.1f));
+        if(!m_model->Intersects(
+                    SAABBox2D(glm::vec2(sheetPos.x + papWidth * 0.1f, sheetPos.y),
+                              glm::vec2(sheetPos.x, sheetPos.y + papHeight * 0.1f))
+                    ))
+            continue;
+
         QImage img;
         try
         {
-            img = m_renderer->DrawImageFromSheet(sheet.m_position);
+            img = m_renderer->DrawImageFromSheet(sheetPos);
         } catch(std::exception& error)
         {
             QMessageBox::information(this, "Export Error", error.what());
@@ -163,35 +193,6 @@ void CRenWin2D::ExportSheets(const QString baseName)
     doneCurrent();
 
     QMessageBox::information(this, "Export", "Images have been exported successfully!");
-}
-
-void CRenWin2D::SerializeSheets(FILE *f) const
-{
-    int sheetsNum = m_sheets.size();
-    std::fwrite(&sheetsNum, sizeof(sheetsNum), 1, f);
-    for(const SPaperSheet& sh : m_sheets)
-    {
-        std::fwrite(&(sh.m_position), sizeof(glm::vec2), 1, f);
-        std::fwrite(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
-    }
-}
-
-void CRenWin2D::DeserializeSheets(FILE *f)
-{
-    m_sheets.clear();
-    m_currSheet = nullptr;
-
-    int sheetsNum;
-    SAFE_FREAD(&sheetsNum, sizeof(sheetsNum), 1, f);
-
-    for(int i=0; i<sheetsNum; ++i)
-    {
-        m_sheets.push_back(SPaperSheet());
-        SPaperSheet &sh = m_sheets.back();
-
-        SAFE_FREAD(&(sh.m_position), sizeof(glm::vec2), 1, f);
-        SAFE_FREAD(&(sh.m_widthHeight), sizeof(glm::vec2), 1, f);
-    }
 }
 
 void CRenWin2D::resizeGL(int w, int h)
@@ -309,11 +310,6 @@ bool CRenWin2D::event(QEvent *e)
     return true;
 }
 
-void CRenWin2D::AddSheet(const glm::vec2 &pos, const glm::vec2 &widHei)
-{
-    m_sheets.push_back(SPaperSheet{pos, widHei});
-}
-
 void CRenWin2D::RecalcProjection()
 {
     m_renderer->UpdateCameraPosition(m_cameraPosition);
@@ -407,56 +403,6 @@ void CRenWin2D::ModeLMB()
             m_cameraMode = CAM_STILL;
             break;
         }
-        case EM_ADD_SHEET :
-        {
-            mouseWorldCoords.x = static_cast<float>(static_cast<int>(mouseWorldCoords.x));
-            mouseWorldCoords.y = static_cast<float>(static_cast<int>(mouseWorldCoords.y));
-            const CSettings& sett = CSettings::GetInstance();
-            glm::vec2 papSize((float)sett.GetPaperWidth(), (float)sett.GetPaperHeight());
-            AddSheet(mouseWorldCoords, papSize * 0.1f);
-            m_cameraMode = CAM_STILL;
-            break;
-        }
-        case EM_MOVE_SHEET :
-        {
-            m_currSheet = nullptr;
-            for(auto it = m_sheets.begin(); it != m_sheets.end(); ++it)
-            {
-                const SPaperSheet &s = *it;
-                if(mouseWorldCoords.x >= s.m_position.x &&
-                   mouseWorldCoords.x <= s.m_position.x + s.m_widthHeight.x &&
-                   mouseWorldCoords.y >= s.m_position.y &&
-                   mouseWorldCoords.y <= s.m_position.y + s.m_widthHeight.y)
-                {
-                    m_currSheet = &(*it);
-                    break;
-                }
-            }
-            if(!m_currSheet)
-            {
-                m_cameraMode = CAM_STILL;
-                return;
-            }
-            m_fromCurrGroupCenter = mouseWorldCoords - m_currSheet->m_position;
-            break;
-        }
-        case EM_REM_SHEET :
-        {
-            m_currSheet = nullptr;
-            for(auto it = m_sheets.begin(); it != m_sheets.end(); ++it)
-            {
-                const SPaperSheet &s = *it;
-                if(mouseWorldCoords.x >= s.m_position.x &&
-                   mouseWorldCoords.x <= s.m_position.x + s.m_widthHeight.x &&
-                   mouseWorldCoords.y >= s.m_position.y &&
-                   mouseWorldCoords.y <= s.m_position.y + s.m_widthHeight.y)
-                {
-                    m_sheets.erase(it);
-                    break;
-                }
-            }
-            break;
-        }
     default : break;
     }
 }
@@ -529,15 +475,6 @@ void CRenWin2D::ModeUpdate(QPointF &mpos)
             tGroup->SetRotation(newAngle + m_currGroupLastRot);
             break;
         }
-        case EM_MOVE_SHEET :
-        {
-            glm::vec2 mNewPos = PointToWorldCoords(mpos) - m_fromCurrGroupCenter;
-            mNewPos.x = static_cast<float>(static_cast<int>(mNewPos.x));
-            mNewPos.y = static_cast<float>(static_cast<int>(mNewPos.y));
-            if(m_currSheet)
-                m_currSheet->m_position = mNewPos;
-            break;
-        }
     default : break;
     }
 }
@@ -562,17 +499,6 @@ void CRenWin2D::ModeEnd()
             break;
         }
     default : break;
-    }
-}
-
-void CRenWin2D::UpdateSheetsSize()
-{
-    const CSettings& sett = CSettings::GetInstance();
-    glm::vec2 papSize((float)sett.GetPaperWidth(), (float)sett.GetPaperHeight());
-    papSize *= 0.1f;
-    for(auto &sheet : m_sheets)
-    {
-        sheet.m_widthHeight = papSize;
     }
 }
 

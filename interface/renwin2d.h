@@ -19,10 +19,7 @@ public:
         EM_MOVE,
         EM_ROTATE,
         EM_SNAP,
-        EM_CHANGE_FLAPS,
-        EM_MOVE_SHEET,
-        EM_ADD_SHEET,
-        EM_REM_SHEET
+        EM_CHANGE_FLAPS
     };
 
     explicit CRenWin2D(QWidget *parent = nullptr);
@@ -31,12 +28,7 @@ public:
     void         SetModel(CMesh *mdl) override final;
     void         SetMode(EditMode m);
     void         ExportSheets(const QString baseName);
-    void         UpdateSheetsSize();
-    void         SerializeSheets(FILE* f) const;
-    void         DeserializeSheets(FILE* f);
     void         ZoomFit() override final;
-    void         ClearSheets() { m_sheets.clear(); }
-    void         AddSheet(const glm::vec2& pos, const glm::vec2& widHei);
 
 public slots:
     void         LoadTexture(const QImage *img, unsigned index) override;
@@ -55,14 +47,9 @@ private:
     void         ModeUpdate(QPointF &mpos);
     void         ModeEnd();
     glm::vec2    PointToWorldCoords(QPointF &pt) const;
+    void         FillOccupiedSheetsSize(unsigned& horizontal, unsigned& vertical) const;
 
 private:
-    struct SPaperSheet
-    {
-        glm::vec2 m_position;
-        glm::vec2 m_widthHeight;
-    };
-
     enum
     { CAM_TRANSLATE,
       CAM_STILL,
@@ -82,8 +69,6 @@ private:
     glm::vec2                       m_fromCurrGroupCenter = glm::vec2(0.0f,0.0f);
     float                           m_currGroupLastRot = 0.0f;
     QPointF                         m_mousePosition;
-    std::list<SPaperSheet>          m_sheets;
-    SPaperSheet*                    m_currSheet = nullptr;
     std::unique_ptr<IRenderer2D>    m_renderer;
 };
 

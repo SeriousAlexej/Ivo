@@ -155,10 +155,6 @@
    <addaction name="actionModeSnap"/>
    <addaction name="actionModeFlaps"/>
    <addaction name="separator"/>
-   <addaction name="actionModeAddSheet"/>
-   <addaction name="actionModeMoveSheet"/>
-   <addaction name="actionModeRemSheet"/>
-   <addaction name="separator"/>
    <addaction name="actionExport_Sheets"/>
    <addaction name="actionScale"/>
    <addaction name="actionSettings"/>
@@ -310,60 +306,6 @@
    </property>
    <property name="shortcut">
     <string>4</string>
-   </property>
-  </action>
-  <action name="actionModeAddSheet">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../res.qrc">
-     <normaloff>:/icons/icons/Sheet-Add.png</normaloff>:/icons/icons/Sheet-Add.png</iconset>
-   </property>
-   <property name="text">
-    <string>ModeAddSheet</string>
-   </property>
-   <property name="toolTip">
-    <string>Add sheet of paper</string>
-   </property>
-   <property name="shortcut">
-    <string>5</string>
-   </property>
-  </action>
-  <action name="actionModeMoveSheet">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../res.qrc">
-     <normaloff>:/icons/icons/Sheet-Move.png</normaloff>:/icons/icons/Sheet-Move.png</iconset>
-   </property>
-   <property name="text">
-    <string>ModeMoveSheet</string>
-   </property>
-   <property name="toolTip">
-    <string>Move sheet of paper</string>
-   </property>
-   <property name="shortcut">
-    <string>6</string>
-   </property>
-  </action>
-  <action name="actionModeRemSheet">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../res.qrc">
-     <normaloff>:/icons/icons/Sheet-Rem.png</normaloff>:/icons/icons/Sheet-Rem.png</iconset>
-   </property>
-   <property name="text">
-    <string>ModeRemSheet</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete sheet of paper</string>
-   </property>
-   <property name="shortcut">
-    <string>7</string>
    </property>
   </action>
   <action name="actionExport_Sheets">

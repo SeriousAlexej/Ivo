@@ -42,7 +42,6 @@ CMesh::CMesh()
 
 CMesh::~CMesh()
 {
-//    g_Mesh = nullptr;
 }
 
 bool CMesh::IsModified() const
@@ -1242,4 +1241,26 @@ void CMesh::Scale(const float scale)
     CIvoCommand* cmd = new CIvoCommand();
     cmd->AddAction(cmdSca);
     m_undoStack.push(cmd);
+}
+
+SAABBox2D CMesh::GetAABBox2D() const
+{
+    SAABBox2D bbox(m_groups.front().m_toRightDown, m_groups.front().m_toTopLeft);
+
+    for(const STriGroup& grp : m_groups)
+    {
+        bbox = SAABBox2D::Union(bbox, SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft));
+    }
+
+    return bbox;
+}
+
+bool CMesh::Intersects(const SAABBox2D &bbox) const
+{
+    for(const STriGroup& grp : m_groups)
+    {
+        if(SAABBox2D::Intersects(bbox, SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft)))
+            return true;
+    }
+    return false;
 }

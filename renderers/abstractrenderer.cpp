@@ -28,16 +28,5 @@ void IAbstractRenderer::LoadTexture(const QImage *img, unsigned index)
 
 void IAbstractRenderer::ClearTextures()
 {
-    /*
-    for(auto it=m_textures.begin(); it!=m_textures.end(); it++)
-    {
-        std::unique_ptr<QOpenGLTexture>& texPtr = it->second;
-        if(texPtr)
-        {
-            texPtr->destroy();
-            texPtr.reset(nullptr);
-        }
-    }
-    */
     m_textures.clear();
 }

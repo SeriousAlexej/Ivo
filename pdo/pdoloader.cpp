@@ -279,15 +279,13 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
         sheetsVertical   = 1 + (int)glm::floor(-bbox.y / borderSize.y);
     }
 
-    m_model = new CMesh();
-    m_rw2->SetModel(m_model);
-    ((IRenWin*)m_rw3)->SetModel(m_model);
+    m_model.reset(new CMesh());
+    m_rw2->SetModel(m_model.get());
+    ((IRenWin*)m_rw3)->SetModel(m_model.get());
 
     for(int x=0; x<sheetsHorizontal; x++)
     for(int y=0; y<sheetsVertical; y++)
     {
-        bool sheetAdded = false;
-
         float sheetMinX = x*borderSize.x;
         float sheetMaxX = sheetMinX + borderSize.x;
         float sheetMaxY = -y*borderSize.y;
@@ -309,11 +307,8 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
 
             //part is on sheet (x;y), offset it
 
-            p.ApplyOffset(glm::vec2(x*margins.x*2.0f, -y*margins.y*2.0f));
-            sheetAdded = true;
+            p.ApplyOffset(glm::vec2(x*margins.x*2.0f + margins.x, -y*margins.y*2.0f - margins.y));
         }
-        if(sheetAdded)
-            m_rw2->AddSheet(glm::vec2(x*pageSize.x - margins.x, -(y+1)*pageSize.y + margins.y), pageSize);
     }
 
     m_model->LoadFromPDO(faces, edges, vertices3D, parts);
