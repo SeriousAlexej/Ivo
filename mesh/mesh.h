@@ -247,6 +247,7 @@ public:
         void                    Serialize(FILE *f) const;
         void                    Deserialize(FILE *f);
         void                    Scale(const float scale);
+        void                    ResetBBoxVectors();
 
         std::list<STriangle2D*> m_tris;
         glm::vec2               m_toTopLeft;
@@ -259,7 +260,6 @@ public:
 
         static float            ms_depthStep;
 
-        friend class CRenderer2DLegacy;
         friend class CMesh;
         friend class CAtomicCommand;
     };

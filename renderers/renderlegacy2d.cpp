@@ -4,8 +4,10 @@
 #include "mesh/mesh.h"
 #include "settings/settings.h"
 #include "interface/renwin2d.h"
+#include "interface/selectioninfo.h"
 
-CRenderer2DLegacy::CRenderer2DLegacy()
+CRenderer2DLegacy::CRenderer2DLegacy(QOpenGLFunctions_2_0& gl) :
+    m_gl(gl)
 {
 }
 
@@ -15,11 +17,11 @@ CRenderer2DLegacy::~CRenderer2DLegacy()
 
 void CRenderer2DLegacy::Init()
 {
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_MULTISAMPLE);
-    glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
+    m_gl.glEnable(GL_DEPTH_TEST);
+    m_gl.glDepthFunc(GL_LEQUAL);
+    m_gl.glEnable(GL_TEXTURE_2D);
+    m_gl.glEnable(GL_MULTISAMPLE);
+    m_gl.glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
     CreateFoldTextures();
 }
 
@@ -27,73 +29,73 @@ void CRenderer2DLegacy::ResizeView(int w, int h)
 {
     m_width = w;
     m_height = h;
-    glViewport(0, 0, w, h);
+    m_gl.glViewport(0, 0, w, h);
 }
 
 void CRenderer2DLegacy::RecalcProjection()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glLoadIdentity();
     const float hwidth = m_cameraPosition[2] * float(m_width)/float(m_height);
-    glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
+    m_gl.glOrtho(-hwidth, hwidth, -m_cameraPosition[2], m_cameraPosition[2], 0.1f, 2000.0f);
 }
 
 void CRenderer2DLegacy::PreDraw() const
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    m_gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_gl.glMatrixMode(GL_MODELVIEW);
+    m_gl.glLoadIdentity();
 
-    glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
+    m_gl.glTranslatef(m_cameraPosition[0], m_cameraPosition[1], -1.0f);
 
     const float hheight = m_cameraPosition[2];
     const float hwidth = hheight * float(m_width)/float(m_height);
     if(m_cameraPosition.y - hheight < 0.0f && m_cameraPosition.y + hheight > 0.0f)
     {
-        glColor3f(0.0f, 0.0f, 0.0f);
-        glBegin(GL_LINES);
-        glVertex3f(-m_cameraPosition.x - hwidth, 0.0f, -10.0f);
-        glVertex3f(-m_cameraPosition.x + hwidth, 0.0f, -10.0f);
-        glEnd();
-        glClear(GL_DEPTH_BUFFER_BIT);
+        m_gl.glColor3f(0.0f, 0.0f, 0.0f);
+        m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(-m_cameraPosition.x - hwidth, 0.0f, -10.0f);
+        m_gl.glVertex3f(-m_cameraPosition.x + hwidth, 0.0f, -10.0f);
+        m_gl.glEnd();
+        m_gl.glClear(GL_DEPTH_BUFFER_BIT);
     }
     if(m_cameraPosition.x - hwidth < 0.0f && m_cameraPosition.x + hwidth > 0.0f)
     {
-        glColor3f(0.0f, 0.0f, 0.0f);
-        glBegin(GL_LINES);
-        glVertex3f(0.0f, -m_cameraPosition.y - hheight, -10.0f);
-        glVertex3f(0.0f, -m_cameraPosition.y + hheight, -10.0f);
-        glEnd();
-        glClear(GL_DEPTH_BUFFER_BIT);
+        m_gl.glColor3f(0.0f, 0.0f, 0.0f);
+        m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(0.0f, -m_cameraPosition.y - hheight, -10.0f);
+        m_gl.glVertex3f(0.0f, -m_cameraPosition.y + hheight, -10.0f);
+        m_gl.glEnd();
+        m_gl.glClear(GL_DEPTH_BUFFER_BIT);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    m_gl.glColor3f(1.0f, 1.0f, 1.0f);
 }
 
 void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 {
-    glClear(GL_DEPTH_BUFFER_BIT);
+    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
     if(!m_model)
         return;
 
-    if(sinfo.m_editMode == (int)CRenWin2D::EM_SNAP ||
-       sinfo.m_editMode == (int)CRenWin2D::EM_CHANGE_FLAPS ||
-       sinfo.m_editMode == (int)CRenWin2D::EM_ROTATE)
+    if(sinfo.m_editMode == CRenWin2D::EM_SNAP         ||
+       sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS ||
+       sinfo.m_editMode == CRenWin2D::EM_ROTATE)
     {
         CMesh::STriangle2D* trUnderCursor = nullptr;
         int edgeUnderCursor = 0;
         m_model->GetStuffUnderCursor(sinfo.m_mouseWorldPos, trUnderCursor, edgeUnderCursor);
 
-        if(sinfo.m_editMode == (int)CRenWin2D::EM_ROTATE && sinfo.m_triangle)
+        if(sinfo.m_editMode == CRenWin2D::EM_ROTATE && sinfo.m_triangle)
         {
-            trUnderCursor = (CMesh::STriangle2D*)sinfo.m_triangle;
+            trUnderCursor = sinfo.m_triangle;
             edgeUnderCursor = sinfo.m_edge;
         }
 
         //highlight edge under cursor (if it has neighbour)
         if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() ||
-                             sinfo.m_editMode == (int)CRenWin2D::EM_ROTATE))
+                             sinfo.m_editMode == CRenWin2D::EM_ROTATE))
         {
-            if(sinfo.m_editMode == (int)CRenWin2D::EM_CHANGE_FLAPS &&
+            if(sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS &&
                trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                 return;
 
@@ -103,40 +105,40 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 
             glm::vec2 e1Middle;
 
-            if(sinfo.m_editMode == (int)CRenWin2D::EM_CHANGE_FLAPS)
+            if(sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS)
             {
-                glColor3f(0.0f, 0.0f, 1.0f);
-            } else if(sinfo.m_editMode == (int)CRenWin2D::EM_SNAP) {
+                m_gl.glColor3f(0.0f, 0.0f, 1.0f);
+            } else if(sinfo.m_editMode == CRenWin2D::EM_SNAP) {
                 if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                    glColor3f(1.0f, 0.0f, 0.0f);
+                    m_gl.glColor3f(1.0f, 0.0f, 0.0f);
                 else
-                    glColor3f(0.0f, 1.0f, 0.0f);
+                    m_gl.glColor3f(0.0f, 1.0f, 0.0f);
             } else {
-                glColor3f(0.0f, 1.0f, 1.0f);
+                m_gl.glColor3f(0.0f, 1.0f, 1.0f);
             }
-            glLineWidth(3.0f);
-            glBegin(GL_LINES);
+            m_gl.glLineWidth(3.0f);
+            m_gl.glBegin(GL_LINES);
             switch(edgeUnderCursor)
             {
                 case 0:
-                    glVertex2f(v1[0], v1[1]);
-                    glVertex2f(v2[0], v2[1]);
+                    m_gl.glVertex2f(v1[0], v1[1]);
+                    m_gl.glVertex2f(v2[0], v2[1]);
                     e1Middle = 0.5f*(v1+v2);
                     break;
                 case 1:
-                    glVertex2f(v3[0], v3[1]);
-                    glVertex2f(v2[0], v2[1]);
+                    m_gl.glVertex2f(v3[0], v3[1]);
+                    m_gl.glVertex2f(v2[0], v2[1]);
                     e1Middle = 0.5f*(v3+v2);
                     break;
                 case 2:
-                    glVertex2f(v1[0], v1[1]);
-                    glVertex2f(v3[0], v3[1]);
+                    m_gl.glVertex2f(v1[0], v1[1]);
+                    m_gl.glVertex2f(v3[0], v3[1]);
                     e1Middle = 0.5f*(v1+v3);
                     break;
                 default : break;
             }
 
-            if(sinfo.m_editMode != (int)CRenWin2D::EM_ROTATE)
+            if(sinfo.m_editMode != CRenWin2D::EM_ROTATE)
             {
                 const CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
                 int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
@@ -147,53 +149,53 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
                 switch(e2)
                 {
                     case 0:
-                        glVertex2f(v12[0], v12[1]);
-                        glVertex2f(v22[0], v22[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(v12[0], v12[1]);
+                        m_gl.glVertex2f(v22[0], v22[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         e1Middle = 0.5f*(v12+v22);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     case 1:
-                        glVertex2f(v32[0], v32[1]);
-                        glVertex2f(v22[0], v22[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(v32[0], v32[1]);
+                        m_gl.glVertex2f(v22[0], v22[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         e1Middle = 0.5f*(v32+v22);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     case 2:
-                        glVertex2f(v12[0], v12[1]);
-                        glVertex2f(v32[0], v32[1]);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(v12[0], v12[1]);
+                        m_gl.glVertex2f(v32[0], v32[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         e1Middle = 0.5f*(v12+v32);
-                        glVertex2f(e1Middle[0], e1Middle[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     default : break;
                 }
             }
-            glEnd();
-            glLineWidth(1.0f);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            m_gl.glEnd();
+            m_gl.glLineWidth(1.0f);
+            m_gl.glColor3f(1.0f, 1.0f, 1.0f);
         }
     } else {
         //draw selection rectangle
         if(sinfo.m_group)
         {
-            const CMesh::STriGroup* tGroup = (const CMesh::STriGroup*)sinfo.m_group;
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glBegin(GL_LINE_LOOP);
+            const CMesh::STriGroup* tGroup = sinfo.m_group;
+            m_gl.glColor3f(1.0f, 0.0f, 0.0f);
+            m_gl.glBegin(GL_LINE_LOOP);
             glm::vec2 pos = tGroup->GetPosition();
             float aabbxh = tGroup->GetAABBHalfSide();
-            glVertex2f(pos[0]-aabbxh, pos[1]+aabbxh);
-            glVertex2f(pos[0]+aabbxh, pos[1]+aabbxh);
-            glVertex2f(pos[0]+aabbxh, pos[1]-aabbxh);
-            glVertex2f(pos[0]-aabbxh, pos[1]-aabbxh);
-            glEnd();
-            glColor3f(1.0f, 1.0f, 1.0f);
+            m_gl.glVertex2f(pos[0]-aabbxh, pos[1]+aabbxh);
+            m_gl.glVertex2f(pos[0]+aabbxh, pos[1]+aabbxh);
+            m_gl.glVertex2f(pos[0]+aabbxh, pos[1]-aabbxh);
+            m_gl.glVertex2f(pos[0]-aabbxh, pos[1]-aabbxh);
+            m_gl.glEnd();
+            m_gl.glColor3f(1.0f, 1.0f, 1.0f);
         }
     }
 }
 
-void CRenderer2DLegacy::DrawPaperSheets(std::size_t numHorizontal, std::size_t numVertical) const
+void CRenderer2DLegacy::DrawPaperSheets(unsigned numHorizontal, unsigned numVertical) const
 {
     if(numHorizontal == 0 || numVertical == 0)
         return;
@@ -204,38 +206,38 @@ void CRenderer2DLegacy::DrawPaperSheets(std::size_t numHorizontal, std::size_t n
     const glm::vec2 size = glm::vec2(papWidth * numHorizontal, papHeight * numVertical);
     const glm::vec2 position(0.0f, -size.y);
 
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_LINE_LOOP);
-    glVertex3f(position.x, position.y, -3.0f);
-    glVertex3f(position.x+size.x, position.y, -3.0f);
-    glVertex3f(position.x+size.x, position.y+size.y, -3.0f);
-    glVertex3f(position.x, position.y+size.y, -3.0f);
-    glEnd();
-    glColor3f(0.7f, 0.7f, 0.7f);
-    glBegin(GL_LINES);
-    for(std::size_t i=1; i<numHorizontal; i++)
+    m_gl.glColor3f(0.0f, 0.0f, 0.0f);
+    m_gl.glBegin(GL_LINE_LOOP);
+    m_gl.glVertex3f(position.x, position.y, -3.0f);
+    m_gl.glVertex3f(position.x+size.x, position.y, -3.0f);
+    m_gl.glVertex3f(position.x+size.x, position.y+size.y, -3.0f);
+    m_gl.glVertex3f(position.x, position.y+size.y, -3.0f);
+    m_gl.glEnd();
+    m_gl.glColor3f(0.7f, 0.7f, 0.7f);
+    m_gl.glBegin(GL_LINES);
+    for(unsigned i=1; i<numHorizontal; i++)
     {
-        glVertex3f(position.x + papWidth * i, position.y, -2.0f);
-        glVertex3f(position.x + papWidth * i, 0.0f, -2.0f);
+        m_gl.glVertex3f(position.x + papWidth * i, position.y, -2.0f);
+        m_gl.glVertex3f(position.x + papWidth * i, 0.0f, -2.0f);
     }
-    for(std::size_t i=1; i<numVertical; i++)
+    for(unsigned i=1; i<numVertical; i++)
     {
-        glVertex3f(position.x, -papHeight * i, -2.0f);
-        glVertex3f(position.x + size.x, -papHeight * i, -2.0f);
+        m_gl.glVertex3f(position.x, -papHeight * i, -2.0f);
+        m_gl.glVertex3f(position.x + size.x, -papHeight * i, -2.0f);
     }
-    glEnd();
-    glColor3f(0.2f, 0.2f, 0.2f);
-    glBegin(GL_QUADS);
-    glVertex3f(position.x+0.5f, position.y-0.5f, -10.0f);
-    glVertex3f(position.x+0.5f+size.x, position.y-0.5f, -10.0f);
-    glVertex3f(position.x+0.5f+size.x, position.y+size.y-0.5f, -10.0f);
-    glVertex3f(position.x+0.5f, position.y+size.y-0.5f, -10.0f);
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glVertex3f(position.x, position.y, -5.0f);
-    glVertex3f(position.x+size.x, position.y, -5.0f);
-    glVertex3f(position.x+size.x, position.y+size.y, -5.0f);
-    glVertex3f(position.x, position.y+size.y, -5.0f);
-    glEnd();
+    m_gl.glEnd();
+    m_gl.glColor3f(0.2f, 0.2f, 0.2f);
+    m_gl.glBegin(GL_QUADS);
+    m_gl.glVertex3f(position.x+0.5f, position.y-0.5f, -10.0f);
+    m_gl.glVertex3f(position.x+0.5f+size.x, position.y-0.5f, -10.0f);
+    m_gl.glVertex3f(position.x+0.5f+size.x, position.y+size.y-0.5f, -10.0f);
+    m_gl.glVertex3f(position.x+0.5f, position.y+size.y-0.5f, -10.0f);
+    m_gl.glColor3f(1.0f, 1.0f, 1.0f);
+    m_gl.glVertex3f(position.x, position.y, -5.0f);
+    m_gl.glVertex3f(position.x+size.x, position.y, -5.0f);
+    m_gl.glVertex3f(position.x+size.x, position.y+size.y, -5.0f);
+    m_gl.glVertex3f(position.x, position.y+size.y, -5.0f);
+    m_gl.glEnd();
 }
 
 void CRenderer2DLegacy::DrawScene() const
@@ -243,7 +245,7 @@ void CRenderer2DLegacy::DrawScene() const
     if(!m_model)
         return;
 
-    glClear(GL_DEPTH_BUFFER_BIT);
+    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
 
     DrawParts();
 }
@@ -255,7 +257,7 @@ void CRenderer2DLegacy::DrawParts() const
     if(renFlags & CSettings::R_FLAPS)
     {
         DrawFlaps();
-        glClear(GL_DEPTH_BUFFER_BIT);
+        m_gl.glClear(GL_DEPTH_BUFFER_BIT);
     }
 
     DrawGroups();
@@ -273,7 +275,7 @@ void CRenderer2DLegacy::DrawFlaps() const
 
     const std::list<CMesh::SEdge>& edges = m_model->GetEdges();
 
-    glBegin(GL_QUADS);
+    m_gl.glBegin(GL_QUADS);
     for(const CMesh::SEdge &e : edges)
     {
         if(!e.IsSnapped())
@@ -296,7 +298,7 @@ void CRenderer2DLegacy::DrawFlaps() const
             }
         }
     }
-    glEnd();
+    m_gl.glEnd();
 
     if(m_texFolds && m_texFolds->isBound())
         m_texFolds->release();
@@ -306,7 +308,7 @@ void CRenderer2DLegacy::DrawGroups() const
 {
     const std::vector<glm::vec2> &uvs = m_model->GetUVCoords();
 
-    glBegin(GL_TRIANGLES);
+    m_gl.glBegin(GL_TRIANGLES);
     const auto &groups = m_model->GetGroups();
     for(auto it=groups.begin(); it!=groups.end(); ++it)
     {
@@ -328,17 +330,17 @@ void CRenderer2DLegacy::DrawGroups() const
             const glm::vec2 &uv2 = uvs[t[1]];
             const glm::vec2 &uv3 = uvs[t[2]];
 
-            glTexCoord2f(uv1[0], uv1[1]);
-            glVertex3f(vertex1[0], vertex1[1], -grp.GetDepth());
+            m_gl.glTexCoord2f(uv1[0], uv1[1]);
+            m_gl.glVertex3f(vertex1[0], vertex1[1], -grp.GetDepth());
 
-            glTexCoord2f(uv2[0], uv2[1]);
-            glVertex3f(vertex2[0], vertex2[1], -grp.GetDepth());
+            m_gl.glTexCoord2f(uv2[0], uv2[1]);
+            m_gl.glVertex3f(vertex2[0], vertex2[1], -grp.GetDepth());
 
-            glTexCoord2f(uv3[0], uv3[1]);
-            glVertex3f(vertex3[0], vertex3[1], -grp.GetDepth());
+            m_gl.glTexCoord2f(uv3[0], uv3[1]);
+            m_gl.glVertex3f(vertex3[0], vertex3[1], -grp.GetDepth());
         }
     }
-    glEnd();
+    m_gl.glEnd();
 
     UnbindTexture();
 }
@@ -349,15 +351,15 @@ void CRenderer2DLegacy::DrawEdges() const
     const unsigned char renFlags = sett.GetRenderFlags();
     const float maxFlatAngle = (float)sett.GetFoldMaxFlatAngle();
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
+    m_gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    m_gl.glEnable(GL_BLEND);
 
     if(m_texFolds)
         m_texFolds->bind();
 
     const std::list<CMesh::SEdge>& edges = m_model->GetEdges();
 
-    glBegin(GL_QUADS);
+    m_gl.glBegin(GL_QUADS);
     for(const CMesh::SEdge &e : edges)
     {
         int foldType = (int)e.GetFoldType();
@@ -382,8 +384,8 @@ void CRenderer2DLegacy::DrawEdges() const
          RenderEdge(t, edge, CMesh::SEdge::FT_FLAT);
      }
     }
-    glEnd();
-    glDisable(GL_BLEND);
+    m_gl.glEnd();
+    m_gl.glDisable(GL_BLEND);
 
     if(m_texFolds && m_texFolds->isBound())
         m_texFolds->release();
@@ -427,14 +429,14 @@ void CRenderer2DLegacy::RenderFlap(void *tr, int edge) const
     const float normalScaler = 0.015f * CSettings::GetInstance().GetLineWidth();
 
     //render inner part of flap
-    glTexCoord2f(0.0f, 0.8f); //white
-    glVertex3f(x[0], y[0], -dep2);
-    glVertex3f(x[1], y[1], -dep2);
-    glVertex3f(x[2], y[2], -dep2);
-    glVertex3f(x[3], y[3], -dep2);
+    m_gl.glTexCoord2f(0.0f, 0.8f); //white
+    m_gl.glVertex3f(x[0], y[0], -dep2);
+    m_gl.glVertex3f(x[1], y[1], -dep2);
+    m_gl.glVertex3f(x[2], y[2], -dep2);
+    m_gl.glVertex3f(x[3], y[3], -dep2);
 
     //render edges of flap
-    glTexCoord2f(0.0f, 0.1f); //black
+    m_gl.glTexCoord2f(0.0f, 0.1f); //black
     for(int i=0; i<4; i++)
     {
         int i2 = (i+1)%4;
@@ -444,10 +446,10 @@ void CRenderer2DLegacy::RenderFlap(void *tr, int edge) const
         const float& y2 = y[i2];
         const glm::vec2 eN = glm::normalize(rotMx90deg * glm::vec2(x2-x1, y2-y1)) * normalScaler;
 
-        glVertex3f(x1 - eN.x, y1 - eN.y, -dep);
-        glVertex3f(x1 + eN.x, y1 + eN.y, -dep);
-        glVertex3f(x2 + eN.x, y2 + eN.y, -dep);
-        glVertex3f(x2 - eN.x, y2 - eN.y, -dep);
+        m_gl.glVertex3f(x1 - eN.x, y1 - eN.y, -dep);
+        m_gl.glVertex3f(x1 + eN.x, y1 + eN.y, -dep);
+        m_gl.glVertex3f(x2 + eN.x, y2 + eN.y, -dep);
+        m_gl.glVertex3f(x2 - eN.x, y2 - eN.y, -dep);
     }
 }
 
@@ -479,17 +481,17 @@ void CRenderer2DLegacy::RenderEdge(void *tr, int edge, int foldType) const
 
     static const float oneForth = 1.0f/4.0f;
 
-    glTexCoord2f(0.0f, oneForth * (foldSelector - 1.0f) + 0.1f);
-    glVertex3f(v1.x - vN.x, v1.y - vN.y, -dep);
+    m_gl.glTexCoord2f(0.0f, oneForth * (foldSelector - 1.0f) + 0.1f);
+    m_gl.glVertex3f(v1.x - vN.x, v1.y - vN.y, -dep);
 
-    glTexCoord2f(0.0f, oneForth * foldSelector - 0.1f);
-    glVertex3f(v1.x + vN.x, v1.y + vN.y, -dep);
+    m_gl.glTexCoord2f(0.0f, oneForth * foldSelector - 0.1f);
+    m_gl.glVertex3f(v1.x + vN.x, v1.y + vN.y, -dep);
 
-    glTexCoord2f(len, oneForth * foldSelector - 0.1f);
-    glVertex3f(v2.x + vN.x, v2.y + vN.y, -dep);
+    m_gl.glTexCoord2f(len, oneForth * foldSelector - 0.1f);
+    m_gl.glVertex3f(v2.x + vN.x, v2.y + vN.y, -dep);
 
-    glTexCoord2f(len, oneForth * (foldSelector - 1.0f) + 0.1f);
-    glVertex3f(v2.x - vN.x, v2.y - vN.y, -dep);
+    m_gl.glTexCoord2f(len, oneForth * (foldSelector - 1.0f) + 0.1f);
+    m_gl.glVertex3f(v2.x - vN.x, v2.y - vN.y, -dep);
 }
 
 QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos) const
@@ -501,15 +503,15 @@ QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos) const
     const int fboW = (int)(papW * sett.GetResolutionScale());
     const int fboH = (int)(papH * sett.GetResolutionScale());
 
-    glViewport(0, 0, fboW, fboH);
+    m_gl.glViewport(0, 0, fboW, fboH);
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(-papW * 0.05f, papW * 0.05f, -papH * 0.05f, papH * 0.05f, 0.1f, 2000.0f);
+    m_gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glPushMatrix();
+    m_gl.glLoadIdentity();
+    m_gl.glOrtho(-papW * 0.05f, papW * 0.05f, -papH * 0.05f, papH * 0.05f, 0.1f, 2000.0f);
 
-    glMatrixMode(GL_MODELVIEW);
+    m_gl.glMatrixMode(GL_MODELVIEW);
 
     QOpenGLFramebufferObjectFormat fboFormat;
     fboFormat.setSamples(6);
@@ -522,10 +524,10 @@ QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos) const
     }
     fbo.bind();
 
-    glLoadIdentity();
-    glTranslatef(-pos.x - papW*0.05f, -pos.y - papH*0.05f, -1.0f);
+    m_gl.glLoadIdentity();
+    m_gl.glTranslatef(-pos.x - papW*0.05f, -pos.y - papH*0.05f, -1.0f);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     DrawParts();
 
@@ -533,12 +535,12 @@ QImage CRenderer2DLegacy::DrawImageFromSheet(const glm::vec2 &pos) const
 
     assert(fbo.release());
 
-    glViewport(0, 0, m_width, m_height);
+    m_gl.glViewport(0, 0, m_width, m_height);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glPopMatrix();
 
-    glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
+    m_gl.glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
 
     return img;
 }
@@ -548,7 +550,7 @@ void CRenderer2DLegacy::BindTexture(unsigned id) const
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture && m_boundTextureID != (int)id)
     {
-        glEnd();
+        m_gl.glEnd();
         if(m_textures[id])
         {
             m_textures[id]->bind();
@@ -556,7 +558,7 @@ void CRenderer2DLegacy::BindTexture(unsigned id) const
         {
             m_textures[m_boundTextureID]->release();
         }
-        glBegin(GL_TRIANGLES);
+        m_gl.glBegin(GL_TRIANGLES);
         m_boundTextureID = id;
     }
 }

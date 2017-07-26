@@ -1,11 +1,12 @@
 #ifndef RENDERLEGACY2D_H
 #define RENDERLEGACY2D_H
+#include <QOpenGLFunctions_2_0>
 #include "renderbase2d.h"
 
 class CRenderer2DLegacy : public IRenderer2D
 {
 public:
-    CRenderer2DLegacy();
+    CRenderer2DLegacy(QOpenGLFunctions_2_0& gl);
     virtual ~CRenderer2DLegacy();
 
     void    Init() override;
@@ -14,7 +15,7 @@ public:
     void    PreDraw() const override;
     void    DrawScene() const override;
     void    DrawSelection(const SSelectionInfo& sinfo) const override;
-    void    DrawPaperSheets(std::size_t numHorizontal, std::size_t numVertical) const override;
+    void    DrawPaperSheets(unsigned numHorizontal, unsigned numVertical) const override;
 
     void    RecalcProjection() override;
 
@@ -33,7 +34,8 @@ private:
     void    BindTexture(unsigned id) const;
     void    UnbindTexture() const;
 
-    mutable int m_boundTextureID = -1;
+    mutable int             m_boundTextureID = -1;
+    QOpenGLFunctions_2_0&   m_gl;
 };
 
 #endif // RENDERLEGACY2D_H

@@ -2,6 +2,7 @@
 #define PDOTOOLS_H
 #include <glm/vec2.hpp>
 #include <memory>
+#include <limits>
 #include <vector>
 #include <list>
 
@@ -46,10 +47,10 @@ struct PDO_Face
 
 struct PDO_Part
 {
-    float                  minX = +999999999999.0f;
-    float                  maxX = -999999999999.0f;
-    float                  minY = +999999999999.0f;
-    float                  maxY = -999999999999.0f;
+    float                  minX = std::numeric_limits<float>::max();
+    float                  maxX = std::numeric_limits<float>::lowest();
+    float                  minY = std::numeric_limits<float>::max();
+    float                  maxY = std::numeric_limits<float>::lowest();
     std::list<PDO_Face*>   faces;
     bool                   offsetApplied = false;
 

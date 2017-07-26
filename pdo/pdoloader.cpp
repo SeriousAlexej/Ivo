@@ -4,8 +4,6 @@
 #include <clocale>
 #include "settings/settings.h"
 #include "mesh/mesh.h"
-#include "interface/renwin.h"
-#include "interface/renwin2d.h"
 #include "interface/mainwindow.h"
 #include "io/saferead.h"
 #include "pdotools.h"
@@ -280,8 +278,7 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     }
 
     m_model.reset(new CMesh());
-    m_rw2->SetModel(m_model.get());
-    ((IRenWin*)m_rw3)->SetModel(m_model.get());
+    SetModelToWindows();
 
     for(int x=0; x<sheetsHorizontal; x++)
     for(int y=0; y<sheetsVertical; y++)

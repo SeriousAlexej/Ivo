@@ -5,7 +5,8 @@
 #include "mesh/mesh.h"
 #include "renderlegacy3d.h"
 
-CRenderer3DLegacy::CRenderer3DLegacy()
+CRenderer3DLegacy::CRenderer3DLegacy(QOpenGLFunctions_2_0& gl) :
+    m_gl(gl)
 {
 }
 
@@ -15,31 +16,31 @@ CRenderer3DLegacy::~CRenderer3DLegacy()
 
 void CRenderer3DLegacy::Init()
 {
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-    glEnable(GL_MULTISAMPLE);
-    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT1);
-    glShadeModel(GL_SMOOTH);
+    m_gl.glEnable(GL_TEXTURE_2D);
+    m_gl.glEnable(GL_DEPTH_TEST);
+    m_gl.glDepthFunc(GL_LESS);
+    m_gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    m_gl.glEnable(GL_MULTISAMPLE);
+    m_gl.glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+    m_gl.glEnable(GL_COLOR_MATERIAL);
+    m_gl.glEnable(GL_LIGHTING);
+    m_gl.glEnable(GL_LIGHT1);
+    m_gl.glShadeModel(GL_SMOOTH);
     glm::vec4 diff = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     glm::vec4 ambi = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, &diff[0]);
-    glLightfv(GL_LIGHT1, GL_AMBIENT, &ambi[0]);
+    m_gl.glLightfv(GL_LIGHT1, GL_DIFFUSE, &diff[0]);
+    m_gl.glLightfv(GL_LIGHT1, GL_AMBIENT, &ambi[0]);
 }
 
 void CRenderer3DLegacy::ResizeView(int w, int h, float fovy)
 {
     m_width = w;
     m_height = h;
-    glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    m_gl.glViewport(0, 0, w, h);
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glLoadIdentity();
     glm::mat4 projMx = glm::perspective(glm::radians(fovy), (static_cast<float>(w))/(static_cast<float>(h)), 0.1f, 3000.0f);
-    glMultMatrixf(&projMx[0][0]);
+    m_gl.glMultMatrixf(&projMx[0][0]);
 }
 
 void CRenderer3DLegacy::ToggleLighting(bool enable)
@@ -47,9 +48,9 @@ void CRenderer3DLegacy::ToggleLighting(bool enable)
     IRenderer3D::ToggleLighting(enable);
     if(m_lighting)
     {
-        glEnable(GL_LIGHTING);
+        m_gl.glEnable(GL_LIGHTING);
     } else {
-        glDisable(GL_LIGHTING);
+        m_gl.glDisable(GL_LIGHTING);
     }
 }
 
@@ -71,21 +72,21 @@ void CRenderer3DLegacy::DrawModel() const
     if(!m_model)
         return;
 
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glMultMatrixf(&m_viewMatrix[0][0]);
+    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
+    m_gl.glMatrixMode(GL_MODELVIEW);
+    m_gl.glLoadIdentity();
+    m_gl.glMultMatrixf(&m_viewMatrix[0][0]);
 
     const glm::vec4 lightPosition = {m_cameraPosition.x, m_cameraPosition.y, m_cameraPosition.z, 1.0f};
-    glLightfv(GL_LIGHT1, GL_POSITION, &lightPosition[0]);
+    m_gl.glLightfv(GL_LIGHT1, GL_POSITION, &lightPosition[0]);
 
     const std::vector<glm::vec3> &vert = m_model->GetVertices();
     const std::vector<glm::vec2> &uvs = m_model->GetUVCoords();
     const std::vector<glm::vec3> &norms = m_model->GetNormals();
 
-    glBegin(GL_TRIANGLES);
+    m_gl.glBegin(GL_TRIANGLES);
+    m_gl.glColor3ub(255, 255, 255);
     int i = 0;
-    glColor3ub(255, 255, 255);
     for(const glm::uvec4 &t : m_model->GetTriangles())
     {
         bool faceSelected = m_model->IsTrianglePicked(i);
@@ -102,56 +103,56 @@ void CRenderer3DLegacy::DrawModel() const
 
         const glm::vec3 &faceNormal = norms[i++];
 
-        glNormal3f(faceNormal[0], faceNormal[1], faceNormal[2]);
+        m_gl.glNormal3f(faceNormal[0], faceNormal[1], faceNormal[2]);
 
         if(faceSelected)
-            glColor3ub(255, 0, 0);
+            m_gl.glColor3ub(255, 0, 0);
         else
-            glColor3ub(255, 255, 255);
+            m_gl.glColor3ub(255, 255, 255);
 
-        glTexCoord2f(uv1[0], uv1[1]);
-        glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+        m_gl.glTexCoord2f(uv1[0], uv1[1]);
+        m_gl.glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
 
-        glTexCoord2f(uv2[0], uv2[1]);
-        glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+        m_gl.glTexCoord2f(uv2[0], uv2[1]);
+        m_gl.glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
 
-        glTexCoord2f(uv3[0], uv3[1]);
-        glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+        m_gl.glTexCoord2f(uv3[0], uv3[1]);
+        m_gl.glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
     }
 
-    glEnd();
+    m_gl.glEnd();
 
     UnbindTexture();
 }
 
 void CRenderer3DLegacy::DrawBackground() const
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f);
+    m_gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glPushMatrix();
+    m_gl.glLoadIdentity();
+    m_gl.glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    if(m_lighting)
-        glDisable(GL_LIGHTING);
-
-    glBegin(GL_QUADS);
-    glColor3ub(214, 237, 255);
-    glVertex3f(-1.0f, 1.0f, -1.0f);
-    glVertex3f(1.0f, 1.0f, -1.0f);
-    glColor3ub(255, 255, 255);
-    glVertex3f(1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glEnd();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    m_gl.glMatrixMode(GL_MODELVIEW);
+    m_gl.glLoadIdentity();
 
     if(m_lighting)
-        glEnable(GL_LIGHTING);
+        m_gl.glDisable(GL_LIGHTING);
+
+    m_gl.glBegin(GL_QUADS);
+    m_gl.glColor3ub(214, 237, 255);
+    m_gl.glVertex3f(-1.0f, 1.0f, -1.0f);
+    m_gl.glVertex3f(1.0f, 1.0f, -1.0f);
+    m_gl.glColor3ub(255, 255, 255);
+    m_gl.glVertex3f(1.0f, -1.0f, -1.0f);
+    m_gl.glVertex3f(-1.0f, -1.0f, -1.0f);
+    m_gl.glEnd();
+
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glPopMatrix();
+
+    if(m_lighting)
+        m_gl.glEnable(GL_LIGHTING);
 }
 
 void CRenderer3DLegacy::DrawGrid() const
@@ -159,46 +160,46 @@ void CRenderer3DLegacy::DrawGrid() const
     if(!m_grid)
         return;
 
-    glDisable(GL_LIGHTING);
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_LINES);
-        glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, 0.0f);
-        glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, 0.0f);
+    m_gl.glDisable(GL_LIGHTING);
+    m_gl.glColor3f(0.0f, 0.0f, 0.0f);
+    m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, 0.0f);
+        m_gl.glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, 0.0f);
 
-        glVertex3f(0.0f, 0.0f, m_cameraPosition.z + 50.0f);
-        glVertex3f(0.0f, 0.0f, m_cameraPosition.z - 50.0f);
-    glEnd();
+        m_gl.glVertex3f(0.0f, 0.0f, m_cameraPosition.z + 50.0f);
+        m_gl.glVertex3f(0.0f, 0.0f, m_cameraPosition.z - 50.0f);
+    m_gl.glEnd();
 
     int baseX = (int)m_cameraPosition.x;
     int baseZ = (int)m_cameraPosition.z;
 
-    glColor3f(0.4f, 0.4f, 0.4f);
-    glBegin(GL_LINES);
+    m_gl.glColor3f(0.4f, 0.4f, 0.4f);
+    m_gl.glBegin(GL_LINES);
         for(int i=-50; i<50; ++i)
         {
-            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z + 50.0f);
-            glVertex3f(baseX+i, 0.0f, m_cameraPosition.z - 50.0f);
+            m_gl.glVertex3f(baseX+i, 0.0f, m_cameraPosition.z + 50.0f);
+            m_gl.glVertex3f(baseX+i, 0.0f, m_cameraPosition.z - 50.0f);
         }
         for(int i=-50; i<50; ++i)
         {
-            glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, baseZ+i);
-            glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, baseZ+i);
+            m_gl.glVertex3f(m_cameraPosition.x + 50.0f, 0.0f, baseZ+i);
+            m_gl.glVertex3f(m_cameraPosition.x - 50.0f, 0.0f, baseZ+i);
         }
-    glEnd();
+    m_gl.glEnd();
 }
 
 void CRenderer3DLegacy::DrawAxis() const
 {
-    glDisable(GL_LIGHTING);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    m_gl.glDisable(GL_LIGHTING);
+    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    m_gl.glMatrixMode(GL_MODELVIEW);
+    m_gl.glLoadIdentity();
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
+    m_gl.glMatrixMode(GL_PROJECTION);
+    m_gl.glPushMatrix();
+    m_gl.glLoadIdentity();
+    m_gl.glOrtho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
 
     glm::mat4 rotMx = m_viewMatrix;
     rotMx[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -210,32 +211,31 @@ void CRenderer3DLegacy::DrawAxis() const
     vecY = rotMx * vecY;
     vecZ = rotMx * vecZ;
 
-    glTranslatef(-1.9f, -1.9f, -20.0f);
+    m_gl.glTranslatef(-1.9f, -1.9f, -20.0f);
 
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(vecX.x, vecX.y, vecX.z);
-    glEnd();
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(vecY.x, vecY.y, vecY.z);
-    glEnd();
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(vecZ.x, vecZ.y, vecZ.z);
-    glEnd();
+    m_gl.glColor3f(1.0f, 0.0f, 0.0f);
+    m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(0.0f, 0.0f, 0.0f);
+        m_gl.glVertex3f(vecX.x, vecX.y, vecX.z);
+    m_gl.glEnd();
+    m_gl.glColor3f(0.0f, 1.0f, 0.0f);
+    m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(0.0f, 0.0f, 0.0f);
+        m_gl.glVertex3f(vecY.x, vecY.y, vecY.z);
+    m_gl.glEnd();
+    m_gl.glColor3f(0.0f, 0.0f, 1.0f);
+    m_gl.glBegin(GL_LINES);
+        m_gl.glVertex3f(0.0f, 0.0f, 0.0f);
+        m_gl.glVertex3f(vecZ.x, vecZ.y, vecZ.z);
+    m_gl.glEnd();
 
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    m_gl.glPopMatrix();
+    m_gl.glMatrixMode(GL_MODELVIEW);
 
     if(m_lighting)
-    {
-        glEnable(GL_LIGHTING);
-    }
-    glColor3f(1.0f, 1.0f, 1.0f);
+        m_gl.glEnable(GL_LIGHTING);
+
+    m_gl.glColor3f(1.0f, 1.0f, 1.0f);
 }
 
 void CRenderer3DLegacy::UpdateViewMatrix(const glm::mat4& viewMatrix)
@@ -261,18 +261,18 @@ QImage CRenderer3DLegacy::GetPickingTexture() const
     }
     fbo.bind();
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glMultMatrixf(&m_viewMatrix[0][0]);
+    m_gl.glMatrixMode(GL_MODELVIEW);
+    m_gl.glLoadIdentity();
+    m_gl.glMultMatrixf(&m_viewMatrix[0][0]);
 
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
+    m_gl.glDisable(GL_LIGHTING);
+    m_gl.glDisable(GL_TEXTURE_2D);
 
-    glBegin(GL_TRIANGLES);
+    m_gl.glBegin(GL_TRIANGLES);
 
     const std::vector<glm::vec3> &vert = m_model->GetVertices();
 
@@ -287,20 +287,20 @@ QImage CRenderer3DLegacy::GetPickingTexture() const
         int g = i & 0x00FF00; g >>= 8;
         int b = i & 0xFF0000; b >>= 16;
 
-        glColor3ub(r, g, b);
-        glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
-        glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
-        glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+        m_gl.glColor3ub(r, g, b);
+        m_gl.glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+        m_gl.glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+        m_gl.glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
         i++;
     }
 
-    glEnd();
+    m_gl.glEnd();
 
     if(m_lighting)
-        glEnable(GL_LIGHTING);
-    glEnable(GL_TEXTURE_2D);
+        m_gl.glEnable(GL_LIGHTING);
+    m_gl.glEnable(GL_TEXTURE_2D);
 
-    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+    m_gl.glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
 
     QImage pickTexture = fbo.toImage();
 
@@ -314,7 +314,7 @@ void CRenderer3DLegacy::BindTexture(unsigned id) const
     const bool renTexture = CSettings::GetInstance().GetRenderFlags() & CSettings::R_TEXTR;
     if(renTexture && m_boundTextureID != (int)id)
     {
-        glEnd();
+        m_gl.glEnd();
         if(m_textures[id])
         {
             m_textures[id]->bind();
@@ -322,7 +322,7 @@ void CRenderer3DLegacy::BindTexture(unsigned id) const
         {
             m_textures[m_boundTextureID]->release();
         }
-        glBegin(GL_TRIANGLES);
+        m_gl.glBegin(GL_TRIANGLES);
         m_boundTextureID = id;
     }
 }

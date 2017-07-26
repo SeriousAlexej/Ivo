@@ -9,10 +9,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 
-find_package(Qt5Core       5.2 REQUIRED)
-find_package(Qt5Gui        5.2 REQUIRED)
-find_package(Qt5Widgets    5.2 REQUIRED)
-find_package(Qt5OpenGL     5.2 REQUIRED)
+find_package(Qt5Core       5.5 REQUIRED)
+find_package(Qt5Gui        5.5 REQUIRED)
+find_package(Qt5Widgets    5.5 REQUIRED)
+find_package(Qt5OpenGL     5.5 REQUIRED)
 find_package(assimp            REQUIRED)
 find_package(glm               REQUIRED)
 
@@ -71,6 +71,7 @@ set(SRC_LIST_H
     "interface/renwin.h"
     "interface/renwin2d.h"
     "interface/renwin3d.h"
+    "interface/selectioninfo.h"
     "renderers/abstractrenderer.h"
     "geometric/aabbox.h"
 )

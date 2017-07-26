@@ -156,9 +156,8 @@ void CMainWindow::LoadModel()
 
         AskToSaveChanges();
         m_openedModel = "";
-        m_rw2->SetModel(newModel.get());
-        m_rw3->SetModel(newModel.get());
         m_model = std::move(newModel);
+        SetModelToWindows();
         ClearTextures();
 
         m_rw2->ZoomFit();
@@ -293,12 +292,17 @@ void CMainWindow::on_actionSave_triggered()
     }
 }
 
+void CMainWindow::SetModelToWindows()
+{
+    m_rw2->SetModel(m_model.get());
+    m_rw3->SetModel(m_model.get());
+}
+
 void CMainWindow::ClearModel()
 {
     m_openedModel = "";
     m_model.reset(nullptr);
-    m_rw2->SetModel(nullptr);
-    m_rw3->SetModel(nullptr);
+    SetModelToWindows();
     ClearTextures();
 }
 

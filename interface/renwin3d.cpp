@@ -13,9 +13,6 @@ CRenWin3D::CRenWin3D(QWidget *parent) :
 {
     grabKeyboard();
     setMouseTracking(true);
-
-    m_renderer = std::unique_ptr<IRenderer3D>(new CRenderer3DLegacy());
-    UpdateViewAngles();
 }
 
 CRenWin3D::~CRenWin3D()
@@ -60,6 +57,11 @@ void CRenWin3D::SetEditMode(EditMode mode)
 
 void CRenWin3D::initializeGL()
 {
+    QOpenGLFunctions_2_0* gfx = QOpenGLContext::currentContext()->versionFunctions<QOpenGLFunctions_2_0>();
+    if(!gfx)
+        throw std::logic_error("OpenGL 2.0 is not available!");
+    m_renderer.reset(new CRenderer3DLegacy(*gfx));
+    UpdateViewAngles();
     m_renderer->Init();
 }
 

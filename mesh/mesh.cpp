@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
+#include <limits>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <assimp/Importer.hpp>
@@ -963,12 +964,12 @@ void CMesh::UpdateGroupDepth()
 
 void CMesh::CalculateAABBox()
 {
-    float lowestX  = 999999999999.0f,
-          highestX =-999999999999.0f,
-          lowestY  = 999999999999.0f,
-          highestY =-999999999999.0f,
-          lowestZ  = 999999999999.0f,
-          highestZ =-999999999999.0f;
+    float lowestX  = std::numeric_limits<float>::max();
+    float highestX = std::numeric_limits<float>::lowest();
+    float lowestY  = lowestX;
+    float highestY = highestX;
+    float lowestZ  = lowestX;
+    float highestZ = highestX;
     for(const vec3& v : m_vertices)
     {
         lowestX = min(lowestX, v.x);

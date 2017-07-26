@@ -3,6 +3,7 @@
 #include <QUndoCommand>
 #include <glm/vec2.hpp>
 #include <list>
+#include "mesh.h"
 
 enum ECommandType
 {
@@ -20,7 +21,7 @@ class CAtomicCommand
 public:
     explicit CAtomicCommand(ECommandType actionType);
 
-    void SetTriangle(void* tr);
+    void SetTriangle(CMesh::STriangle2D* tr);
     void SetEdge(int e);
     void SetTranslation(const glm::vec2& trans);
     void SetRotation(float rot);
@@ -30,12 +31,12 @@ public:
     void Undo() const;
 
 private:
-    glm::vec2    m_translation;
-    float        m_rotation;
-    float        m_scale;
-    void*        m_triangle;
-    int          m_edge;
-    ECommandType m_type;
+    glm::vec2           m_translation;
+    float               m_rotation;
+    float               m_scale;
+    CMesh::STriangle2D* m_triangle;
+    int                 m_edge;
+    ECommandType        m_type;
 };
 
 class CIvoCommand : public QUndoCommand

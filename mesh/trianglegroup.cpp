@@ -2,6 +2,7 @@
 #include <list>
 #include <stdexcept>
 #include <unordered_set>
+#include <limits>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <functional>
@@ -128,6 +129,12 @@ bool CMesh::STriGroup::AddTriangle(STriangle2D* tr, STriangle2D* referal)
     return true;
 }
 
+void CMesh::STriGroup::ResetBBoxVectors()
+{
+    m_toTopLeft   = vec2(std::numeric_limits<float>::max(),    std::numeric_limits<float>::lowest());
+    m_toRightDown = vec2(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::max());
+}
+
 void CMesh::STriGroup::SetRotation(float angle)
 {
     m_rotation = angle;
@@ -139,8 +146,7 @@ void CMesh::STriGroup::SetRotation(float angle)
     m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
     m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
 
-    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
+    ResetBBoxVectors();
     for(STriangle2D *t : m_tris)
     {
         t->GroupHasTransformed(m_matrix);
@@ -213,8 +219,7 @@ void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
 
     m_tris.insert(m_tris.end(), grp->m_tris.begin(), grp->m_tris.end());
 
-    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
+    ResetBBoxVectors();
     for(STriangle2D*& t : m_tris)
     {
         t->m_myGroup = this;
@@ -413,8 +418,7 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     CMesh::g_Mesh->m_groups.emplace_back();
     STriGroup &newGroup = CMesh::g_Mesh->m_groups.back();
 
-    newGroup.m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
-    newGroup.m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
+    newGroup.ResetBBoxVectors();
     for(STriangle2D*& t : m_tris)
     {
         if(std::find(trAndCompany.begin(), trAndCompany.end(), t) == trAndCompany.end())
@@ -424,8 +428,7 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     }
     newGroup.CentrateOrigin();
 
-    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
+    ResetBBoxVectors();
     m_tris.clear();
 
     for(STriangle2D*& t : trAndCompany)
@@ -587,8 +590,7 @@ void CMesh::STriGroup::Deserialize(FILE *f)
 
 void CMesh::STriGroup::Scale(const float scale)
 {
-    m_toTopLeft = vec2(99999999999999.0f, -99999999999999.0f);
-    m_toRightDown = vec2(-99999999999999.0f, 99999999999999.0f);
+    ResetBBoxVectors();
 
     for(STriangle2D* tri : m_tris)
     {

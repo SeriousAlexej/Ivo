@@ -31,7 +31,7 @@ void CAtomicCommand::SetScale(float sca)
     m_scale = sca;
 }
 
-void CAtomicCommand::SetTriangle(void *tr)
+void CAtomicCommand::SetTriangle(CMesh::STriangle2D *tr)
 {
     m_triangle = tr;
 }
@@ -40,7 +40,7 @@ void CAtomicCommand::Redo() const
 {
     if(!m_triangle) return;
 
-    CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
+    CMesh::STriangle2D* tr = m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
     CMesh* msh = CMesh::GetMesh();
 
@@ -98,7 +98,7 @@ void CAtomicCommand::Undo() const
 {
     if(!m_triangle) return;
 
-    CMesh::STriangle2D* tr = (CMesh::STriangle2D*)m_triangle;
+    CMesh::STriangle2D* tr = m_triangle;
     CMesh::STriGroup* grp = tr->GetGroup();
     CMesh* msh = CMesh::GetMesh();
 

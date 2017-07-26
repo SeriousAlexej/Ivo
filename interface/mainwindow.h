@@ -55,6 +55,7 @@ private slots:
     
 private:
     void closeEvent(QCloseEvent *event) override;
+    void SetModelToWindows();
     void ClearModel();
     void AskToSaveChanges();
     void SaveToIVO(const char* filename);

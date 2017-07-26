@@ -1,10 +1,10 @@
 #ifndef IRENWIN_H
 #define IRENWIN_H
-#include <QGLWidget>
+#include <QOpenGLWidget>
 
 class CMesh;
 
-class IRenWin : public QGLWidget
+class IRenWin : public QOpenGLWidget
 {
     Q_OBJECT
 

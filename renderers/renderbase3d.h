@@ -34,4 +34,4 @@ protected:
     bool            m_grid = true;
 };
 
-#endif // RENDERERCLASSIC_H
+#endif // RENDERBASE3D_H

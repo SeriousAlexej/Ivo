@@ -3,8 +3,6 @@
 #include "io/saferead.h"
 #include "mesh/mesh.h"
 #include "settings/settings.h"
-#include "interface/renwin.h"
-#include "interface/renwin2d.h"
 
 void CMainWindow::SaveToIVO(const char* filename)
 {
@@ -132,9 +130,8 @@ void CMainWindow::LoadFromIVO(const char* filename)
 
             m_openedModel = filename;
 
-            m_rw2->SetModel(newModel.get());
-            ((IRenWin*)m_rw3)->SetModel(newModel.get());
             m_model = std::move(newModel);
+            SetModelToWindows();
             ClearTextures();
 
             std::unordered_map<unsigned, std::string> materials;
