@@ -21,7 +21,9 @@ before_install:
   - export PATH=${DEPS_DIR}/cmake/bin:${PATH}
   - cmake --version
   - git clone https://github.com/g-truc/glm.git
-  - cd glm && cmake -G "Unix Makefiles" && sudo make install && cd ..
+  - cd glm
+  - git reset --hard ad744735f66359b6aecdfe75e93c024f0c7ec055
+  - cmake -G "Unix Makefiles" && sudo make install && cd ..
 
 before_script:
   - QT_ENV_SCRIPT=$(find /opt -name 'qt*-env.sh')
