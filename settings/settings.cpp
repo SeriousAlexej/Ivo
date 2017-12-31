@@ -5,6 +5,8 @@ CSettings::CSettings() :
     m_renFlags(R_FLAPS | R_EDGES | R_TEXTR | R_FOLDS),
     m_papWidth(297u),
     m_papHeight(210u),
+    m_marginsHorizontal(10u),
+    m_marginsVertical(10u),
     m_resScale(6.0f),
     m_imgFormat(IF_PNG),
     m_imgQuality(100),
@@ -51,6 +53,28 @@ void CSettings::SetPaperHeight(unsigned aHeight)
 {
     assert(aHeight > 0);
     m_papHeight = aHeight;
+}
+
+unsigned CSettings::GetMarginsHorizontal() const
+{
+    return m_marginsHorizontal;
+}
+
+void CSettings::SetMarginsHorizontal(unsigned aHMargins)
+{
+    assert(aHMargins > 0);
+    m_marginsHorizontal = aHMargins;
+}
+
+unsigned CSettings::GetMarginsVertical() const
+{
+    return m_marginsVertical;
+}
+
+void CSettings::SetMarginsVertical(unsigned aVMargins)
+{
+    assert(aVMargins > 0);
+    m_marginsVertical = aVMargins;
 }
 
 float CSettings::GetResolutionScale() const

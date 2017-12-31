@@ -5,14 +5,22 @@
 struct SAABBox2D
 {
 public:
-    SAABBox2D(const glm::vec2& rightBottom, const glm::vec2& leftTop);
-    ~SAABBox2D() = default;
+    SAABBox2D();
+    SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop);
 
-    static SAABBox2D Union(const SAABBox2D& box1, const SAABBox2D& box2);
-    static bool      Intersects(const SAABBox2D& box1, const SAABBox2D& box2);
+    bool Intersects(const SAABBox2D& other) const;
+    SAABBox2D Union(const SAABBox2D& other) const;
 
-    glm::vec2 m_rightBottom;
-    glm::vec2 m_leftTop;
+    glm::vec2 GetRightBottom() const;
+    glm::vec2 GetLeftTop() const;
+    float GetRight() const;
+    float GetLeft() const;
+    float GetTop() const;
+    float GetBottom() const;
+
+    float width;
+    float height;
+    glm::vec2 position;
 };
 
 #endif

@@ -26,6 +26,8 @@ void CSettingsWindow::LoadSettings()
 
     ui->spinBoxW->setValue(s.GetPaperWidth());
     ui->spinBoxH->setValue(s.GetPaperHeight());
+    ui->spinBoxHMargs->setValue(s.GetMarginsHorizontal());
+    ui->spinBoxVMargs->setValue(s.GetMarginsVertical());
 
     ui->doubleSpinBoxMultiplier->setValue(s.GetResolutionScale());
     ui->horizontalSliderQuality->setValue(s.GetImageQuality());
@@ -65,6 +67,8 @@ void CSettingsWindow::SaveSettings() const
     float lineWidth = (float)ui->doubleSpinBoxLineW->value();
     unsigned papW = (unsigned)ui->spinBoxW->value();
     unsigned papH = (unsigned)ui->spinBoxH->value();
+    unsigned margH = (unsigned)ui->spinBoxHMargs->value();
+    unsigned margV = (unsigned)ui->spinBoxVMargs->value();
     float resScale = (float)ui->doubleSpinBoxMultiplier->value();
     unsigned char imgQuality = (unsigned char)ui->horizontalSliderQuality->value();
     unsigned char detachAngle = (unsigned char)ui->spinBoxDetachAngle->value();
@@ -110,6 +114,8 @@ void CSettingsWindow::SaveSettings() const
     s.SetRenderFlags(renFlags);
     s.SetPaperWidth(papW);
     s.SetPaperHeight(papH);
+    s.SetMarginsHorizontal(margH);
+    s.SetMarginsVertical(margV);
     s.SetResolutionScale(resScale);
     s.SetImageQuality(imgQuality);
     s.SetImageFormat(imgFormat);
@@ -176,18 +182,29 @@ void CSettingsWindow::on_spinBoxW_valueChanged(int i)
 {
     Q_UNUSED(i);
     UpdateResolution();
+    UpdateMargins();
 }
 
 void CSettingsWindow::on_spinBoxH_valueChanged(int i)
 {
     Q_UNUSED(i);
     UpdateResolution();
+    UpdateMargins();
 }
 
 void CSettingsWindow::on_doubleSpinBoxMultiplier_valueChanged(double i)
 {
     Q_UNUSED(i);
     UpdateResolution();
+}
+
+void CSettingsWindow::UpdateMargins()
+{
+    if(ui->spinBoxW->value() < ui->spinBoxHMargs->value()*2)
+        ui->spinBoxHMargs->setValue(ui->spinBoxW->value()/2);
+
+    if(ui->spinBoxH->value() < ui->spinBoxVMargs->value()*2)
+        ui->spinBoxVMargs->setValue(ui->spinBoxH->value()/2);
 }
 
 void CSettingsWindow::UpdateResolution()
@@ -198,4 +215,16 @@ void CSettingsWindow::UpdateResolution()
 
     ui->lineW->setText(QString::number((int)w));
     ui->lineH->setText(QString::number((int)h));
+}
+
+void CSettingsWindow::on_spinBoxHMargs_valueChanged(int i)
+{
+    Q_UNUSED(i);
+    UpdateMargins();
+}
+
+void CSettingsWindow::on_spinBoxVMargs_valueChanged(int i)
+{
+    Q_UNUSED(i);
+    UpdateMargins();
 }

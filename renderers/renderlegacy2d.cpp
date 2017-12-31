@@ -203,6 +203,8 @@ void CRenderer2DLegacy::DrawPaperSheets(unsigned numHorizontal, unsigned numVert
     const CSettings& sett = CSettings::GetInstance();
     const float papHeight = sett.GetPaperHeight() * 0.1f;
     const float papWidth = sett.GetPaperWidth() * 0.1f;
+    const float papHMargins = sett.GetMarginsHorizontal() * 0.1f;
+    const float papVMargins = sett.GetMarginsVertical() * 0.1f;
     const glm::vec2 size = glm::vec2(papWidth * numHorizontal, papHeight * numVertical);
     const glm::vec2 position(0.0f, -size.y);
 
@@ -226,6 +228,19 @@ void CRenderer2DLegacy::DrawPaperSheets(unsigned numHorizontal, unsigned numVert
         m_gl.glVertex3f(position.x + size.x, -papHeight * i, -2.0f);
     }
     m_gl.glEnd();
+
+    m_gl.glColor3f(0.9f, 0.9f, 0.9f);
+    for(unsigned x=0u; x<numHorizontal; x++)
+    for(unsigned y=0u; y<numVertical; y++)
+    {
+        m_gl.glBegin(GL_LINE_LOOP);
+        m_gl.glVertex3f(position.x + papWidth*x + papHMargins, position.y + papHeight*y + papVMargins, -2.0f);
+        m_gl.glVertex3f(position.x + papWidth*(x+1) - papHMargins, position.y + papHeight*y + papVMargins, -2.0f);
+        m_gl.glVertex3f(position.x + papWidth*(x+1) - papHMargins, position.y + papHeight*(y+1) - papVMargins, -2.0f);
+        m_gl.glVertex3f(position.x + papWidth*x + papHMargins, position.y + papHeight*(y+1) - papVMargins, -2.0f);
+        m_gl.glEnd();
+    }
+
     m_gl.glColor3f(0.2f, 0.2f, 0.2f);
     m_gl.glBegin(GL_QUADS);
     m_gl.glVertex3f(position.x+0.5f, position.y-0.5f, -10.0f);

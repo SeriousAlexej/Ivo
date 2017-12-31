@@ -17,43 +17,73 @@
    <iconset resource="../res.qrc">
     <normaloff>:/icons/icons/stupid_logo.png</normaloff>:/icons/icons/stupid_logo.png</iconset>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QMenuBar {
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(234, 234, 234, 255), stop:1 rgba(255, 255, 255, 255));
+}
+
+QToolBar {
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(234, 234, 234, 255));
+border-color: transparent;
+}
+
+QDockWidget::title {
+border: 1px solid lightgrey;
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(255, 255, 255, 255));
+}
+
+QToolButton {
+border-radius: 4px;
+border: 1px solid  rgba(0, 0, 0, 0);
+}
+
+QToolButton::hover {
+border-radius: 4px;
+border: 1px solid  rgba(220, 220, 255, 120);
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(0, 0, 0, 10), stop:1 rgba(190, 210, 255, 255));
+}
+
+QToolButton::checked {
+border-radius: 4px;
+border: 1px solid  rgba(210, 210, 230, 120);
+background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0, 0, 0, 35), stop:1 rgba(240, 210, 160, 255));
+}</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
+  </property>
   <widget class="QWidget" name="centralWidget">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="maximumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="QSplitter" name="splitter">
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <widget class="QFrame" name="frameLeft">
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-      </widget>
-      <widget class="QFrame" name="frameRight">
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-      </widget>
-     </widget>
-    </item>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -64,6 +94,9 @@
      <width>951</width>
      <height>21</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -115,7 +148,7 @@
     <bool>true</bool>
    </property>
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Toolbar</string>
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
@@ -123,14 +156,36 @@
    <property name="autoFillBackground">
     <bool>false</bool>
    </property>
+   <property name="styleSheet">
+    <string notr="true">QMenuBar {
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(234, 234, 234, 255), stop:1 rgba(255, 255, 255, 255));
+}
+
+QToolBar {
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(234, 234, 234, 255));
+border-color: transparent;
+}
+
+QDockWidget::title {
+border: 1px solid lightgrey;
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(255, 255, 255, 255));
+}
+</string>
+   </property>
    <property name="movable">
     <bool>true</bool>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
    </property>
    <property name="iconSize">
     <size>
      <width>24</width>
      <height>24</height>
     </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonIconOnly</enum>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -160,6 +215,54 @@
    <addaction name="actionSettings"/>
    <addaction name="separator"/>
    <addaction name="actionPolypaint"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget3D">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>3D Model</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="CRenWin3D" name="frameLeft"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget2D">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>2D Layout</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="CRenWin2D" name="frameRight"/>
   </widget>
   <action name="actionOpen_obj">
    <property name="icon">
@@ -242,10 +345,10 @@
      <normaloff>:/icons/icons/48px-View-refresh.png</normaloff>:/icons/icons/48px-View-refresh.png</iconset>
    </property>
    <property name="text">
-    <string>ModeRotate</string>
+    <string>Rotate</string>
    </property>
    <property name="toolTip">
-    <string>Rotate mode</string>
+    <string>Rotate</string>
    </property>
    <property name="shortcut">
     <string>2</string>
@@ -260,10 +363,10 @@
      <normaloff>:/icons/icons/48px-Go-bottom.png</normaloff>:/icons/icons/48px-Go-bottom.png</iconset>
    </property>
    <property name="text">
-    <string>ModeSnap</string>
+    <string>Join/Break edges</string>
    </property>
    <property name="toolTip">
-    <string>JoinBreak edges mode</string>
+    <string>Join/Break edges</string>
    </property>
    <property name="shortcut">
     <string>3</string>
@@ -274,20 +377,23 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="../res.qrc">
      <normaloff>:/icons/icons/Move_mode.png</normaloff>:/icons/icons/Move_mode.png</iconset>
    </property>
    <property name="text">
-    <string>ModeMove</string>
+    <string>Move</string>
    </property>
    <property name="toolTip">
-    <string>Move mode</string>
+    <string>Move</string>
    </property>
    <property name="shortcut">
     <string>1</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionModeFlaps">
@@ -299,7 +405,7 @@
      <normaloff>:/icons/icons/Flaps_mode.png</normaloff>:/icons/icons/Flaps_mode.png</iconset>
    </property>
    <property name="text">
-    <string>ModeFlaps</string>
+    <string>Switch flaps</string>
    </property>
    <property name="toolTip">
     <string>Switch flaps</string>
@@ -481,6 +587,20 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>CRenWin3D</class>
+   <extends>QWidget</extends>
+   <header>interface/renwin3d.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CRenWin2D</class>
+   <extends>QWidget</extends>
+   <header>interface/renwin2d.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../res.qrc"/>
  </resources>

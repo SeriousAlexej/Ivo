@@ -47,7 +47,7 @@ CMesh::~CMesh()
 
 bool CMesh::IsModified() const
 {
-    return m_undoStack.canRedo() || m_undoStack.canUndo();
+    return m_undoStack.canUndo();
 }
 
 void CMesh::Clear()
@@ -187,7 +187,7 @@ void CMesh::LoadMesh(const std::string& path)
 
 void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
                         const std::vector<std::unique_ptr<PDO_Edge>>& edges,
-                        const std::vector<vec3>&                 vertices3D,
+                        const std::vector<vec3>&                      vertices3D,
                         const std::unordered_map<unsigned, PDO_Part>& parts)
 {
     Clear();
@@ -323,8 +323,8 @@ void CMesh::FillAdjTri_Gen2DTri()
     for(int i = m_triangles.size()-1; i>=0; --i)
     {
         const uvec4 &t = m_triangles[i];
-        const vec3 *v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
-        const vec3 *n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
+        const vec3* v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
+        const vec3* n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
 
         float v1v2cos = clamp(dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(distance(*v1[2], *v1[0])*distance(*v1[1], *v1[0])), -1.0f, 1.0f);
         m_tri2D[i].m_vtx[0] = vec2(0.0f, 0.0f);
@@ -349,8 +349,8 @@ void CMesh::FillAdjTri_Gen2DTri()
                 break;
 
             const uvec4 &t2 = m_triangles[j];
-            const vec3 *v2[3] = { &m_vertices[t2[0]], &m_vertices[t2[1]], &m_vertices[t2[2]] };
-            const vec3 *n2[3] = { &m_normals[t2[0]], &m_normals[t2[1]], &m_normals[t2[2]] };
+            const vec3* v2[3] = { &m_vertices[t2[0]], &m_vertices[t2[1]], &m_vertices[t2[2]] };
+            const vec3* n2[3] = { &m_normals[t2[0]], &m_normals[t2[1]], &m_normals[t2[2]] };
 
             //9 cases edges of 2 triangles can be adjacent:
             for(int e1=0; e1<3; ++e1)
@@ -690,199 +690,6 @@ void CMesh::GroupPickedTriangles()
     CMesh::g_Mesh->m_undoStack.push(cmd);
     UpdateGroupDepth();
     ClearPickedTriangles();
-}
-
-void CMesh::PackGroups(bool undoable)
-{
-    struct SGroupBBox
-    {
-        vec2 topLeft;
-        vec2 rightDown;
-        vec2 position;
-        float area;
-        float width;
-        float height;
-        CMesh::STriGroup *grp;
-
-        vec2 GetFinalPosition(vec2 offset)
-        {
-            const float groupGap1x = 0.75f;
-            position += offset;
-            vec2 grpCenterOffset(grp->GetPosition().x - topLeft.x, grp->GetPosition().y - rightDown.y);
-            return grpCenterOffset + vec2(position[0]+groupGap1x, position[1]+groupGap1x);
-        }
-        void FillArea()
-        {
-            const float groupGap2x = 1.5f;
-            width = rightDown[0]-topLeft[0]+groupGap2x;
-            height = topLeft[1]-rightDown[1]+groupGap2x;
-            area = width*height;
-        }
-        bool Intersect(const SGroupBBox &other) const
-        {
-            const float &oX = other.position[0];
-            const float &oY = other.position[1];
-            const float &oWidth = other.width;
-            const float &oHeight = other.height;
-            //this is enough for FCNR algo
-            return PointInside(oX, oY) ||
-                   PointInside(oX+oWidth, oY) ||
-                   PointInside(oX+oWidth, oY+oHeight) ||
-                   PointInside(oX, oY+oHeight) ||
-                   other.PointInside(position[0], position[1]) ||
-                   other.PointInside(position[0]+width, position[1]) ||
-                   other.PointInside(position[0]+width, position[1]+height) ||
-                   other.PointInside(position[0], position[1]+height);
-        }
-
-    private:
-        bool PointInside(float x, float y) const
-        {
-            return x >= position[0] && x <= position[0]+width &&
-                   y >= position[1] && y <= position[1]+height;
-        }
-    };
-
-    SGroupBBox dummy;
-    dummy.topLeft = dummy.rightDown = dummy.position = vec2(0.0f, 0.0f);
-    std::vector<SGroupBBox> bboxes(m_groups.size(), dummy);
-    float binWidth = 0.0f;
-    float binHeight = 0.0f;
-    float maxWidth = 0.0f;
-
-    int i=0;
-    for(auto &grp : m_groups)
-    {
-        SGroupBBox &bbox = bboxes[i];
-        bbox.grp = &grp;
-        bbox.topLeft = grp.m_toTopLeft;
-        bbox.rightDown = grp.m_toRightDown;
-        bbox.FillArea();
-        binWidth += bbox.area;
-        maxWidth = max(bbox.width, maxWidth);
-        ++i;
-    }
-    binWidth = max(sqrt(binWidth), maxWidth);
-
-    std::sort(bboxes.begin(), bboxes.end(),
-         [](const SGroupBBox &i, const SGroupBBox &j) { return i.height < j.height; } );
-
-    //FCNR
-    struct FCNR_level
-    {
-        std::list<SGroupBBox*> floor;
-        std::list<SGroupBBox*> ceiling;
-        float ceilHeight;
-        float floorHeight;
-    };
-
-    //make a few passes of FCNR for better results
-    for(int pass=0; pass<2; ++pass)
-    {
-        std::list<FCNR_level> levels;
-        for(int i=bboxes.size()-1; i>=0; --i)
-        {
-            SGroupBBox &bbx = bboxes[i];
-            bool added = false;
-            for(auto &lvl : levels)
-            {
-                SGroupBBox *rmost_fl = lvl.floor.back();
-
-                float x = rmost_fl->position[0] + rmost_fl->width;
-
-                if(binWidth - x >= bbx.width)
-                {
-                    bbx.position = vec2(x, lvl.floorHeight);
-                    bool intersects = false;
-                    for(auto &ceilBBX : lvl.ceiling)
-                    {
-                        if(ceilBBX->Intersect(bbx))
-                        {
-                            intersects = true;
-                            break;
-                        }
-                    }
-                    if(!intersects)
-                    {
-                        lvl.floor.push_back(&bbx);
-                        added = true;
-                        break;
-                    }
-                }
-
-                if(!lvl.ceiling.empty())
-                {
-                    SGroupBBox *lmost_cl = lvl.ceiling.back();
-                    x = lmost_cl->position[0];
-                } else {
-                    x = binWidth;
-                }
-
-                if(x >= bbx.width)
-                {
-                    bbx.position = vec2(x - bbx.width, lvl.floorHeight + lvl.ceilHeight - bbx.height);
-                    bool intersects = false;
-                    for(auto &floorBBX : lvl.floor)
-                    {
-                        if(floorBBX->Intersect(bbx))
-                        {
-                            intersects = true;
-                            break;
-                        }
-                    }
-                    if(!intersects)
-                    {
-                        lvl.ceiling.push_back(&bbx);
-                        added = true;
-                        break;
-                    }
-                }
-            }
-
-            if(!added)
-            {
-                FCNR_level *prev = nullptr;
-                if(!levels.empty())
-                    prev = &levels.back();
-                levels.push_back(FCNR_level());
-                FCNR_level &lvl = levels.back();
-
-                lvl.ceilHeight = bbx.height;
-                lvl.floorHeight = (prev ? prev->ceilHeight + prev->floorHeight : 0.0f);
-                lvl.floor.push_front(&bbx);
-                bbx.position = vec2(0.0f, lvl.floorHeight);
-            }
-        }
-
-        binHeight = levels.back().floorHeight + levels.back().ceilHeight;
-        //adjust width for the next pass of FCNR
-        binWidth = max(maxWidth, (binWidth + binHeight) * 0.5f);
-    }
-
-    CIvoCommand* cmd = nullptr;
-    if(undoable)
-    {
-        cmd = new CIvoCommand();
-    }
-
-    for(SGroupBBox &b : bboxes)
-    {
-        vec2 finalPos = b.GetFinalPosition(vec2(-binWidth*0.5f, -binHeight*0.5f));
-        if(undoable)
-        {
-            CAtomicCommand cmdMov(CT_MOVE);
-            cmdMov.SetTriangle(b.grp->m_tris.front());
-            cmdMov.SetTranslation(finalPos - b.grp->GetPosition());
-            cmd->AddAction(cmdMov);
-        } else {
-            b.grp->SetPosition(finalPos.x, finalPos.y);
-        }
-    }
-
-    if(undoable)
-    {
-        m_undoStack.push(cmd);
-    }
 }
 
 CMesh::STriGroup* CMesh::GroupUnderCursor(vec2 &curPos)
@@ -1250,7 +1057,7 @@ SAABBox2D CMesh::GetAABBox2D() const
 
     for(const STriGroup& grp : m_groups)
     {
-        bbox = SAABBox2D::Union(bbox, SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft));
+        bbox = bbox.Union(SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft));
     }
 
     return bbox;
@@ -1260,7 +1067,7 @@ bool CMesh::Intersects(const SAABBox2D &bbox) const
 {
     for(const STriGroup& grp : m_groups)
     {
-        if(SAABBox2D::Intersects(bbox, SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft)))
+        if(bbox.Intersects(SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft)))
             return true;
     }
     return false;

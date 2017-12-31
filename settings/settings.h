@@ -37,6 +37,12 @@ public:
     unsigned            GetPaperHeight() const;
     void                SetPaperHeight(unsigned aHeight);
 
+    unsigned            GetMarginsHorizontal() const;
+    void                SetMarginsHorizontal(unsigned aHMargins);
+
+    unsigned            GetMarginsVertical() const;
+    void                SetMarginsVertical(unsigned aVMargins);
+
     float               GetResolutionScale() const;
     void                SetResolutionScale(float aScale);
 
@@ -61,6 +67,8 @@ private:
     unsigned char m_renFlags;
     unsigned      m_papWidth;
     unsigned      m_papHeight;
+    unsigned      m_marginsHorizontal;
+    unsigned      m_marginsVertical;
     float         m_resScale;
     ImageFormat   m_imgFormat;
     unsigned char m_imgQuality;

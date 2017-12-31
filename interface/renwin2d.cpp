@@ -124,7 +124,7 @@ void CRenWin2D::FillOccupiedSheetsSize(unsigned &horizontal, unsigned &vertical)
     const CSettings& sett = CSettings::GetInstance();
     unsigned papHeight = sett.GetPaperHeight();
     unsigned papWidth = sett.GetPaperWidth();
-    const vec2& rightBottom = m_model->GetAABBox2D().m_rightBottom;
+    const vec2 rightBottom = m_model->GetAABBox2D().GetRightBottom();
     if(rightBottom.x > 0.0f && rightBottom.y < 0.0f)
     {
         horizontal = 1u + static_cast<unsigned>(rightBottom.x * 10.0f) / papWidth;

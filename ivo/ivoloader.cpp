@@ -16,6 +16,8 @@ void CMainWindow::SaveToIVO(const char* filename)
     unsigned char renFlags = CSettings::GetInstance().GetRenderFlags();
     unsigned      paperWid = CSettings::GetInstance().GetPaperWidth();
     unsigned      paperHei = CSettings::GetInstance().GetPaperHeight();
+    unsigned      margsHor = CSettings::GetInstance().GetMarginsHorizontal();
+    unsigned      margsVer = CSettings::GetInstance().GetMarginsVertical();
     float         resScale = CSettings::GetInstance().GetResolutionScale();
     int           imageFmt = CSettings::GetInstance().GetImageFormat();
     unsigned char imageQlt = CSettings::GetInstance().GetImageQuality();
@@ -31,6 +33,8 @@ void CMainWindow::SaveToIVO(const char* filename)
     std::fwrite(&renFlags, sizeof(renFlags), 1, f);
     std::fwrite(&paperWid, sizeof(paperWid), 1, f);
     std::fwrite(&paperHei, sizeof(paperHei), 1, f);
+    std::fwrite(&margsHor, sizeof(margsHor), 1, f);
+    std::fwrite(&margsVer, sizeof(margsVer), 1, f);
     std::fwrite(&resScale, sizeof(resScale), 1, f);
     std::fwrite(&imageFmt, sizeof(imageFmt), 1, f);
     std::fwrite(&imageQlt, sizeof(imageQlt), 1, f);
@@ -108,6 +112,8 @@ void CMainWindow::LoadFromIVO(const char* filename)
             unsigned char renFlags;
             unsigned      paperWid;
             unsigned      paperHei;
+            unsigned      margsHor;
+            unsigned      margsVer;
             float         resScale;
             int           imageFmt;
             unsigned char imageQlt;
@@ -118,6 +124,8 @@ void CMainWindow::LoadFromIVO(const char* filename)
             SAFE_FREAD(&renFlags, sizeof(renFlags), 1, f);
             SAFE_FREAD(&paperWid, sizeof(paperWid), 1, f);
             SAFE_FREAD(&paperHei, sizeof(paperHei), 1, f);
+            SAFE_FREAD(&margsHor, sizeof(margsHor), 1, f);
+            SAFE_FREAD(&margsVer, sizeof(margsVer), 1, f);
             SAFE_FREAD(&resScale, sizeof(resScale), 1, f);
             SAFE_FREAD(&imageFmt, sizeof(imageFmt), 1, f);
             SAFE_FREAD(&imageQlt, sizeof(imageQlt), 1, f);
@@ -191,6 +199,8 @@ void CMainWindow::LoadFromIVO(const char* filename)
             sett.SetRenderFlags( renFlags );
             sett.SetPaperWidth( paperWid );
             sett.SetPaperHeight( paperHei );
+            sett.SetMarginsHorizontal( margsHor );
+            sett.SetMarginsVertical( margsVer );
             sett.SetResolutionScale( resScale );
             sett.SetImageFormat( (CSettings::ImageFormat)imageFmt );
             sett.SetImageQuality( imageQlt );

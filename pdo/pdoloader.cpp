@@ -239,6 +239,8 @@ void CMainWindow::LoadFromPDOv2_0(const char *filename)
     CSettings& s = CSettings::GetInstance();
     s.SetPaperWidth((unsigned)(pageSize.x*10.0f));
     s.SetPaperHeight((unsigned)(pageSize.y*10.0f));
+    s.SetMarginsHorizontal((unsigned)(margins.x*10.0f));
+    s.SetMarginsVertical((unsigned)(margins.y*10.0f));
 
     //pre-apply scaling
     float real3Dscale = 1.0f;

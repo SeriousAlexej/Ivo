@@ -1,27 +1,70 @@
 #include <algorithm>
+#include <glm/vec2.hpp>
 #include "aabbox.h"
 
-SAABBox2D::SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop)
-    : m_rightBottom(rightBottom), m_leftTop(leftTop)
+SAABBox2D::SAABBox2D()
+    : width(0.0f)
+    , height(0.0f)
+    , position(0.0f, 0.0f)
 {
 }
 
-SAABBox2D SAABBox2D::Union(const SAABBox2D &box1, const SAABBox2D &box2)
+SAABBox2D::SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop)
 {
-    SAABBox2D result = box1;
-    result.m_leftTop.x = std::min(box1.m_leftTop.x, box2.m_leftTop.x);
-    result.m_leftTop.y = std::max(box1.m_leftTop.y, box2.m_leftTop.y);
-    result.m_rightBottom.x = std::max(box1.m_rightBottom.x, box2.m_rightBottom.x);
-    result.m_rightBottom.y = std::min(box1.m_rightBottom.y, box2.m_rightBottom.y);
+    position = glm::vec2(rightBottom.x + leftTop.x, leftTop.y + rightBottom.y)*0.5f;
+    width = std::fabs(rightBottom.x - leftTop.x);
+    height = std::fabs(leftTop.y - rightBottom.y);
+}
+
+glm::vec2 SAABBox2D::GetRightBottom() const
+{
+    return glm::vec2(GetRight(), GetBottom());
+}
+
+glm::vec2 SAABBox2D::GetLeftTop() const
+{
+    return glm::vec2(GetLeft(), GetTop());
+}
+
+float SAABBox2D::GetBottom() const
+{
+    return position.y - height * 0.5f;
+}
+
+float SAABBox2D::GetTop() const
+{
+    return position.y + height * 0.5f;
+}
+
+float SAABBox2D::GetLeft() const
+{
+    return position.x - width * 0.5f;
+}
+
+float SAABBox2D::GetRight() const
+{
+    return position.x + width * 0.5f;
+}
+
+SAABBox2D SAABBox2D::Union(const SAABBox2D& other) const
+{
+    float left   = std::min(GetLeft(),   other.GetLeft());
+    float top    = std::max(GetTop(),    other.GetTop());
+    float right  = std::max(GetRight(),  other.GetRight());
+    float bottom = std::min(GetBottom(), other.GetBottom());
+    SAABBox2D result;
+    result.position = glm::vec2(right + left, top + bottom)*0.5f;
+    result.width = std::fabs(right - left);
+    result.height = std::fabs(top - bottom);
     return result;
 }
 
-bool SAABBox2D::Intersects(const SAABBox2D &box1, const SAABBox2D &box2)
+bool SAABBox2D::Intersects(const SAABBox2D& other) const
 {
-    bool atLeft   = box1.m_rightBottom.x <= box2.m_leftTop.x;
-    bool atRight  = box1.m_leftTop.x     >= box2.m_rightBottom.x;
-    bool atTop    = box1.m_rightBottom.y >= box2.m_leftTop.y;
-    bool atBottom = box1.m_leftTop.y     <= box2.m_rightBottom.y;
+    bool atLeft   = GetRight()  <= other.GetLeft();
+    bool atRight  = GetLeft()   >= other.GetRight();
+    bool atTop    = GetBottom() >= other.GetTop();
+    bool atBottom = GetTop()    <= other.GetBottom();
 
     return !(atLeft || atRight || atTop || atBottom);
 }

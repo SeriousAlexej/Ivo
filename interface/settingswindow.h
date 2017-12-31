@@ -25,10 +25,13 @@ private slots:
     void on_spinBoxW_valueChanged(int i);
     void on_spinBoxH_valueChanged(int i);
     void on_doubleSpinBoxMultiplier_valueChanged(double i);
+    void on_spinBoxHMargs_valueChanged(int i);
+    void on_spinBoxVMargs_valueChanged(int i);
 
 private:
     void SaveSettings() const;
     void UpdateResolution();
+    void UpdateMargins();
 
     Ui::CSettingsWindow *ui;
 };

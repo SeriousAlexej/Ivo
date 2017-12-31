@@ -26,24 +26,14 @@ extern QString GetSupported3DFormats();
 static bool g_rw3IsValid = true;
 static std::mutex g_rw3Mutex;
 
-CMainWindow::CMainWindow(QWidget *parent) :
+CMainWindow::CMainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     m_model(nullptr)
 {
     ui->setupUi(this);
-    m_rw3 = new CRenWin3D(ui->frameLeft);
-    m_rw2 = new CRenWin2D(ui->frameRight);
-    {
-        QHBoxLayout* l = new QHBoxLayout(ui->frameLeft);
-        l->addWidget(m_rw3);
-        ui->frameLeft->setLayout(l);
-    }
-    {
-        QHBoxLayout* l = new QHBoxLayout(ui->frameRight);
-        l->addWidget(m_rw2);
-        ui->frameRight->setLayout(l);
-    }
+    m_rw3 = ui->frameLeft;
+    m_rw2 = ui->frameRight;
 
     std::thread updateEventThread([this](){
         while(true)
@@ -63,21 +53,21 @@ CMainWindow::CMainWindow(QWidget *parent) :
     });
     updateEventThread.detach();
 
-    QActionGroup *ag = new QActionGroup(this);
+    QActionGroup* ag = new QActionGroup(this);
     ag->addAction(ui->actionModeMove);
     ag->addAction(ui->actionModeRotate);
     ag->addAction(ui->actionModeSnap);
     ag->addAction(ui->actionModeFlaps);
     ui->actionModeMove->setChecked(true);
 
-    connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
-    connect(ui->actionOpen_obj, SIGNAL(triggered()), this, SLOT(LoadModel()));
-    connect(ui->actionLoad_Texture, SIGNAL(triggered()), this, SLOT(OpenMaterialManager()));
-    connect(this, SIGNAL(UpdateTexture(const QImage*, unsigned)), m_rw3, SLOT(LoadTexture(const QImage*, unsigned)));
-    connect(this, SIGNAL(UpdateTexture(const QImage*, unsigned)), m_rw2, SLOT(LoadTexture(const QImage*, unsigned)));
-    connect(m_rw3, SIGNAL(RequestFullRedraw()), m_rw2, SLOT(ClearSelection()));
-    connect(m_rw3, SIGNAL(RequestFullRedraw()), this, SLOT(UpdateView()));
-    connect(m_rw2, SIGNAL(RequestFullRedraw()), this, SLOT(UpdateView()));
+    connect(ui->actionExit,         &QAction::triggered,            this,   &CMainWindow::close);
+    connect(ui->actionOpen_obj,     &QAction::triggered,            this,   &CMainWindow::LoadModel);
+    connect(ui->actionLoad_Texture, &QAction::triggered,            this,   &CMainWindow::OpenMaterialManager);
+    connect(this,                   &CMainWindow::UpdateTexture,    m_rw3,  &IRenWin::LoadTexture);
+    connect(this,                   &CMainWindow::UpdateTexture,    m_rw2,  &IRenWin::LoadTexture);
+    connect(m_rw3,                  &IRenWin::RequestFullRedraw,    m_rw2,  &CRenWin2D::ClearSelection);
+    connect(m_rw3,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
+    connect(m_rw2,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
 }
 
 CMainWindow::~CMainWindow()
@@ -379,7 +369,6 @@ void CMainWindow::on_actionAutoPack_triggered()
     if(m_model)
     {
         m_model->PackGroups();
-        m_rw2->ZoomFit();
         UpdateView();
     }
 }
