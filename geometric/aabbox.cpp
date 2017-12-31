@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <glm/vec2.hpp>
 #include "aabbox.h"
 
@@ -12,8 +13,8 @@ SAABBox2D::SAABBox2D()
 SAABBox2D::SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop)
 {
     position = glm::vec2(rightBottom.x + leftTop.x, leftTop.y + rightBottom.y)*0.5f;
-    width = std::fabs(rightBottom.x - leftTop.x);
-    height = std::fabs(leftTop.y - rightBottom.y);
+    width = std::abs(rightBottom.x - leftTop.x);
+    height = std::abs(leftTop.y - rightBottom.y);
 }
 
 glm::vec2 SAABBox2D::GetRightBottom() const
@@ -54,8 +55,8 @@ SAABBox2D SAABBox2D::Union(const SAABBox2D& other) const
     float bottom = std::min(GetBottom(), other.GetBottom());
     SAABBox2D result;
     result.position = glm::vec2(right + left, top + bottom)*0.5f;
-    result.width = std::fabs(right - left);
-    result.height = std::fabs(top - bottom);
+    result.width = std::abs(right - left);
+    result.height = std::abs(top - bottom);
     return result;
 }
 
