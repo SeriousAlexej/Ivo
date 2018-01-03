@@ -19,8 +19,8 @@ struct GrahamPointCmp
 
     bool operator()(const glm::vec2& a, const glm::vec2& b) const
     {
-        double thetaA = std::atan2(a.y - lowest.y, a.x - lowest.x);
-        double thetaB = std::atan2(b.y - lowest.y, b.x - lowest.x);
+        float thetaA = glm::atan(a.y - lowest.y, a.x - lowest.x);
+        float thetaB = glm::atan(b.y - lowest.y, b.x - lowest.x);
 
         if(thetaA < thetaB)
         {
@@ -28,15 +28,13 @@ struct GrahamPointCmp
         } else if(thetaA > thetaB) {
             return false;
         } else {
-            double distanceA = glm::distance(lowest, a);
-            double distanceB = glm::distance(lowest, b);
+            float distanceA = glm::distance(lowest, a);
+            float distanceB = glm::distance(lowest, b);
 
             if(distanceA < distanceB)
-            {
                 return true;
-            } else {
+            else
                 return false;
-            }
         }
     }
 
@@ -53,13 +51,12 @@ enum Turn
 
 Turn GetTurn(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
 {
-
-    double crossProduct = ((b.x - a.x) * (c.y - a.y)) -
+    float crossProduct = ((b.x - a.x) * (c.y - a.y)) -
                           ((b.y - a.y) * (c.x - a.x));
 
-    if(crossProduct > 0.0)
+    if(crossProduct > 0.0f)
         return COUNTER_CLOCKWISE;
-    else if(crossProduct < 0.0)
+    else if(crossProduct < 0.0f)
         return CLOCKWISE;
     else
         return COLLINEAR;
