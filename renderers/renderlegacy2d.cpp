@@ -73,19 +73,20 @@ void CRenderer2DLegacy::PreDraw() const
 
 void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 {
-    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
     if(!m_model)
         return;
 
-    if(sinfo.m_editMode == CRenWin2D::EM_SNAP         ||
-       sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS ||
-       sinfo.m_editMode == CRenWin2D::EM_ROTATE)
+    m_gl.glClear(GL_DEPTH_BUFFER_BIT);
+
+    if(sinfo.m_editMode == CRenWin2D::EditMode::Snap  ||
+       sinfo.m_editMode == CRenWin2D::EditMode::Flaps ||
+       sinfo.m_editMode == CRenWin2D::EditMode::Rotate)
     {
         CMesh::STriangle2D* trUnderCursor = nullptr;
         int edgeUnderCursor = 0;
         m_model->GetStuffUnderCursor(sinfo.m_mouseWorldPos, trUnderCursor, edgeUnderCursor);
 
-        if(sinfo.m_editMode == CRenWin2D::EM_ROTATE && sinfo.m_triangle)
+        if(sinfo.m_editMode == CRenWin2D::EditMode::Rotate && sinfo.m_triangle)
         {
             trUnderCursor = sinfo.m_triangle;
             edgeUnderCursor = sinfo.m_edge;
@@ -93,9 +94,9 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 
         //highlight edge under cursor (if it has neighbour)
         if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() ||
-                             sinfo.m_editMode == CRenWin2D::EM_ROTATE))
+                             sinfo.m_editMode == CRenWin2D::EditMode::Rotate))
         {
-            if(sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS &&
+            if(sinfo.m_editMode == CRenWin2D::EditMode::Flaps &&
                trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                 return;
 
@@ -105,10 +106,10 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
 
             glm::vec2 e1Middle;
 
-            if(sinfo.m_editMode == CRenWin2D::EM_CHANGE_FLAPS)
+            if(sinfo.m_editMode == CRenWin2D::EditMode::Flaps)
             {
                 m_gl.glColor3f(0.0f, 0.0f, 1.0f);
-            } else if(sinfo.m_editMode == CRenWin2D::EM_SNAP) {
+            } else if(sinfo.m_editMode == CRenWin2D::EditMode::Snap) {
                 if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
                     m_gl.glColor3f(1.0f, 0.0f, 0.0f);
                 else
@@ -138,7 +139,7 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
                 default : break;
             }
 
-            if(sinfo.m_editMode != CRenWin2D::EM_ROTATE)
+            if(sinfo.m_editMode != CRenWin2D::EditMode::Rotate)
             {
                 const CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
                 int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);

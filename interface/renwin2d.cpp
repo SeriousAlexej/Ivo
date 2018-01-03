@@ -6,11 +6,13 @@
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <limits>
+#include <cassert>
 #include "mesh/mesh.h"
-#include "renwin2d.h"
+#include "interface/renwin2d.h"
 #include "settings/settings.h"
 #include "renderers/renderlegacy2d.h"
 #include "interface/selectioninfo.h"
+#include "interface/renwin2dEditInfo.h"
 
 using glm::vec2;
 using glm::vec3;
@@ -28,21 +30,6 @@ using glm::abs;
 using glm::max;
 using glm::min;
 
-struct CRenWin2D::SEditInfo
-{
-    QPointF             mousePressPoint;
-    CRenWin2D::EditMode editMode = CRenWin2D::EM_MOVE;
-    CMesh::STriGroup*   currGroup = nullptr;
-    CMesh::STriangle2D* currTri = nullptr;
-    int                 currEdge = -1;
-    vec2                currEdgeVec;
-    vec2                currGroupOldPos = vec2(0.0f, 0.0f);
-    float               currGroupOldRot = 0.0f;
-    vec2                fromCurrGroupCenter = vec2(0.0f,0.0f);
-    float               currGroupLastRot = 0.0f;
-    QPointF             mousePosition;
-};
-
 CRenWin2D::CRenWin2D(QWidget *parent) :
     IRenWin(parent)
 {
@@ -51,6 +38,14 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
     setMouseTracking(true);
 
     m_editInfo.reset(new SEditInfo());
+
+#define MODE_FUNCS(mode)\
+    SModeFuncs{std::bind(&CRenWin2D::MODE_FUNC_START(mode), this),\
+               std::bind(&CRenWin2D::MODE_FUNC_END(mode), this),\
+               std::bind(&CRenWin2D::MODE_FUNC_UPDATE(mode), this)}
+#define RENWIN_MODE(mode) m_modeFunctions[static_cast<int>(EditMode::mode)] = MODE_FUNCS(mode);
+#include "interface/modes2D/renwin2DModes.h"
+#undef RENWIN_MODE
 }
 
 CRenWin2D::~CRenWin2D()
@@ -312,9 +307,9 @@ bool CRenWin2D::event(QEvent *e)
             bool shouldUpdate = false;
             const auto& editMode = m_editInfo->editMode;
             if(m_editInfo->mousePosition != newPos &&
-                    (editMode == EM_SNAP           ||
-                     editMode == EM_CHANGE_FLAPS   ||
-                     editMode == EM_ROTATE))
+                    (editMode == EditMode::Snap    ||
+                     editMode == EditMode::Flaps   ||
+                     editMode == EditMode::Rotate))
                 shouldUpdate = true;
             m_editInfo->mousePosition = newPos;
             switch(m_cameraMode)
@@ -338,7 +333,7 @@ bool CRenWin2D::event(QEvent *e)
                 }
                 case CAM_MODE :
                 {
-                    ModeUpdate(newPos);
+                    ModeUpdate();
                     shouldUpdate = true;
                     break;
                 }
@@ -376,174 +371,36 @@ void CRenWin2D::ModeLMB()
         return;
 
     m_editInfo->currGroup = nullptr;
-    vec2 mouseWorldCoords = PointToWorldCoords(m_editInfo->mousePressPoint);
 
-    switch(m_editInfo->editMode)
-    {
-        case EM_ROTATE :
-        {
-            CMesh::STriangle2D *trUnderCursor = nullptr;
-            m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, m_editInfo->currEdge);
-
-            CMesh::STriGroup *tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-            m_editInfo->currGroup = tGroup;
-            if(!tGroup)
-            {
-                m_cameraMode = CAM_STILL;
-                break;
-            }
-            m_editInfo->currTri = trUnderCursor;
-            if(trUnderCursor)
-            {
-                CMesh::STriangle2D& trRef = *trUnderCursor;
-                m_editInfo->currEdgeVec = normalize(trRef[(m_editInfo->currEdge+1)%3] - trRef[m_editInfo->currEdge]);
-            }
-            m_editInfo->fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
-            m_editInfo->currGroupLastRot = tGroup->GetRotation();
-            m_editInfo->currGroupOldRot = tGroup->GetRotation();
-            break;
-        }
-        case EM_MOVE :
-        {
-            CMesh::STriGroup* tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-            m_editInfo->currGroup = tGroup;
-            if(!tGroup)
-            {
-                m_cameraMode = CAM_STILL;
-                return;
-            }
-            m_editInfo->fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
-            m_editInfo->currGroupOldPos = tGroup->GetPosition();
-            break;
-        }
-        case EM_SNAP :
-        {
-            CMesh::STriangle2D* trUnderCursor = nullptr;
-            int edgeUnderCursor = 0;
-            m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
-            if(trUnderCursor)
-            {
-                CMesh::STriGroup* grp = trUnderCursor->GetGroup();
-                if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                {
-                    grp->BreakEdge(trUnderCursor, edgeUnderCursor);
-                } else {
-                    grp->JoinEdge(trUnderCursor, edgeUnderCursor);
-                }
-            }
-            m_cameraMode = CAM_STILL;
-            break;
-        }
-        case EM_CHANGE_FLAPS :
-        {
-            CMesh::STriangle2D *trUnderCursor = nullptr;
-            int edgeUnderCursor = 0;
-            m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
-            if(trUnderCursor)
-            {
-                trUnderCursor->GetEdge(edgeUnderCursor)->NextFlapPosition();
-            }
-            m_cameraMode = CAM_STILL;
-            break;
-        }
-    default : break;
-    }
+    const int editMode = static_cast<int>(m_editInfo->editMode);
+    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
+        m_modeFunctions[editMode].start();
+    else
+        assert(false);
 }
 
-void CRenWin2D::ModeUpdate(QPointF &mpos)
+void CRenWin2D::ModeUpdate()
 {
     if(!m_model)
         return;
 
-    switch(m_editInfo->editMode)
-    {
-        case EM_MOVE :
-        {
-            const vec2 mNewPos = PointToWorldCoords(mpos) - m_editInfo->fromCurrGroupCenter;
-            if(m_editInfo->currGroup)
-                m_editInfo->currGroup->SetPosition(mNewPos[0], mNewPos[1]);
-            break;
-        }
-        case EM_ROTATE :
-        {
-            if(!m_editInfo->currGroup)
-                break;
-            CMesh::STriGroup *tGroup = static_cast<CMesh::STriGroup*>(m_editInfo->currGroup);
-
-            vec2 mNewPos = PointToWorldCoords(mpos) - tGroup->GetPosition();
-            float newAngle = dot(mNewPos, m_editInfo->fromCurrGroupCenter) / (length(mNewPos) * length(m_editInfo->fromCurrGroupCenter));
-            newAngle = degrees(acos(newAngle));
-
-            vec2 &vA = m_editInfo->fromCurrGroupCenter,
-                      &vB = mNewPos;
-
-            if(vA[0]*vB[1] - vB[0]*vA[1] < 0.0f)
-            {
-                newAngle *= -1.0f;
-            }
-
-            static const float snapDelta = 5.0f;
-            if(m_editInfo->currTri)
-            {
-                const CMesh::STriangle2D& tri = *(m_editInfo->currTri);
-                const vec2& triV1 = tri[m_editInfo->currEdge];
-                const vec2& triV2 = tri[(m_editInfo->currEdge+1)%3];
-                vec2 edgeVec = normalize(triV2 - triV1);
-                float angleOX = acos(clamp(edgeVec.x, -1.0f, 1.0f));
-                if(edgeVec.y < 0.0f)
-                {
-                    angleOX *= -1.0f;
-                }
-                angleOX = degrees(angleOX);
-
-                const float angleRad = radians(newAngle);
-                const mat2 rotMx(vec2(cos(angleRad), sin(angleRad)),
-                                 vec2(-sin(angleRad), cos(angleRad)));
-                vec2 edgeVecRotated = rotMx * m_editInfo->currEdgeVec;
-                float currAngleOX = acos(clamp(edgeVecRotated.x, -1.0f, 1.0f));
-                if(edgeVecRotated.y < 0.0f)
-                {
-                    currAngleOX *= -1.0f;
-                }
-                currAngleOX = degrees(currAngleOX);
-                for(float snapAngle = -180.0f; snapAngle < 200.0f; snapAngle += 45.0f)
-                {
-                    if(abs(snapAngle - currAngleOX) < snapDelta)
-                    {
-                        newAngle = tGroup->GetRotation() + snapAngle - angleOX - m_editInfo->currGroupLastRot;
-                        break;
-                    }
-                }
-            }
-
-            tGroup->SetRotation(newAngle + m_editInfo->currGroupLastRot);
-            break;
-        }
-    default : break;
-    }
+    const int editMode = static_cast<int>(m_editInfo->editMode);
+    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
+        m_modeFunctions[editMode].update();
+    else
+        assert(false);
 }
 
 void CRenWin2D::ModeEnd()
 {
     if(!m_model || !m_editInfo->currGroup)
         return;
-    CMesh::STriGroup& tGroup = *(m_editInfo->currGroup);
 
-    switch(m_editInfo->editMode)
-    {
-        case EM_MOVE :
-        {
-            m_model->NotifyGroupMovement(tGroup, m_editInfo->currGroupOldPos);
-            break;
-        }
-        case EM_ROTATE :
-        {
-            m_model->NotifyGroupRotation(tGroup, m_editInfo->currGroupOldRot);
-            m_editInfo->currTri = nullptr;
-            break;
-        }
-    default : break;
-    }
+    const int editMode = static_cast<int>(m_editInfo->editMode);
+    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
+        m_modeFunctions[editMode].end();
+    else
+        assert(false);
 }
 
 void CRenWin2D::ZoomFit()
@@ -559,10 +416,11 @@ void CRenWin2D::ZoomFit()
     for(const CMesh::STriGroup& grp : groups)
     {
         const vec2 grpPos = grp.GetPosition();
-        highestY = max(highestY, grpPos.y + grp.GetAABBHalfSide());
-        lowestY  = min(lowestY,  grpPos.y - grp.GetAABBHalfSide());
-        highestX = max(highestX, grpPos.x + grp.GetAABBHalfSide());
-        lowestX  = min(lowestX,  grpPos.x - grp.GetAABBHalfSide());
+        const float grpAABBh = grp.GetAABBHalfSide();
+        highestY = max(highestY, grpPos.y + grpAABBh);
+        lowestY  = min(lowestY,  grpPos.y - grpAABBh);
+        highestX = max(highestX, grpPos.x + grpAABBh);
+        lowestX  = min(lowestX,  grpPos.x - grpAABBh);
     }
 
     m_cameraPosition = vec3(-((highestX + lowestX) * 0.5f),
@@ -574,4 +432,3 @@ void CRenWin2D::ZoomFit()
     doneCurrent();
     update();
 }
-

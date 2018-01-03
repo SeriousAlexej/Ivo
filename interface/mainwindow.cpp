@@ -178,22 +178,22 @@ void CMainWindow::AskToSaveChanges()
 
 void CMainWindow::on_actionModeRotate_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EM_ROTATE);
+    m_rw2->SetMode(CRenWin2D::EditMode::Rotate);
 }
 
 void CMainWindow::on_actionModeSnap_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EM_SNAP);
+    m_rw2->SetMode(CRenWin2D::EditMode::Snap);
 }
 
 void CMainWindow::on_actionModeMove_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EM_MOVE);
+    m_rw2->SetMode(CRenWin2D::EditMode::Move);
 }
 
 void CMainWindow::on_actionModeFlaps_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EM_CHANGE_FLAPS);
+    m_rw2->SetMode(CRenWin2D::EditMode::Flaps);
 }
 
 void CMainWindow::on_actionExport_Sheets_triggered()

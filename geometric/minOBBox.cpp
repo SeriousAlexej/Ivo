@@ -197,7 +197,7 @@ SOBBox GetMinOBBox(const std::vector<glm::vec2>& points)
 
     Rect2D minBox;
     float minBoxArea = std::numeric_limits<float>::max();
-    double minAngle = 0.0;
+    float minAngle = 0.0f;
 
     for (int i = 0, sz = hullPoints.size(); i < sz; i++)
     {

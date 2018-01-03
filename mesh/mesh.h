@@ -56,8 +56,8 @@ public:
 
     void                        SetMaterials(const std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
 
-    CMesh::STriGroup*           GroupUnderCursor(glm::vec2 &curPos);
-    void                        GetStuffUnderCursor(const glm::vec2 &curPos, CMesh::STriangle2D*& tr, int &e) const;
+    CMesh::STriGroup*           GroupUnderCursor(const glm::vec2& curPos);
+    void                        GetStuffUnderCursor(const glm::vec2& curPos, CMesh::STriangle2D*& tr, int &e) const;
     void                        Undo();
     void                        Redo();
     void                        Clear();
@@ -248,6 +248,7 @@ public:
         void                    Deserialize(FILE *f);
         void                    Scale(const float scale);
         void                    ResetBBoxVectors();
+        void                    RecalcBBoxVectors();
 
         std::list<STriangle2D*> m_tris;
         glm::vec2               m_toTopLeft;

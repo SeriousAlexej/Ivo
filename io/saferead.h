@@ -10,17 +10,17 @@ extern void        BadFile(std::FILE* fi);
 extern std::string ReadLine(std::FILE* fi);
 }
 
+template<typename... Args>
+constexpr int argcount(Args&&... args) { return sizeof...(args); }
+
 #define FIRST_ARG(a, ...) a
 #define REST_ARGS(a, ...) __VA_ARGS__
 
 #define FLINESCANF_IMPL___(num, f, ...)\
 do { if(std::sscanf(SafeRead::ReadLine(f).c_str(), __VA_ARGS__) != num) SafeRead::BadFile(f); } while(false)
 
-#define GET_ARGCOUNT(...)\
-std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
-
 //reads formatted line from file, if errors occur -> closes file and throws
-#define SAFE_FLSCANF(...) FLINESCANF_IMPL___(GET_ARGCOUNT(__VA_ARGS__)-2, FIRST_ARG(__VA_ARGS__), REST_ARGS(__VA_ARGS__))
+#define SAFE_FLSCANF(...) FLINESCANF_IMPL___(argcount(__VA_ARGS__)-2, FIRST_ARG(__VA_ARGS__), REST_ARGS(__VA_ARGS__))
 
 //reads bytes from file, if number of read elements is wrong -> close file and throws
 #define SAFE_FREAD(dst_buf, elem_sz, num_elems, file_stream) \

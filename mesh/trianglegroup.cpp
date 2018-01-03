@@ -5,6 +5,7 @@
 #include <limits>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <glm/gtx/norm.hpp>
 #include <functional>
 #include "mesh/mesh.h"
 #include "mesh/command.h"
@@ -20,6 +21,7 @@ using glm::max;
 using glm::radians;
 using glm::sqrt;
 using glm::inverse;
+using glm::distance2;
 
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
@@ -135,6 +137,21 @@ void CMesh::STriGroup::ResetBBoxVectors()
     m_toRightDown = vec2(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::max());
 }
 
+void CMesh::STriGroup::RecalcBBoxVectors()
+{
+    ResetBBoxVectors();
+
+    for(STriangle2D *t : m_tris)
+        for(int v=0; v<3; ++v)
+        {
+            const vec2 &vert = t->m_vtxRT[v];
+            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
+            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
+            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
+            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
+        }
+}
+
 void CMesh::STriGroup::SetRotation(float angle)
 {
     m_rotation = angle;
@@ -146,19 +163,10 @@ void CMesh::STriGroup::SetRotation(float angle)
     m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
     m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
 
-    ResetBBoxVectors();
     for(STriangle2D *t : m_tris)
-    {
         t->GroupHasTransformed(m_matrix);
-        for(int v=0; v<3; ++v)
-        {
-            const vec2 &vert = t->m_vtxRT[v];
-            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
-        }
-    }
+
+    RecalcBBoxVectors();
 }
 
 void CMesh::STriGroup::SetPosition(float x, float y)
@@ -193,11 +201,10 @@ void CMesh::STriGroup::CentrateOrigin()
         const STriangle2D& tr = *tri;
         for(int i=0; i<3; ++i)
         {
-            float distanceSQR = (m_position.x - tr.m_vtxRT[i].x)*(m_position.x - tr.m_vtxRT[i].x) + (m_position.y - tr.m_vtxRT[i].y)*(m_position.y - tr.m_vtxRT[i].y);
+            float distanceSQR = distance2(m_position, tr.m_vtxRT[i]);
+
             if(distanceSQR > aabbHSideSQR)
-            {
                 aabbHSideSQR = distanceSQR;
-            }
         }
     }
     m_aabbHSide = sqrt(aabbHSideSQR);
@@ -219,19 +226,10 @@ void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
 
     m_tris.insert(m_tris.end(), grp->m_tris.begin(), grp->m_tris.end());
 
-    ResetBBoxVectors();
     for(STriangle2D*& t : m_tris)
-    {
         t->m_myGroup = this;
-        for(int v=0; v<3; ++v)
-        {
-            const vec2 &vert = t->m_vtxRT[v];
-            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
-        }
-    }
+
+    RecalcBBoxVectors();
     CentrateOrigin();
 
     for(auto it = CMesh::g_Mesh->m_groups.begin(); it != CMesh::g_Mesh->m_groups.end(); ++it)
@@ -590,21 +588,10 @@ void CMesh::STriGroup::Deserialize(FILE *f)
 
 void CMesh::STriGroup::Scale(const float scale)
 {
-    ResetBBoxVectors();
-
     for(STriangle2D* tri : m_tris)
-    {
         tri->Scale(scale);
-        for(int v=0; v<3; ++v)
-        {
-            const vec2 &vert = tri->m_vtxRT[v];
-            m_toTopLeft[0] = min(m_toTopLeft[0], vert[0]);
-            m_toTopLeft[1] = max(m_toTopLeft[1], vert[1]);
-            m_toRightDown[0] = max(m_toRightDown[0], vert[0]);
-            m_toRightDown[1] = min(m_toRightDown[1], vert[1]);
-        }
-    }
 
+    RecalcBBoxVectors();
     CentrateOrigin();
 }
 

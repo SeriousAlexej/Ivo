@@ -692,7 +692,7 @@ void CMesh::GroupPickedTriangles()
     ClearPickedTriangles();
 }
 
-CMesh::STriGroup* CMesh::GroupUnderCursor(vec2 &curPos)
+CMesh::STriGroup* CMesh::GroupUnderCursor(const vec2& curPos)
 {
     std::list<STriGroup*> possibleGroups;
     for(STriGroup& grp : m_groups)
@@ -716,7 +716,7 @@ CMesh::STriGroup* CMesh::GroupUnderCursor(vec2 &curPos)
     return nullptr;
 }
 
-void CMesh::GetStuffUnderCursor(const vec2 &curPos, CMesh::STriangle2D *&tr, int &e) const
+void CMesh::GetStuffUnderCursor(const vec2& curPos, CMesh::STriangle2D*& tr, int &e) const
 {
     std::list<const STriGroup*> possibleGroups;
     for(auto &grp : m_groups)
