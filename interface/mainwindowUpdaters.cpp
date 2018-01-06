@@ -62,20 +62,12 @@ template<typename TNotification>
 class ULambda : public CActionUpdater
 {
 public:
-    ULambda(std::function<void()>&& func) : m_func(std::move(func))
+    ULambda(std::function<void()>&& func)
     {
-        Subscribe<TNotification>(&CActionUpdater::RequestUpdate);
-        SetActions({nullptr});
+        Subscribe<TNotification>(std::move(func));
     }
 
-    void Update(QAction* action) override
-    {
-        Q_UNUSED(action);
-        m_func();
-    }
-
-private:
-    std::function<void()> m_func;
+    void Update(QAction* action) override { Q_UNUSED(action); }
 };
 
 }
@@ -111,8 +103,7 @@ void CMainWindow::RegisterUpdaters()
 
     updater = std::unique_ptr<CActionUpdater>(new ULambda<CMesh::UndoRedoChanged>([this]()
     {
-        if(HasModel())
-            m_modelModified = true;
+        m_modelModified = true;
     }));
     m_actionUpdaters.emplace_back(std::move(updater));
 }
