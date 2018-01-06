@@ -107,6 +107,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
     <addaction name="actionLoad_Texture"/>
     <addaction name="actionSave_As"/>
     <addaction name="actionSave"/>
+    <addaction name="actionCloseModel"/>
     <addaction name="separator"/>
     <addaction name="actionExport_Sheets"/>
     <addaction name="separator"/>
@@ -157,20 +158,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
     <bool>false</bool>
    </property>
    <property name="styleSheet">
-    <string notr="true">QMenuBar {
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(234, 234, 234, 255), stop:1 rgba(255, 255, 255, 255));
-}
-
-QToolBar {
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(234, 234, 234, 255));
-border-color: transparent;
-}
-
-QDockWidget::title {
-border: 1px solid lightgrey;
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(255, 255, 255, 255));
-}
-</string>
+    <string notr="true"/>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -205,16 +193,18 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
    <addaction name="separator"/>
+   <addaction name="actionModeSelect"/>
    <addaction name="actionModeMove"/>
    <addaction name="actionModeRotate"/>
    <addaction name="actionModeSnap"/>
    <addaction name="actionModeFlaps"/>
    <addaction name="separator"/>
-   <addaction name="actionExport_Sheets"/>
    <addaction name="actionScale"/>
-   <addaction name="actionSettings"/>
-   <addaction name="separator"/>
    <addaction name="actionPolypaint"/>
+   <addaction name="actionAutoPack"/>
+   <addaction name="separator"/>
+   <addaction name="actionExport_Sheets"/>
+   <addaction name="actionSettings"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget3D">
    <property name="sizePolicy">
@@ -273,7 +263,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
     <string>Import &amp;Model</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+I</string>
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionSave_As">
@@ -583,6 +573,39 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
    </property>
    <property name="toolTip">
     <string>Enter Polypaint mode</string>
+   </property>
+  </action>
+  <action name="actionModeSelect">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Select_mode.png</normaloff>:/icons/icons/Select_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>Select</string>
+   </property>
+   <property name="toolTip">
+    <string>Select</string>
+   </property>
+   <property name="shortcut">
+    <string>`</string>
+   </property>
+  </action>
+  <action name="actionCloseModel">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/close.png</normaloff>:/icons/icons/close.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close Model</string>
+   </property>
+   <property name="toolTip">
+    <string>Close currently opened model</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
  </widget>

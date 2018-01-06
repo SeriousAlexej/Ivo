@@ -13,6 +13,7 @@
 #include <assimp/scene.h>
 #include "pdo/pdotools.h"
 #include "geometric/aabbox.h"
+#include "notification/notification.h"
 
 #define IVO_VERSION 1
 
@@ -20,6 +21,9 @@ class CIvoCommand;
 
 class CMesh
 {
+public:
+    NOTIFICATION(UndoRedoChanged);
+
 public:
     struct SEdge;
     struct STriangle2D;
@@ -58,10 +62,11 @@ public:
 
     CMesh::STriGroup*           GroupUnderCursor(const glm::vec2& curPos);
     void                        GetStuffUnderCursor(const glm::vec2& curPos, CMesh::STriangle2D*& tr, int &e) const;
+    bool                        CanUndo() const;
+    bool                        CanRedo() const;
     void                        Undo();
     void                        Redo();
     void                        Clear();
-    bool                        IsModified() const;
     void                        NotifyGroupMovement(STriGroup& grp, const glm::vec2& oldPos);
     void                        NotifyGroupRotation(STriGroup& grp, float oldRot);
     void                        Serialize(FILE* f) const;

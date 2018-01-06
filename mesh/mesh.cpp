@@ -11,10 +11,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/mesh.h>
+#include <QObject>
 #include "mesh/mesh.h"
 #include "mesh/command.h"
 #include "settings/settings.h"
 #include "io/saferead.h"
+#include "notification/hub.h"
 
 using glm::uvec4;
 using glm::vec2;
@@ -39,15 +41,13 @@ CMesh* CMesh::g_Mesh = nullptr;
 CMesh::CMesh()
 {
     m_undoStack.setUndoLimit(100);
+
+    QObject::connect(&m_undoStack, &QUndoStack::canRedoChanged, [this](){ NOTIFY(UndoRedoChanged); });
+    QObject::connect(&m_undoStack, &QUndoStack::canUndoChanged, [this](){ NOTIFY(UndoRedoChanged); });
 }
 
 CMesh::~CMesh()
 {
-}
-
-bool CMesh::IsModified() const
-{
-    return m_undoStack.canUndo();
 }
 
 void CMesh::Clear()
@@ -820,6 +820,16 @@ vec3 CMesh::GetSizeMillimeters() const
     sizeMm.z = m_aabbox[6].z - m_aabbox[0].z;
     sizeMm *= 10.0f;
     return sizeMm;
+}
+
+bool CMesh::CanRedo() const
+{
+    return m_undoStack.canRedo();
+}
+
+bool CMesh::CanUndo() const
+{
+    return m_undoStack.canUndo();
 }
 
 void CMesh::Undo()

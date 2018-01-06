@@ -24,5 +24,7 @@
         <file>icons/48px-Document-save.png</file>
         <file>icons/48px-Image-x-generic.png</file>
         <file>icons/48px-Polypaint.png</file>
+        <file>icons/Select_mode.png</file>
+        <file>icons/close.png</file>
     </qresource>
 </RCC>

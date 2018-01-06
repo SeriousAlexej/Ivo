@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMessageBox>
 #include <string>
 #include <memory>
 #include <unordered_map>
-
+#include <vector>
+#include "notification/notification.h"
 
 namespace Ui {
 class MainWindow;
@@ -14,19 +16,26 @@ class MainWindow;
 class CMesh;
 class CRenWin3D;
 class CRenWin2D;
+class CActionUpdater;
 
 class CMainWindow : public QMainWindow
 {
     Q_OBJECT
+public:
+    NOTIFICATION(ModelStateChanged);
 
 public:
-    explicit CMainWindow(QWidget *parent = 0);
+    explicit CMainWindow(QWidget* parent = 0);
     ~CMainWindow();
+
+    bool            HasModel() const;
+    const CMesh*    GetModel() const;
 
 signals:
     void UpdateTexture(const QImage* img, unsigned index);
 
 private slots:
+    void UpdateView();
     void LoadModel();
     void OpenMaterialManager();
     void ClearTextures();
@@ -49,24 +58,27 @@ private slots:
     void on_actionShow_Grid_triggered(bool checked);
     void on_actionToggle_Lighting_triggered(bool checked);
     void on_actionPolypaint_triggered();
+    void on_actionModeSelect_triggered();
+    void on_actionCloseModel_triggered();
 
-private slots:
-    void UpdateView();
-    
 private:
     void closeEvent(QCloseEvent *event) override;
+    void RegisterUpdaters();
     void SetModelToWindows();
     void ClearModel();
-    void AskToSaveChanges();
+    QMessageBox::StandardButton AskToSaveChanges();
     void SaveToIVO(const char* filename);
     void LoadFromIVO(const char* filename);
     void LoadFromPDOv2_0(const char* filename);
 
     Ui::MainWindow*                         ui;
+    bool                                    m_modelModified;
     std::unique_ptr<CMesh>                  m_model;
     CRenWin3D*                              m_rw3;
     CRenWin2D*                              m_rw2;
     std::string                             m_openedModel = "";
+    std::vector
+        <std::unique_ptr<CActionUpdater>>   m_actionUpdaters;
     std::unordered_map
         <unsigned, std::string>             m_textures;
     std::unordered_map

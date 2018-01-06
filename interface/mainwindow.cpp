@@ -16,7 +16,9 @@
 #include "settings/settings.h"
 #include "scalewindow.h"
 #include "interface/materialmanager.h"
+#include "interface/actionupdater.h"
 #include "pdo/pdotools.h"
+#include "notification/hub.h"
 
 namespace Formats3D
 {
@@ -29,6 +31,7 @@ static std::mutex g_rw3Mutex;
 CMainWindow::CMainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
+    m_modelModified(false),
     m_model(nullptr)
 {
     ui->setupUi(this);
@@ -58,6 +61,7 @@ CMainWindow::CMainWindow(QWidget* parent) :
     ag->addAction(ui->actionModeRotate);
     ag->addAction(ui->actionModeSnap);
     ag->addAction(ui->actionModeFlaps);
+    ag->addAction(ui->actionModeSelect);
     ui->actionModeMove->setChecked(true);
 
     connect(ui->actionExit,         &QAction::triggered,            this,   &CMainWindow::close);
@@ -68,20 +72,41 @@ CMainWindow::CMainWindow(QWidget* parent) :
     connect(m_rw3,                  &IRenWin::RequestFullRedraw,    m_rw2,  &CRenWin2D::ClearSelection);
     connect(m_rw3,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
     connect(m_rw2,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
+
+    RegisterUpdaters();
+    for(auto& updater : m_actionUpdaters)
+        updater->RequestUpdate();
 }
 
 CMainWindow::~CMainWindow()
 {
+    m_actionUpdaters.clear();
     delete ui;
 }
 
-void CMainWindow::closeEvent(QCloseEvent *event)
+bool CMainWindow::HasModel() const
 {
+    return m_model != nullptr;
+}
+
+const CMesh* CMainWindow::GetModel() const
+{
+    return m_model.get();
+}
+
+void CMainWindow::closeEvent(QCloseEvent* event)
+{
+    const auto decision = AskToSaveChanges();
+    if(decision == QMessageBox::Cancel)
+    {
+        event->ignore();
+        return;
+    }
+
     g_rw3Mutex.lock();
     g_rw3IsValid = false;
     g_rw3Mutex.unlock();
 
-    AskToSaveChanges();
     event->accept();
 }
 
@@ -140,11 +165,14 @@ void CMainWindow::LoadModel()
 
     try
     {
+        const auto decision = AskToSaveChanges();
+        if(decision == QMessageBox::Cancel)
+            return;
+
         std::unique_ptr<CMesh> newModel(new CMesh());
 
         newModel->LoadMesh(modelPath);
 
-        AskToSaveChanges();
         m_openedModel = "";
         m_model = std::move(newModel);
         SetModelToWindows();
@@ -153,6 +181,8 @@ void CMainWindow::LoadModel()
         m_rw2->ZoomFit();
         m_rw3->ZoomFit();
         UpdateView();
+
+        NOTIFY(ModelStateChanged);
     } catch(std::exception& e)
     {
         ClearModel();
@@ -160,20 +190,22 @@ void CMainWindow::LoadModel()
     }
 }
 
-void CMainWindow::AskToSaveChanges()
+QMessageBox::StandardButton CMainWindow::AskToSaveChanges()
 {
+    QMessageBox::StandardButton result = QMessageBox::No;
+
     if(m_model)
     {
-        if(m_model->IsModified() || m_openedModel == "")
+        if(m_modelModified || m_openedModel == "")
         {
-            auto result = QMessageBox::question(this, "Save changes", "Do you want to save changes to current model?",
-                                                QMessageBox::Yes | QMessageBox::No);
+            result = QMessageBox::question(this, "Save changes", "Do you want to save changes to current model?",
+                                                QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
             if(result == QMessageBox::Yes)
-            {
                 on_actionSave_triggered();
-            }
         }
     }
+
+    return result;
 }
 
 void CMainWindow::on_actionModeRotate_triggered()
@@ -290,10 +322,13 @@ void CMainWindow::SetModelToWindows()
 
 void CMainWindow::ClearModel()
 {
+    m_modelModified = false;
     m_openedModel = "";
     m_model.reset(nullptr);
     SetModelToWindows();
     ClearTextures();
+
+    NOTIFY(ModelStateChanged);
 }
 
 void CMainWindow::on_actionLoad_Model_triggered()
@@ -305,7 +340,10 @@ void CMainWindow::on_actionLoad_Model_triggered()
     if(ivoModelPath.empty())
         return;
 
-    AskToSaveChanges();
+    const auto decision = AskToSaveChanges();
+    if(decision == QMessageBox::Cancel)
+        return;
+
     ClearModel();
 
     try
@@ -329,6 +367,7 @@ void CMainWindow::on_actionLoad_Model_triggered()
         m_rw3->ZoomFit();
         UpdateView();
 
+        NOTIFY(ModelStateChanged);
     } catch(std::exception& e)
     {
         ClearModel();
@@ -393,4 +432,16 @@ void CMainWindow::on_actionPolypaint_triggered()
     } else {
         m_rw3->SetEditMode(CRenWin3D::EM_NONE);
     }
+}
+
+void CMainWindow::on_actionModeSelect_triggered()
+{
+    m_rw2->SetMode(CRenWin2D::EditMode::Select);
+}
+
+void CMainWindow::on_actionCloseModel_triggered()
+{
+    const auto decision = AskToSaveChanges();
+    if(decision != QMessageBox::Cancel)
+        ClearModel();
 }

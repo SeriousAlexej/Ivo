@@ -84,6 +84,8 @@ void CMainWindow::SaveToIVO(const char* filename)
     m_openedModel = filename;
 
     std::fclose(f);
+
+    m_modelModified = false;
 }
 
 void CMainWindow::LoadFromIVO(const char* filename)
