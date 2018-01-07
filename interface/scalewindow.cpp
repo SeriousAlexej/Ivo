@@ -9,6 +9,7 @@ CScaleWindow::CScaleWindow(QWidget *parent) :
     m_outputScale(nullptr)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 }
 
 CScaleWindow::~CScaleWindow()

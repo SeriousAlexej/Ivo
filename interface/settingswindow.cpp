@@ -8,6 +8,7 @@ CSettingsWindow::CSettingsWindow(QWidget *parent) :
     ui(new Ui::CSettingsWindow)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 }
 
 CSettingsWindow::~CSettingsWindow()

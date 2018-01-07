@@ -23,7 +23,6 @@ public:
     inline std::unordered_map<unsigned, std::string>& GetTextures() { return m_textures; }
 
 private slots:
-    void on_btnClose_clicked();
     void on_btnAddTex_clicked();
     void on_btnRemTex_clicked();
 

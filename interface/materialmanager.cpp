@@ -7,6 +7,7 @@ CMaterialManager::CMaterialManager(QWidget *parent) :
     ui(new Ui::CMaterialManager)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 }
 
 CMaterialManager::~CMaterialManager()
@@ -38,11 +39,6 @@ void CMaterialManager::SetMaterials(const std::unordered_map<unsigned, std::stri
 
         ui->listMaterials->addItem(QString((it->second + " -- " + texPath).c_str()));
     }
-}
-
-void CMaterialManager::on_btnClose_clicked()
-{
-    close();
 }
 
 void CMaterialManager::on_btnAddTex_clicked()

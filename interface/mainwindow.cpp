@@ -35,6 +35,7 @@ CMainWindow::CMainWindow(QWidget* parent) :
     m_model(nullptr)
 {
     ui->setupUi(this);
+    setCentralWidget(nullptr);
     m_rw3 = ui->frameLeft;
     m_rw2 = ui->frameRight;
 

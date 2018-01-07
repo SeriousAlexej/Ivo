@@ -173,7 +173,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
     </size>
    </property>
    <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonIconOnly</enum>
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -260,7 +260,10 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Document-new.png</normaloff>:/icons/icons/48px-Document-new.png</iconset>
    </property>
    <property name="text">
-    <string>Import &amp;Model</string>
+    <string>Import</string>
+   </property>
+   <property name="toolTip">
+    <string>Import Model</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -305,7 +308,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
    </property>
    <property name="text">
-    <string>Mate&amp;rial Manager</string>
+    <string>Materials</string>
    </property>
    <property name="toolTip">
     <string>Browse current model's materials and assign textures</string>
@@ -353,7 +356,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Go-bottom.png</normaloff>:/icons/icons/48px-Go-bottom.png</iconset>
    </property>
    <property name="text">
-    <string>Join/Break edges</string>
+    <string>Edges</string>
    </property>
    <property name="toolTip">
     <string>Join/Break edges</string>
@@ -395,7 +398,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/Flaps_mode.png</normaloff>:/icons/icons/Flaps_mode.png</iconset>
    </property>
    <property name="text">
-    <string>Switch flaps</string>
+    <string>Flaps</string>
    </property>
    <property name="toolTip">
     <string>Switch flaps</string>
@@ -410,7 +413,10 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Printer.png</normaloff>:/icons/icons/48px-Printer.png</iconset>
    </property>
    <property name="text">
-    <string>E&amp;xport Sheets</string>
+    <string>E&amp;xport</string>
+   </property>
+   <property name="toolTip">
+    <string>Export Sheets</string>
    </property>
   </action>
   <action name="actionSettings">
@@ -491,7 +497,10 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Document-open.png</normaloff>:/icons/icons/48px-Document-open.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Load Model</string>
+    <string>Load</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Model</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
