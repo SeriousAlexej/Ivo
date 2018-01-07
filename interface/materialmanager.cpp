@@ -1,4 +1,5 @@
 #include <QFileDialog>
+#include <QDialogButtonBox>
 #include "materialmanager.h"
 #include "ui_materialmanager.h"
 
@@ -8,6 +9,8 @@ CMaterialManager::CMaterialManager(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
+
+    QObject::connect(ui->btnClose, &QDialogButtonBox::clicked, this, &QDialog::close);
 }
 
 CMaterialManager::~CMaterialManager()

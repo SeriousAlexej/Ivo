@@ -126,13 +126,13 @@ void CSettingsWindow::SaveSettings() const
     s.SetFoldMaxFlatAngle(maxFlatAngle);
 }
 
-void CSettingsWindow::on_pushButtonOK_clicked()
+void CSettingsWindow::on_buttonBox_accepted()
 {
     SaveSettings();
     close();
 }
 
-void CSettingsWindow::on_pushButtonCancel_clicked()
+void CSettingsWindow::on_buttonBox_rejected()
 {
     close();
 }

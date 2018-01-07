@@ -18,8 +18,8 @@ public:
     void LoadSettings();
 
 private slots:
-    void on_pushButtonOK_clicked();
-    void on_pushButtonCancel_clicked();
+    void on_buttonBox_accepted();
+    void on_buttonBox_rejected();
     void on_pushButtonOrientation_clicked();
     void on_pushButtonApplyPreset_clicked();
     void on_spinBoxW_valueChanged(int i);

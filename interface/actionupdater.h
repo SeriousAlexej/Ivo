@@ -5,7 +5,7 @@
 #include <QAction>
 #include "notification/subscriber.h"
 
-class CActionUpdater : protected Subscriber
+class CActionUpdater : public Subscriber
 {
 public:
     CActionUpdater() = default;

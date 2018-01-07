@@ -4,10 +4,11 @@
 
 class Subscriber
 {
-protected:
+public:
     Subscriber() = default;
     virtual ~Subscriber();
 
+protected:
     template<typename TNotification,
              typename TMethod,
              typename std::enable_if<std::is_member_function_pointer<TMethod>::value, int>::type = 0>
