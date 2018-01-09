@@ -70,7 +70,6 @@ CMainWindow::CMainWindow(QWidget* parent) :
     connect(ui->actionLoad_Texture, &QAction::triggered,            this,   &CMainWindow::OpenMaterialManager);
     connect(this,                   &CMainWindow::UpdateTexture,    m_rw3,  &IRenWin::LoadTexture);
     connect(this,                   &CMainWindow::UpdateTexture,    m_rw2,  &IRenWin::LoadTexture);
-    connect(m_rw3,                  &IRenWin::RequestFullRedraw,    m_rw2,  &CRenWin2D::ClearSelection);
     connect(m_rw3,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
     connect(m_rw2,                  &IRenWin::RequestFullRedraw,    this,   &CMainWindow::UpdateView);
 
@@ -270,7 +269,6 @@ void CMainWindow::on_actionUndo_triggered()
     if(m_model)
     {
         m_model->Undo();
-        m_rw2->ClearSelection();
         UpdateView();
     }
 }
@@ -280,7 +278,6 @@ void CMainWindow::on_actionRedo_triggered()
     if(m_model)
     {
         m_model->Redo();
-        m_rw2->ClearSelection();
         UpdateView();
     }
 }

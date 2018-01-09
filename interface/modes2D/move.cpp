@@ -37,4 +37,7 @@ void CRenWin2D::MoveUpdate()
 void CRenWin2D::MoveEnd()
 {
     m_model->NotifyGroupsMovement(m_editInfo->selection, m_editInfo->selectionOldPositions);
+
+    if(m_editInfo->selectionFilledOnSpot)
+        ClearSelection();
 }

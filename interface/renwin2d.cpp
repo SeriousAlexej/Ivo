@@ -403,13 +403,9 @@ void CRenWin2D::ModeEnd()
 
     const int editMode = static_cast<int>(m_editInfo->editMode);
     if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
-    {
         m_modeFunctions[editMode].end();
-        if(m_editInfo->selectionFilledOnSpot)
-            ClearSelection();
-    } else {
+    else
         assert(false);
-    }
 }
 
 void CRenWin2D::ZoomFit()

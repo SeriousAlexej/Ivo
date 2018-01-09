@@ -131,4 +131,7 @@ void CRenWin2D::RotateEnd()
                                         m_editInfo->selectionOldPositions,
                                         m_editInfo->selectionOldRotations);
     m_editInfo->currTri = nullptr;
+
+    if(m_editInfo->selectionFilledOnSpot)
+        ClearSelection();
 }
