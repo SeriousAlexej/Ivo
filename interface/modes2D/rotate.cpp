@@ -1,8 +1,10 @@
+#include <cassert>
 #include <glm/mat2x2.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include "interface/selectioninfo.h"
 #include "interface/renwin2dEditInfo.h"
+#include "geometric/aabbox.h"
 
 using glm::vec2;
 using glm::mat2;
@@ -20,45 +22,53 @@ using glm::cos;
 void CRenWin2D::RotateStart()
 {
     const vec2 mouseWorldCoords = PointToWorldCoords(m_editInfo->mousePressPoint);
-    CMesh::STriangle2D* trUnderCursor = nullptr;
-    m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, m_editInfo->currEdge);
-
-    CMesh::STriGroup* tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-    m_editInfo->currGroup = tGroup;
-    if(!tGroup)
+    m_model->GetStuffUnderCursor(mouseWorldCoords, m_editInfo->currTri, m_editInfo->currEdge);
+    TryFillSelection(mouseWorldCoords);
+    if(m_editInfo->selection.empty())
     {
         m_cameraMode = CAM_STILL;
         return;
     }
-    m_editInfo->currTri = trUnderCursor;
-    if(trUnderCursor)
+
+    if(m_editInfo->currTri)
     {
-        CMesh::STriangle2D& trRef = *trUnderCursor;
-        m_editInfo->currEdgeVec = normalize(trRef[(m_editInfo->currEdge+1)%3] - trRef[m_editInfo->currEdge]);
+        CMesh::STriangle2D& trRef = *(m_editInfo->currTri);
+        int currEdge = m_editInfo->currEdge;
+        m_editInfo->currEdgeVec = normalize(trRef[(currEdge+1)%3] - trRef[currEdge]);
     }
-    m_editInfo->fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
-    m_editInfo->currGroupLastRot = tGroup->GetRotation();
-    m_editInfo->currGroupOldRot = tGroup->GetRotation();
+
+    SAABBox2D bbox = m_editInfo->selection[0]->GetAABBox();
+    m_editInfo->selectionOldRotations.clear();
+    m_editInfo->selectionLastRotations.clear();
+    m_editInfo->selectionOldPositions.clear();
+    m_editInfo->selectionOldRotations.reserve(m_editInfo->selection.size());
+    m_editInfo->selectionLastRotations.reserve(m_editInfo->selection.size());
+    m_editInfo->selectionOldPositions.reserve(m_editInfo->selection.size());
+
+    for(auto* grp : m_editInfo->selection)
+    {
+        bbox = bbox.Union(grp->GetAABBox());
+        m_editInfo->selectionOldRotations.push_back(grp->GetRotation());
+        m_editInfo->selectionLastRotations.push_back(grp->GetRotation());
+        m_editInfo->selectionOldPositions.push_back(grp->GetPosition());
+    }
+    m_editInfo->rotationCenter = bbox.position;
 }
 
 //------------------------------------------------------------------------
 void CRenWin2D::RotateUpdate()
 {
-    if(!m_editInfo->currGroup)
-        return;
-    CMesh::STriGroup* tGroup = m_editInfo->currGroup;
+    const vec2 startPos = PointToWorldCoords(m_editInfo->mousePressPoint) - m_editInfo->rotationCenter;
+    const vec2 newPos = PointToWorldCoords(m_editInfo->mousePosition) - m_editInfo->rotationCenter;
+    float newAngle = dot(newPos, startPos) / (length(newPos) * length(startPos));
+    float angleRad = acos(clamp(newAngle, -1.0f, 1.0f));
 
-    vec2 mNewPos = PointToWorldCoords(m_editInfo->mousePosition) - tGroup->GetPosition();
-    float newAngle = dot(mNewPos, m_editInfo->fromCurrGroupCenter) / (length(mNewPos) * length(m_editInfo->fromCurrGroupCenter));
-    newAngle = degrees(acos(newAngle));
+    if(startPos[0]*newPos[1] - newPos[0]*startPos[1] < 0.0f)
+        angleRad *= -1.0f;
 
-    vec2& vA = m_editInfo->fromCurrGroupCenter;
-    vec2& vB = mNewPos;
-
-    if(vA[0]*vB[1] - vB[0]*vA[1] < 0.0f)
-    {
-        newAngle *= -1.0f;
-    }
+    newAngle = degrees(angleRad);
+    mat2 rotMx(vec2(cos(angleRad), sin(angleRad)),
+               vec2(-sin(angleRad), cos(angleRad)));
 
     static const float snapDelta = 5.0f;
     if(m_editInfo->currTri)
@@ -66,41 +76,59 @@ void CRenWin2D::RotateUpdate()
         const CMesh::STriangle2D& tri = *(m_editInfo->currTri);
         const vec2& triV1 = tri[m_editInfo->currEdge];
         const vec2& triV2 = tri[(m_editInfo->currEdge+1)%3];
-        vec2 edgeVec = normalize(triV2 - triV1);
-        float angleOX = acos(clamp(edgeVec.x, -1.0f, 1.0f));
+        const vec2 edgeVec = normalize(triV2 - triV1);
+        float angleOX = degrees(acos(clamp(edgeVec.x, -1.0f, 1.0f)));
         if(edgeVec.y < 0.0f)
-        {
             angleOX *= -1.0f;
-        }
-        angleOX = degrees(angleOX);
 
-        const float angleRad = radians(newAngle);
-        const mat2 rotMx(vec2(cos(angleRad), sin(angleRad)),
-                         vec2(-sin(angleRad), cos(angleRad)));
         vec2 edgeVecRotated = rotMx * m_editInfo->currEdgeVec;
-        float currAngleOX = acos(clamp(edgeVecRotated.x, -1.0f, 1.0f));
+        float currAngleOX = degrees(acos(clamp(edgeVecRotated.x, -1.0f, 1.0f)));
         if(edgeVecRotated.y < 0.0f)
-        {
             currAngleOX *= -1.0f;
-        }
-        currAngleOX = degrees(currAngleOX);
+
         for(float snapAngle = -180.0f; snapAngle < 200.0f; snapAngle += 45.0f)
         {
             if(abs(snapAngle - currAngleOX) < snapDelta)
             {
-                newAngle = tGroup->GetRotation() + snapAngle - angleOX - m_editInfo->currGroupLastRot;
+                const auto* referenceGroup = m_editInfo->currTri->GetGroup();
+                bool refFound = false;
+                int i = 0;
+                for(auto* grp : m_editInfo->selection)
+                {
+                    if(grp == referenceGroup)
+                    {
+                        refFound = true;
+                        break;
+                    }
+                    i++;
+                }
+                assert(refFound);
+                float refGroupLastRot = m_editInfo->selectionLastRotations[i];
+
+                newAngle = referenceGroup->GetRotation() + snapAngle - angleOX - refGroupLastRot;
+                angleRad = radians(newAngle);
+                rotMx = mat2(vec2(cos(angleRad), sin(angleRad)),
+                             vec2(-sin(angleRad), cos(angleRad)));
                 break;
             }
         }
     }
 
-    tGroup->SetRotation(newAngle + m_editInfo->currGroupLastRot);
+    int i = 0;
+    for(auto* grp : m_editInfo->selection)
+    {
+        const vec2 grpShift = m_editInfo->selectionOldPositions[i] - m_editInfo->rotationCenter;
+        const vec2 newPos = m_editInfo->rotationCenter + rotMx * grpShift;
+        grp->SetPosition(newPos.x, newPos.y);
+        grp->SetRotation(newAngle + m_editInfo->selectionLastRotations[i++]);
+    }
 }
 
 //------------------------------------------------------------------------
 void CRenWin2D::RotateEnd()
 {
-    CMesh::STriGroup& tGroup = *(m_editInfo->currGroup);
-    m_model->NotifyGroupRotation(tGroup, m_editInfo->currGroupOldRot);
+    m_model->NotifyGroupsTransformation(m_editInfo->selection,
+                                        m_editInfo->selectionOldPositions,
+                                        m_editInfo->selectionOldRotations);
     m_editInfo->currTri = nullptr;
 }

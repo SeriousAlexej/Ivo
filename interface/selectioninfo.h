@@ -5,11 +5,14 @@
 
 struct SSelectionInfo
 {
-    glm::vec2           m_mouseWorldPos;
-    CRenWin2D::EditMode m_editMode;
-    CMesh::STriGroup*   m_group;
-    CMesh::STriangle2D* m_triangle;
-    int                 m_edge;
+    bool                        m_modeIsActive;
+    glm::vec2                   m_mouseWorldPosStart;
+    glm::vec2                   m_mouseWorldPos;
+    CRenWin2D::EditMode         m_editMode;
+    CMesh::STriangle2D*         m_triangle;
+    int                         m_edge;
+    std::vector
+        <CMesh::STriGroup*>     m_selection;
 };
 
 #endif

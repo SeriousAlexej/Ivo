@@ -692,17 +692,23 @@ void CMesh::GroupPickedTriangles()
     ClearPickedTriangles();
 }
 
+std::vector<CMesh::STriGroup*> CMesh::GetGroupsInRange(const SAABBox2D &range)
+{
+    std::vector<STriGroup*> groupsInRange;
+    for(auto& grp : m_groups)
+    {
+        if(grp.GetAABBox().Intersects(range))
+            groupsInRange.push_back(&grp);
+    }
+    return groupsInRange;
+}
+
 CMesh::STriGroup* CMesh::GroupUnderCursor(const vec2& curPos)
 {
     std::list<STriGroup*> possibleGroups;
     for(STriGroup& grp : m_groups)
     {
-        float gLX = grp.m_position[0] - grp.m_aabbHSide;
-        float gRX = grp.m_position[0] + grp.m_aabbHSide;
-        float gTY = grp.m_position[1] + grp.m_aabbHSide;
-        float gDY = grp.m_position[1] - grp.m_aabbHSide;
-        if(curPos[0] >= gLX && curPos[0] <= gRX &&
-           curPos[1] >= gDY && curPos[1] <= gTY)
+        if(grp.GetAABBox().PointInside(curPos))
             possibleGroups.push_back(&grp);
     }
     for(auto &grp : possibleGroups)
@@ -721,12 +727,7 @@ void CMesh::GetStuffUnderCursor(const vec2& curPos, CMesh::STriangle2D*& tr, int
     std::list<const STriGroup*> possibleGroups;
     for(auto &grp : m_groups)
     {
-        float gLX = grp.m_position[0] - grp.m_aabbHSide;
-        float gRX = grp.m_position[0] + grp.m_aabbHSide;
-        float gTY = grp.m_position[1] + grp.m_aabbHSide;
-        float gDY = grp.m_position[1] - grp.m_aabbHSide;
-        if(curPos[0] >= gLX && curPos[0] <= gRX &&
-           curPos[1] >= gDY && curPos[1] <= gTY)
+        if(grp.GetAABBox().PointInside(curPos))
             possibleGroups.push_back(&grp);
     }
     struct SClosestEdge
@@ -751,7 +752,10 @@ void CMesh::GetStuffUnderCursor(const vec2& curPos, CMesh::STriangle2D*& tr, int
         }
     }
     if(chart.empty())
+    {
+        tr = nullptr;
         return;
+    }
     chart.sort([](const SClosestEdge &i, const SClosestEdge &j) { return i.score < j.score; } );
     tr = chart.front().t;
     e = chart.front().e;
@@ -850,29 +854,80 @@ void CMesh::Redo()
     }
 }
 
-void CMesh::NotifyGroupMovement(STriGroup &grp, const vec2& oldPos)
+void CMesh::NotifyGroupsMovement(const std::vector<STriGroup*>& groups, const std::vector<glm::vec2>& oldPositions)
 {
-    CAtomicCommand cmdMov(CT_MOVE);
-    cmdMov.SetTriangle(grp.m_tris.front());
-    cmdMov.SetTranslation(grp.GetPosition() - oldPos);
+    assert(groups.size() == oldPositions.size());
 
-    grp.SetPosition(oldPos.x, oldPos.y);
+    if(groups.empty())
+        return;
 
     CIvoCommand* cmd = new CIvoCommand();
-    cmd->AddAction(cmdMov);
+
+    int i = 0;
+    for(auto* grp : groups)
+    {
+        const vec2& oldPos = oldPositions[i++];
+        CAtomicCommand cmdMov(CT_MOVE);
+        cmdMov.SetTriangle(grp->m_tris.front());
+        cmdMov.SetTranslation(grp->GetPosition() - oldPos);
+        grp->SetPosition(oldPos.x, oldPos.y);
+        cmd->AddAction(cmdMov);
+    }
+
     m_undoStack.push(cmd);
 }
 
-void CMesh::NotifyGroupRotation(STriGroup &grp, float oldRot)
+void CMesh::NotifyGroupsRotation(const std::vector<STriGroup*>& groups, const std::vector<float>& oldRotations)
 {
-    CAtomicCommand cmdRot(CT_ROTATE);
-    cmdRot.SetTriangle(grp.m_tris.front());
-    cmdRot.SetRotation(grp.GetRotation() - oldRot);
+    assert(groups.size() == oldRotations.size());
 
-    grp.SetRotation(oldRot);
+    if(groups.empty())
+        return;
 
     CIvoCommand* cmd = new CIvoCommand();
-    cmd->AddAction(cmdRot);
+
+    int i = 0;
+    for(auto* grp : groups)
+    {
+        const float oldRot = oldRotations[i++];
+        CAtomicCommand cmdRot(CT_ROTATE);
+        cmdRot.SetTriangle(grp->m_tris.front());
+        cmdRot.SetRotation(grp->GetRotation() - oldRot);
+        grp->SetRotation(oldRot);
+        cmd->AddAction(cmdRot);
+    }
+
+    m_undoStack.push(cmd);
+}
+
+void CMesh::NotifyGroupsTransformation(const std::vector<STriGroup*>& groups, const std::vector<glm::vec2>& oldPositions, const std::vector<float>& oldRotations)
+{
+    assert(groups.size() == oldPositions.size());
+    assert(groups.size() == oldRotations.size());
+
+    if(groups.empty())
+        return;
+
+    CIvoCommand* cmd = new CIvoCommand();
+
+    int i = 0;
+    for(auto* grp : groups)
+    {
+        const float oldRot = oldRotations[i];
+        CAtomicCommand cmdRot(CT_ROTATE);
+        cmdRot.SetTriangle(grp->m_tris.front());
+        cmdRot.SetRotation(grp->GetRotation() - oldRot);
+        grp->SetRotation(oldRot);
+        cmd->AddAction(cmdRot);
+
+        const vec2& oldPos = oldPositions[i++];
+        CAtomicCommand cmdMov(CT_MOVE);
+        cmdMov.SetTriangle(grp->m_tris.front());
+        cmdMov.SetTranslation(grp->GetPosition() - oldPos);
+        grp->SetPosition(oldPos.x, oldPos.y);
+        cmd->AddAction(cmdMov);
+    }
+
     m_undoStack.push(cmd);
 }
 
@@ -1066,9 +1121,7 @@ SAABBox2D CMesh::GetAABBox2D() const
     SAABBox2D bbox(m_groups.front().m_toRightDown, m_groups.front().m_toTopLeft);
 
     for(const STriGroup& grp : m_groups)
-    {
-        bbox = bbox.Union(SAABBox2D(grp.m_toRightDown, grp.m_toTopLeft));
-    }
+        bbox = bbox.Union(grp.GetAABBox());
 
     return bbox;
 }

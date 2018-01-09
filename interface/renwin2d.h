@@ -7,7 +7,8 @@
 #include <cstdio>
 #include <unordered_map>
 #include <functional>
-#include "renwin.h"
+#include "interface/renwin.h"
+#include "notification/subscriber.h"
 
 #define MODE_FUNC_START(mode) mode ## Start
 #define MODE_FUNC_UPDATE(mode) mode ## Update
@@ -15,7 +16,7 @@
 
 class IRenderer2D;
 
-class CRenWin2D : public IRenWin
+class CRenWin2D : public IRenWin, public Subscriber
 {
 Q_OBJECT
 #define RENWIN_MODE(mode)\
@@ -53,6 +54,7 @@ protected:
     virtual bool event(QEvent *e) override final;
 
 private:
+    void         TryFillSelection(const glm::vec2& pos);
     void         RecalcProjection();
     void         ModeLMB();
     void         ModeUpdate();

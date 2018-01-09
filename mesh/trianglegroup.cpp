@@ -10,6 +10,7 @@
 #include "mesh/mesh.h"
 #include "mesh/command.h"
 #include "io/saferead.h"
+#include "notification/hub.h"
 
 using glm::mat3;
 using glm::vec2;
@@ -221,6 +222,8 @@ void CMesh::STriGroup::CentrateOrigin()
 
 void CMesh::STriGroup::AttachGroup(STriangle2D* tr2, int e2)
 {
+    NOTIFY(CMesh::GroupStructureChanging);
+
     assert(tr2 && e2 >= 0 && e2 <= 2);
     const STriGroup* grp = tr2->m_myGroup;
 
@@ -360,6 +363,11 @@ CIvoCommand* CMesh::STriGroup::GetJoinEdgeCmd(STriangle2D *tr, int e)
     return cmd;
 }
 
+SAABBox2D CMesh::STriGroup::GetAABBox() const
+{
+    return SAABBox2D(m_toRightDown, m_toTopLeft);
+}
+
 void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
 {
     CIvoCommand* cmd = GetJoinEdgeCmd(tr, e);
@@ -373,6 +381,8 @@ void CMesh::STriGroup::JoinEdge(STriangle2D *tr, int e)
 
 void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
 {
+    NOTIFY(CMesh::GroupStructureChanging);
+
     assert(tr2 && e2 >= 0 && e2 <= 2);
     if(!tr2->m_edges[e2]->HasTwoTriangles()) return;
 
@@ -435,8 +445,6 @@ void CMesh::STriGroup::BreakGroup(STriangle2D *tr2, int e2)
     }
 
     CentrateOrigin();
-
-    tr->m_edges[e]->m_flapPosition = SEdge::FP_LEFT;
 }
 
 CIvoCommand* CMesh::STriGroup::GetBreakEdgeCmd(STriangle2D *tr, int e)

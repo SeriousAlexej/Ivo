@@ -23,6 +23,7 @@ class CMesh
 {
 public:
     NOTIFICATION(UndoRedoChanged);
+    NOTIFICATION(GroupStructureChanging);
 
 public:
     struct SEdge;
@@ -60,6 +61,7 @@ public:
 
     void                        SetMaterials(const std::unordered_map<unsigned, std::string>& materials) { m_materials = materials; }
 
+    std::vector<STriGroup*>     GetGroupsInRange(const SAABBox2D& range);
     CMesh::STriGroup*           GroupUnderCursor(const glm::vec2& curPos);
     void                        GetStuffUnderCursor(const glm::vec2& curPos, CMesh::STriangle2D*& tr, int &e) const;
     bool                        CanUndo() const;
@@ -67,8 +69,9 @@ public:
     void                        Undo();
     void                        Redo();
     void                        Clear();
-    void                        NotifyGroupMovement(STriGroup& grp, const glm::vec2& oldPos);
-    void                        NotifyGroupRotation(STriGroup& grp, float oldRot);
+    void                        NotifyGroupsMovement(const std::vector<STriGroup*>& groups, const std::vector<glm::vec2>& oldPositions);
+    void                        NotifyGroupsRotation(const std::vector<STriGroup*>& groups, const std::vector<float>& oldRotations);
+    void                        NotifyGroupsTransformation(const std::vector<STriGroup*>& groups, const std::vector<glm::vec2>& oldPositions, const std::vector<float>& oldRotations);
     void                        Serialize(FILE* f) const;
     void                        Deserialize(FILE* f);
     void                        Scale(const float scale);
@@ -228,6 +231,7 @@ public:
         STriGroup& operator=(const STriGroup& o) = delete;
         STriGroup& operator=(const STriGroup&& o) = delete;
 
+        SAABBox2D               GetAABBox() const;
         void                    JoinEdge(STriangle2D* tr, int e);
         void                    BreakEdge(STriangle2D* tr, int e);
         void                    SetRotation(float angle);

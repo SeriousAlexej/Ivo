@@ -7,17 +7,18 @@
 
 struct CRenWin2D::SEditInfo
 {
-    QPointF             mousePressPoint;
-    CRenWin2D::EditMode editMode = CRenWin2D::EditMode::Move;
-    CMesh::STriGroup*   currGroup = nullptr;
-    CMesh::STriangle2D* currTri = nullptr;
-    int                 currEdge = -1;
-    glm::vec2           currEdgeVec;
-    glm::vec2           currGroupOldPos = glm::vec2(0.0f, 0.0f);
-    float               currGroupOldRot = 0.0f;
-    glm::vec2           fromCurrGroupCenter = glm::vec2(0.0f,0.0f);
-    float               currGroupLastRot = 0.0f;
-    QPointF             mousePosition;
+    QPointF                        mousePressPoint;
+    QPointF                        mousePosition;
+    CRenWin2D::EditMode            editMode = CRenWin2D::EditMode::Move;
+    CMesh::STriangle2D*            currTri = nullptr;
+    int                            currEdge = -1;
+    glm::vec2                      currEdgeVec;
+    glm::vec2                      rotationCenter = glm::vec2(0.0f,0.0f);
+    bool                           selectionFilledOnSpot = false;
+    std::vector<glm::vec2>         selectionOldPositions;
+    std::vector<float>             selectionOldRotations;
+    std::vector<float>             selectionLastRotations;
+    std::vector<CMesh::STriGroup*> selection;
 };
 
 #endif

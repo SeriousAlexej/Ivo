@@ -1,3 +1,4 @@
+#include <cassert>
 #include "interface/selectioninfo.h"
 #include "interface/renwin2dEditInfo.h"
 
@@ -6,29 +7,34 @@ using glm::vec2;
 //------------------------------------------------------------------------
 void CRenWin2D::MoveStart()
 {
-    const vec2 mouseWorldCoords = PointToWorldCoords(m_editInfo->mousePressPoint);
-    CMesh::STriGroup* tGroup = m_model->GroupUnderCursor(mouseWorldCoords);
-    m_editInfo->currGroup = tGroup;
-    if(!tGroup)
+    TryFillSelection(PointToWorldCoords(m_editInfo->mousePressPoint));
+    if(m_editInfo->selection.empty())
     {
         m_cameraMode = CAM_STILL;
         return;
     }
-    m_editInfo->fromCurrGroupCenter = mouseWorldCoords - tGroup->GetPosition();
-    m_editInfo->currGroupOldPos = tGroup->GetPosition();
+    m_editInfo->selectionOldPositions.clear();
+    m_editInfo->selectionOldPositions.reserve(m_editInfo->selection.size());
+    for(auto* grp : m_editInfo->selection)
+        m_editInfo->selectionOldPositions.push_back(grp->GetPosition());
 }
 
 //------------------------------------------------------------------------
 void CRenWin2D::MoveUpdate()
 {
-    const vec2 mNewPos = PointToWorldCoords(m_editInfo->mousePosition) - m_editInfo->fromCurrGroupCenter;
-    if(m_editInfo->currGroup)
-        m_editInfo->currGroup->SetPosition(mNewPos[0], mNewPos[1]);
+    const vec2 newPosOffset = PointToWorldCoords(m_editInfo->mousePosition)
+                              -
+                              PointToWorldCoords(m_editInfo->mousePressPoint);
+    int i = 0;
+    for(auto* grp : m_editInfo->selection)
+    {
+        const vec2 newPos = m_editInfo->selectionOldPositions[i++] + newPosOffset;
+        grp->SetPosition(newPos.x, newPos.y);
+    }
 }
 
 //------------------------------------------------------------------------
 void CRenWin2D::MoveEnd()
 {
-    CMesh::STriGroup& tGroup = *(m_editInfo->currGroup);
-    m_model->NotifyGroupMovement(tGroup, m_editInfo->currGroupOldPos);
+    m_model->NotifyGroupsMovement(m_editInfo->selection, m_editInfo->selectionOldPositions);
 }

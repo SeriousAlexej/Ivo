@@ -38,6 +38,7 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
     setMouseTracking(true);
 
     m_editInfo.reset(new SEditInfo());
+    Subscribe<CMesh::GroupStructureChanging>(&CRenWin2D::ClearSelection);
 
 #define MODE_FUNCS(mode)\
     SModeFuncs{std::bind(&CRenWin2D::MODE_FUNC_START(mode), this),\
@@ -57,7 +58,11 @@ CRenWin2D::~CRenWin2D()
 
 void CRenWin2D::ClearSelection()
 {
-    m_editInfo->currGroup = nullptr;
+    m_editInfo->selectionFilledOnSpot = false;
+    m_editInfo->selectionOldPositions.clear();
+    m_editInfo->selectionOldRotations.clear();
+    m_editInfo->selectionLastRotations.clear();
+    m_editInfo->selection.clear();
     update();
 }
 
@@ -70,13 +75,12 @@ void CRenWin2D::SetMode(EditMode m)
 
     m_editInfo->editMode = m;
     m_cameraMode = CAM_STILL;
-    m_editInfo->currGroup = nullptr;
     update();
 }
 
 void CRenWin2D::SetModel(CMesh *mdl)
 {
-    m_editInfo->currGroup = nullptr;
+    ClearSelection();
     m_model = mdl;
     m_renderer->SetModel(mdl);
     ZoomFit();
@@ -129,11 +133,13 @@ void CRenWin2D::FillOccupiedSheetsSize(unsigned &horizontal, unsigned &vertical)
 
 void CRenWin2D::paintGL()
 {
-    const SSelectionInfo selInfo {PointToWorldCoords(m_editInfo->mousePosition),
+    const SSelectionInfo selInfo {m_cameraMode == CAM_MODE,
+                                  PointToWorldCoords(m_editInfo->mousePressPoint),
+                                  PointToWorldCoords(m_editInfo->mousePosition),
                                   m_editInfo->editMode,
-                                  m_editInfo->currGroup,
                                   m_editInfo->currTri,
-                                  m_editInfo->currEdge};
+                                  m_editInfo->currEdge,
+                                  m_editInfo->selection};
 
     m_renderer->PreDraw();
 
@@ -298,6 +304,7 @@ bool CRenWin2D::event(QEvent *e)
                 ModeEnd();
             }
             m_cameraMode = CAM_STILL;
+            update();
             break;
         }
         case QEvent::MouseMove :
@@ -370,8 +377,6 @@ void CRenWin2D::ModeLMB()
     if(!m_model)
         return;
 
-    m_editInfo->currGroup = nullptr;
-
     const int editMode = static_cast<int>(m_editInfo->editMode);
     if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
         m_modeFunctions[editMode].start();
@@ -393,14 +398,18 @@ void CRenWin2D::ModeUpdate()
 
 void CRenWin2D::ModeEnd()
 {
-    if(!m_model || !m_editInfo->currGroup)
+    if(!m_model)
         return;
 
     const int editMode = static_cast<int>(m_editInfo->editMode);
     if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
+    {
         m_modeFunctions[editMode].end();
-    else
+        if(m_editInfo->selectionFilledOnSpot)
+            ClearSelection();
+    } else {
         assert(false);
+    }
 }
 
 void CRenWin2D::ZoomFit()

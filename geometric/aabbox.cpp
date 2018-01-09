@@ -47,6 +47,12 @@ float SAABBox2D::GetRight() const
     return position.x + width * 0.5f;
 }
 
+bool SAABBox2D::PointInside(const glm::vec2& point) const
+{
+    return point.x >= GetLeft()   && point.x <= GetRight() &&
+           point.y >= GetBottom() && point.y <= GetTop();
+}
+
 SAABBox2D SAABBox2D::Union(const SAABBox2D& other) const
 {
     float left   = std::min(GetLeft(),   other.GetLeft());

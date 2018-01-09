@@ -8,6 +8,7 @@ public:
     SAABBox2D();
     SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop);
 
+    bool PointInside(const glm::vec2& point) const;
     bool Intersects(const SAABBox2D& other) const;
     SAABBox2D Union(const SAABBox2D& other) const;
 
