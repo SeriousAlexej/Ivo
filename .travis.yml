@@ -1,10 +1,8 @@
 language: c++
 
+sudo: required
 dist: trusty
-
-branches:
-  only:
-    - master
+group: deprecated-2017Q4
 
 compiler:
   - gcc
@@ -13,13 +11,12 @@ os:
   - linux
 
 before_install:
-  - sudo add-apt-repository --yes ppa:beineri/opt-qt571-trusty
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt591-trusty
   - sudo apt-get update
-  - sudo apt-get install -qq mesa-common-dev libgl1-mesa-dev qt57-meta-full libassimp-dev
-  - CMAKE_URL="http://www.cmake.org/files/v3.3/cmake-3.3.1-Linux-x86_64.tar.gz"
-  - mkdir cmake && travis_retry wget --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
-  - export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-  - cmake --version
+  - sudo apt-get install mesa-common-dev
+  - sudo apt-get install libgl1-mesa-dev
+  - sudo apt-get install qt59-meta-full
+  - sudo apt-get install libassimp-dev
   - git clone https://github.com/g-truc/glm.git
   - cd glm
   - git reset --hard ad744735f66359b6aecdfe75e93c024f0c7ec055
