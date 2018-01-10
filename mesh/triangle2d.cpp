@@ -1,5 +1,6 @@
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include "geometric/compgeom.h"
 #include "mesh/mesh.h"
 #include "io/saferead.h"
 
@@ -18,6 +19,10 @@ using glm::min;
 using glm::distance;
 using glm::cross;
 using glm::normalize;
+using glm::rotation;
+using glm::transformation;
+using glm::rightTurn;
+using glm::leftTurn;
 
 void CMesh::SEdge::NextFlapPosition()
 {
@@ -134,10 +139,7 @@ void CMesh::STriangle2D::SetRelMx(mat3 &invParentMx)
 mat3 CMesh::STriangle2D::GetMatrix() const
 {
     float rotRAD = radians(m_rotation);
-    mat3 mx;
-    mx[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
-    mx[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
-    mx[2] = vec3(m_position[0], m_position[1], 1.0f);
+    mat3 mx = transformation(m_position, rotRAD);
     return mx;
 }
 
@@ -178,9 +180,7 @@ void CMesh::STriangle2D::SetRotation(float degCCW)
     while(m_rotation < 0.0f)
         m_rotation += 360.0f;
     float rotRAD = radians(m_rotation);
-    mat2 rotMx;
-    rotMx[0] = vec2(cos(rotRAD), sin(rotRAD));
-    rotMx[1] = vec2(-sin(rotRAD), cos(rotRAD));
+    mat2 rotMx = rotation(rotRAD);
     for(int i=0; i<3; ++i)
     {
         m_normR[i] = rotMx*m_norm[i];
@@ -209,9 +209,9 @@ bool CMesh::STriangle2D::PointInside(const vec2 &point) const
 {
     for(int i=0; i<3; ++i)
     {
-        vec2 vB = point - m_vtxRT[i];
-        vec2 vA = m_vtxRT[(i+1)%3] - m_vtxRT[i];
-        if(vA[0]*vB[1] - vB[0]*vA[1] < 0.0f)
+        const vec2 vB = point - m_vtxRT[i];
+        const vec2 vA = m_vtxRT[(i+1)%3] - m_vtxRT[i];
+        if(rightTurn(vA, vB))
             return false;
     }
     return true;
@@ -224,7 +224,9 @@ bool CMesh::STriangle2D::PointIsNearEdge(const vec2 &point, const int &i, float 
 
     if(m_edgeLen[i]*1.01f >= dv[0]+dv[1])
     {
-        score = abs(((m_vtxRT[(i+1)%3].x-m_vtxRT[i].x)*(point.y-m_vtxRT[i].y)-(m_vtxRT[(i+1)%3].y-m_vtxRT[i].y)*(point.x-m_vtxRT[i].x))/m_edgeLen[i]); //distance to edge
+        const vec2 vA = m_vtxRT[(i+1)%3] - m_vtxRT[i];
+        const vec2 vB = point - m_vtxRT[i];
+        score = abs(cross(vA, vB) / m_edgeLen[i]); //distance to edge
         return true;
     }
     return false;
@@ -296,13 +298,13 @@ bool CMesh::STriangle2D::EdgesIntersect(const vec2 &e1v1, const vec2 &e1v2, cons
     vec2 A = e1v2 - e1v1;
     vec2 B1 = e2v1 - e1v1;
     vec2 B2 = e2v2 - e1v1;
-    bool b1 = (A[0]*B1[1] - B1[0]*A[1]) > 0.0f;
-    bool b2 = (A[0]*B2[1] - B2[0]*A[1]) > 0.0f;
+    bool b1 = leftTurn(A, B1);
+    bool b2 = leftTurn(A, B2);
     A = e2v2 - e2v1;
     B1 = e1v1 - e2v1;
     B2 = e1v2 - e2v1;
-    bool b3 = (A[0]*B1[1] - B1[0]*A[1]) > 0.0f;
-    bool b4 = (A[0]*B2[1] - B2[0]*A[1]) > 0.0f;
+    bool b3 = leftTurn(A, B1);
+    bool b4 = leftTurn(A, B2);
     return (b1 || b2) && !(b1 && b2) &&
            (b3 || b4) && !(b3 && b4);
 }

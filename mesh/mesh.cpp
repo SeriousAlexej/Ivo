@@ -17,6 +17,7 @@
 #include "settings/settings.h"
 #include "io/saferead.h"
 #include "notification/hub.h"
+#include "geometric/compgeom.h"
 
 using glm::uvec4;
 using glm::vec2;
@@ -35,6 +36,7 @@ using glm::sqrt;
 using glm::length;
 using glm::cross;
 using glm::normalize;
+using glm::angleBetween;
 
 CMesh* CMesh::g_Mesh = nullptr;
 
@@ -199,7 +201,7 @@ void CMesh::LoadFromPDO(const std::vector<PDO_Face>&                  faces,
     {
         const PDO_Face& face = faces[f];
         STriangle2D&    tr2D = m_tri2D[f];
-        uvec4&     tr = m_triangles[f];
+        uvec4&          tr = m_triangles[f];
 
         vec2 averageTri2DPos(0.0f, 0.0f);
         for(int i=0; i<3; ++i)
@@ -326,13 +328,13 @@ void CMesh::FillAdjTri_Gen2DTri()
         const vec3* v1[3] = { &m_vertices[t[0]], &m_vertices[t[1]], &m_vertices[t[2]] };
         const vec3* n1[3] = { &m_normals[t[0]],  &m_normals[t[1]],  &m_normals[t[2]] };
 
-        float v1v2cos = clamp(dot(*v1[2]-*v1[0], *v1[1]-*v1[0])/(distance(*v1[2], *v1[0])*distance(*v1[1], *v1[0])), -1.0f, 1.0f);
+        float v1v2cos = angleBetween(*v1[2] - *v1[0], *v1[1] - *v1[0]);
         m_tri2D[i].m_vtx[0] = vec2(0.0f, 0.0f);
-        m_tri2D[i].m_vtx[1] = vec2(sin(acos(v1v2cos)), v1v2cos)*distance(*v1[1], *v1[0]);
+        m_tri2D[i].m_vtx[1] = vec2(sin(v1v2cos), cos(v1v2cos))*distance(*v1[1], *v1[0]);
         m_tri2D[i].m_vtx[2] = vec2(0.0f, distance(*v1[0], *v1[2]));
 
-        m_tri2D[i].m_angleOY[0] = degrees(acos(v1v2cos));
-        m_tri2D[i].m_angleOY[1] = -degrees(acos(clamp(dot(*v1[0]-*v1[2], *v1[1]-*v1[2])/(distance(*v1[2],*v1[0])*distance(*v1[2],*v1[1])), -1.0f, 1.0f) ));
+        m_tri2D[i].m_angleOY[0] = degrees(v1v2cos);
+        m_tri2D[i].m_angleOY[1] = -degrees(angleBetween(*v1[0] - *v1[2], *v1[1] - *v1[2]));
         m_tri2D[i].m_angleOY[2] = 180.0f;
 
         m_tri2D[i].Init();
@@ -447,7 +449,7 @@ void CMesh::DetermineFoldParams(int i, int j, int e1, int e2)
     m_tri2D[i].m_edges[e1] = &edg;
     m_tri2D[j].m_edges[e2] = &edg;
 
-    float angle = degrees(acos(clamp(dot(m_flatNormals[i], m_flatNormals[j]), -1.0f, 1.0f))); //length of normal = 1, skip division...
+    float angle = degrees(angleBetween(m_flatNormals[i], m_flatNormals[j]));
     edg.m_angle = angle;
 
     m_tri2D[j].m_id = j;

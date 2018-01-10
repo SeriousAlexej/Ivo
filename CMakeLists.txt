@@ -30,6 +30,7 @@ endif()
 set(SRC_LIST_C
     "geometric/aabbox.cpp"
     "geometric/binPacking.cpp"
+    "geometric/compgeom.cpp"
     "geometric/minOBBox.cpp"
     "geometric/obbox.cpp"
     "interface/modes2D/flaps.cpp"
@@ -69,6 +70,7 @@ set(SRC_LIST_C
 set(SRC_LIST_H
     "geometric/aabbox.h"
     "geometric/binPacking.h"
+    "geometric/compgeom.h"
     "geometric/obbox.h"
     "interface/modes2D/renwin2DModes.h"
     "interface/actionupdater.h"

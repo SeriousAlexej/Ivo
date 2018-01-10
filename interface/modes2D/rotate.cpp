@@ -5,6 +5,7 @@
 #include "interface/selectioninfo.h"
 #include "interface/renwin2dEditInfo.h"
 #include "geometric/aabbox.h"
+#include "geometric/compgeom.h"
 
 using glm::vec2;
 using glm::mat2;
@@ -17,6 +18,8 @@ using glm::length;
 using glm::abs;
 using glm::sin;
 using glm::cos;
+using glm::rotation;
+using glm::angleFromTo;
 
 //------------------------------------------------------------------------
 void CRenWin2D::RotateStart()
@@ -60,15 +63,9 @@ void CRenWin2D::RotateUpdate()
 {
     const vec2 startPos = PointToWorldCoords(m_editInfo->mousePressPoint) - m_editInfo->rotationCenter;
     const vec2 newPos = PointToWorldCoords(m_editInfo->mousePosition) - m_editInfo->rotationCenter;
-    float newAngle = dot(newPos, startPos) / (length(newPos) * length(startPos));
-    float angleRad = acos(clamp(newAngle, -1.0f, 1.0f));
-
-    if(startPos[0]*newPos[1] - newPos[0]*startPos[1] < 0.0f)
-        angleRad *= -1.0f;
-
-    newAngle = degrees(angleRad);
-    mat2 rotMx(vec2(cos(angleRad), sin(angleRad)),
-               vec2(-sin(angleRad), cos(angleRad)));
+    float angleRad = angleFromTo(startPos, newPos);
+    float newAngle = degrees(angleRad);
+    mat2 rotMx = rotation(angleRad);
 
     static const float snapDelta = 5.0f;
     if(m_editInfo->currTri)
@@ -76,15 +73,11 @@ void CRenWin2D::RotateUpdate()
         const CMesh::STriangle2D& tri = *(m_editInfo->currTri);
         const vec2& triV1 = tri[m_editInfo->currEdge];
         const vec2& triV2 = tri[(m_editInfo->currEdge+1)%3];
-        const vec2 edgeVec = normalize(triV2 - triV1);
-        float angleOX = degrees(acos(clamp(edgeVec.x, -1.0f, 1.0f)));
-        if(edgeVec.y < 0.0f)
-            angleOX *= -1.0f;
+        const vec2 edgeVec = triV2 - triV1;
+        float angleOX = degrees(angleFromTo(vec2(1.0f, 0.0f), edgeVec));
 
         vec2 edgeVecRotated = rotMx * m_editInfo->currEdgeVec;
-        float currAngleOX = degrees(acos(clamp(edgeVecRotated.x, -1.0f, 1.0f)));
-        if(edgeVecRotated.y < 0.0f)
-            currAngleOX *= -1.0f;
+        float currAngleOX = degrees(angleFromTo(vec2(1.0f, 0.0f), edgeVecRotated));
 
         for(float snapAngle = -180.0f; snapAngle < 200.0f; snapAngle += 45.0f)
         {
@@ -107,8 +100,7 @@ void CRenWin2D::RotateUpdate()
 
                 newAngle = referenceGroup->GetRotation() + snapAngle - angleOX - refGroupLastRot;
                 angleRad = radians(newAngle);
-                rotMx = mat2(vec2(cos(angleRad), sin(angleRad)),
-                             vec2(-sin(angleRad), cos(angleRad)));
+                rotMx = rotation(angleRad);
                 break;
             }
         }

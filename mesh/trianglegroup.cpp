@@ -12,6 +12,7 @@
 #include "mesh/command.h"
 #include "io/saferead.h"
 #include "notification/hub.h"
+#include "geometric/compgeom.h"
 
 using glm::mat3;
 using glm::vec2;
@@ -24,6 +25,7 @@ using glm::radians;
 using glm::sqrt;
 using glm::inverse;
 using glm::distance2;
+using glm::transformation;
 
 float CMesh::STriGroup::ms_depthStep = 1.0f;
 
@@ -162,8 +164,7 @@ void CMesh::STriGroup::SetRotation(float angle)
     while(m_rotation < 0.0f)
         m_rotation += 360.0f;
     float rotRAD = radians(m_rotation);
-    m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
-    m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
+    m_matrix = transformation(m_matrix[2], rotRAD);
 
     for(STriangle2D *t : m_tris)
         t->GroupHasTransformed(m_matrix);
@@ -212,9 +213,7 @@ void CMesh::STriGroup::CentrateOrigin()
     m_aabbHSide = sqrt(aabbHSideSQR);
 
     float rotRAD = radians(m_rotation);
-    m_matrix[0] = vec3(cos(rotRAD), sin(rotRAD), 0.0f);
-    m_matrix[1] = vec3(-sin(rotRAD), cos(rotRAD), 0.0f);
-    m_matrix[2] = vec3(m_position[0], m_position[1], 1.0f);
+    m_matrix = transformation(m_position, rotRAD);
     mat3 pinv = inverse(m_matrix);
 
     for(STriangle2D *t : m_tris)

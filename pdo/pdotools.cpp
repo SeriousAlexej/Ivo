@@ -1,7 +1,9 @@
 #include <glm/common.hpp>
 #include <cstring>
 #include "pdotools.h"
+#include "geometric/compgeom.h"
 
+using glm::leftTurn;
 
 void PDO_Part::AddFace(PDO_Face *f)
 {
@@ -52,9 +54,9 @@ static bool VertexIsEar(const std::vector<PDO_2DVertex>& verts, int index)
         glm::vec2 vi2 = vP - vB;
         glm::vec2 vi3 = vP - vC;
 
-        bool b1 = v1.x * vi1.y - vi1.x * v1.y > 0.0f;
-        bool b2 = v2.x * vi2.y - vi2.x * v2.y > 0.0f;
-        bool b3 = v3.x * vi3.y - vi3.x * v3.y > 0.0f;
+        bool b1 = leftTurn(v1, vi1);
+        bool b2 = leftTurn(v2, vi2);
+        bool b3 = leftTurn(v3, vi3);
 
         if(b1 && b2 && b3) //point is inside triangle we want to cut?
             return false; //don't cut!
