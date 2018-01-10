@@ -1,0 +1,44 @@
+version: 0.18.{build}
+
+image: Visual Studio 2015
+
+clone_folder: c:\projects\ivo
+
+clone_depth: 1
+
+platform: x86
+
+configuration: Release
+
+install:
+#install and build assimp
+  - cd c:\projects
+  - git clone https://github.com/assimp/assimp.git
+  - cd assimp
+  - mkdir build
+  - cd build
+  - cmake -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release ..
+  - cmake --build .
+#install glm
+  - cd c:\projects
+  - git clone https://github.com/g-truc/glm.git
+  - cd glm
+  - git reset --hard ad744735f66359b6aecdfe75e93c024f0c7ec055
+#done
+  - cd c:\projects\ivo
+
+before_build:
+  - set CMAKE_PREFIX_PATH=C:\Qt\5.9.2\msvc2015\
+  - cmake -G "Visual Studio 14 2015" -Dassimp_ROOT="c:/projects/assimp" -Dglm_ROOT="c:/projects/glm"
+
+build:
+  parallel: true
+  project: Ivo.sln
+  verbosity: normal
+
+notifications:
+  - provider: Email
+    to:
+      - seriousalexej@gmail.com
+    subject: 'Build {{status}}'
+    on_build_status_changed: true

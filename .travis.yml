@@ -27,4 +27,4 @@ before_script:
   - source $QT_ENV_SCRIPT
 
 script:
-  - . ./.travis.sh
+  - cmake -DCMAKE_BUILD_TYPE=Release && cmake --build .
