@@ -15,10 +15,12 @@ install:
   - cd c:\projects
   - git clone https://github.com/assimp/assimp.git
   - cd assimp
+  - git reset --hard a8673d4828df5107186f49e5e4efa5316b727482
   - mkdir build
   - cd build
-  - cmake -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release ..
+  - cmake -G "Visual Studio 14 2015" -DASSIMP_BUILD_TESTS=OFF ..
   - cmake --build .
+  - copy .\code\debug\*.* .\code\
 #install glm
   - cd c:\projects
   - git clone https://github.com/g-truc/glm.git
@@ -35,10 +37,3 @@ build:
   parallel: true
   project: Ivo.sln
   verbosity: normal
-
-notifications:
-  - provider: Email
-    to:
-      - seriousalexej@gmail.com
-    subject: 'Build {{status}}'
-    on_build_status_changed: true
