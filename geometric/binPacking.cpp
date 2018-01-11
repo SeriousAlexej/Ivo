@@ -10,8 +10,12 @@ std::vector<AABBoxPtr> PackFCNR(std::vector<AABBoxPtr>& bboxes, float binWidth, 
 {
     std::vector<AABBoxPtr> packedBoxes;
 
-    std::sort(bboxes.begin(), bboxes.end(),
-         [](const AABBoxPtr& i, const AABBoxPtr& j) { return i->height < j->height; } );
+    std::sort(bboxes.begin(), bboxes.end(), [](const AABBoxPtr& i, const AABBoxPtr& j)
+    {
+        if(std::abs(i->height - j->height) > 0.001f)
+            return i->height < j->height;
+        return i->width < j->width;
+    });
 
     struct FCNR_level
     {

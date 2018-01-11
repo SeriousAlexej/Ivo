@@ -6,7 +6,10 @@
 #include <set>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include "geometric/aabbox.h"
 #include "geometric/obbox.h"
+#include "geometric/compgeom.h"
+#include "settings/settings.h"
 
 namespace
 {
@@ -51,8 +54,7 @@ enum Turn
 
 Turn GetTurn(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
 {
-    float crossProduct = ((b.x - a.x) * (c.y - a.y)) -
-                          ((b.y - a.y) * (c.x - a.x));
+    const float crossProduct = glm::cross(b - a, c - a);
 
     if(crossProduct > 0.0f)
         return COUNTER_CLOCKWISE;
@@ -65,9 +67,7 @@ Turn GetTurn(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
 bool AreAllCollinear(const std::vector<glm::vec2>& points)
 {
     if(points.size() < 2)
-    {
         return true;
-    }
 
     const glm::vec2& a = points[0];
     const glm::vec2& b = points[1];
@@ -131,110 +131,79 @@ std::vector<glm::vec2> GetConvexHull(const std::vector<glm::vec2>& points)
 
 } //namespace anonymous
 
-SOBBox GetMinOBBox(const std::vector<glm::vec2>& points)
+SOBBox GetMinOBBox(const std::vector<glm::vec2>& points, std::function<float(const SAABBox2D&)> criteria)
 {
-    struct Rect2D
-    {
-        Rect2D()
-        {
-        }
-
-        Rect2D(const glm::vec2& a, const glm::vec2& c)
-        {
-            location = a;
-            size = c - a;
-        }
-
-        float Area() const
-        {
-            return size.x * size.y;
-        }
-
-        std::vector<glm::vec2> Points()
-        {
-            return
-            {
-                glm::vec2(location.x, location.y),
-                glm::vec2(location.x + size.x, location.y),
-                glm::vec2(location.x + size.x, location.y + size.y),
-                glm::vec2(location.x, location.y + size.y)
-            };
-        }
-
-        glm::vec2 location;
-        glm::vec2 size;
-    };
-
-    struct Segment2D
-    {
-        Segment2D(const glm::vec2& a, const glm::vec2& b)
-        {
-            A = a;
-            B = b;
-        }
-
-        glm::vec2 A;
-        glm::vec2 B;
-    };
-
-    auto AngleToXAxis = [](const Segment2D& s) -> float
-    {
-        glm::vec2 delta = s.A - s.B;
-        return -glm::atan(delta.y / delta.x);
-    };
-
-    auto Rotate = [](const glm::vec2& v, float angle) -> glm::vec2
-    {
-        float x = v.x*glm::cos(angle) - v.y*glm::sin(angle);
-        float y = v.x*glm::sin(angle) + v.y*glm::cos(angle);
-        return glm::vec2(x, y);
-    };
+    if(!criteria)
+        criteria = [](const SAABBox2D& b) -> float { return b.width * b.height; };
 
     std::vector<glm::vec2> hullPoints = GetConvexHull(points);
 
-    Rect2D minBox;
-    float minBoxArea = std::numeric_limits<float>::max();
-    float minAngle = 0.0f;
+    struct BoxInfo
+    {
+        SAABBox2D box;
+        float angle;
+    };
+
+    std::vector<BoxInfo> minBoxes;
+    float minBoxPrice = std::numeric_limits<float>::max();
 
     for (int i = 0, sz = hullPoints.size(); i < sz; i++)
     {
-        int nextIndex = i + 1;
-
-        const glm::vec2& current = hullPoints[i];
-        const glm::vec2& next = hullPoints[nextIndex % hullPoints.size()];
-
-        Segment2D segment(current, next);
+        const glm::vec2& curr = hullPoints[i];
+        const glm::vec2& next = hullPoints[(i+1)%sz];
 
         float top    = std::numeric_limits<float>::lowest();
         float bottom = std::numeric_limits<float>::max();
         float left   = std::numeric_limits<float>::max();
         float right  = std::numeric_limits<float>::lowest();
 
-        float angle = AngleToXAxis(segment);
+        const float angle = glm::angleFromTo(next - curr, glm::vec2(1.0f, 0.0f));
+        const glm::mat2 rotMx = glm::rotation(angle);
 
         for (glm::vec2& p : hullPoints)
         {
-            glm::vec2 rotatedPoint = Rotate(p, angle);
+            const glm::vec2 rotatedPoint = rotMx * p;
 
-            top = glm::max(top, rotatedPoint.y);
+            top    = glm::max(top,    rotatedPoint.y);
             bottom = glm::min(bottom, rotatedPoint.y);
-            left = glm::min(left, rotatedPoint.x);
-            right = glm::max(right, rotatedPoint.x);
+            left   = glm::min(left,   rotatedPoint.x);
+            right  = glm::max(right,  rotatedPoint.x);
         }
 
-        Rect2D box(glm::vec2(left, bottom), glm::vec2(right, top));
+        const SAABBox2D box(glm::vec2(right, bottom), glm::vec2(left, top));
+        const float price = criteria(box);
 
-        if (minBoxArea > box.Area())
+        if (minBoxPrice >= price)
         {
-            minBoxArea = box.Area();
-            minBox = box;
-            minAngle = angle;
+            if(minBoxPrice != price)
+            {
+                minBoxes.clear();
+                minBoxPrice = price;
+            }
+            BoxInfo info;
+            info.box = box;
+            info.angle = angle;
+            minBoxes.push_back(info);
         }
     }
 
-    std::vector<glm::vec2> obboxPoints = minBox.Points();
+    BoxInfo* minBoxInfo = &minBoxes[0];
+    minBoxPrice = minBoxInfo->box.width;
+    for(auto& info : minBoxes)
+    {
+        const float price = info.box.width;
+        if(minBoxPrice > price)
+        {
+            minBoxInfo = &info;
+            minBoxPrice = price;
+        }
+    }
+    const SAABBox2D& minBox = minBoxInfo->box;
+    const glm::mat2 reverseRotMx = glm::rotation(-minBoxInfo->angle);
+    std::vector<glm::vec2> obboxPoints = {minBox.GetLeftBottom(), minBox.GetRightBottom(),
+                                          minBox.GetRightTop(),   minBox.GetLeftTop()};
     for(glm::vec2& p : obboxPoints)
-        p = Rotate(p, -minAngle);
+        p = reverseRotMx * p;
 
     return SOBBox(obboxPoints[0], obboxPoints[1], obboxPoints[2], obboxPoints[3]);
 }

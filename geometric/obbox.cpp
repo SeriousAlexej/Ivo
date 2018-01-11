@@ -1,5 +1,6 @@
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include "geometric/compgeom.h"
 #include "obbox.h"
 
 SOBBox::SOBBox(const glm::vec2 &a, const glm::vec2 &b, const glm::vec2 &c, const glm::vec2 &d)
@@ -27,14 +28,7 @@ float SOBBox::GetHeight() const
 
 float SOBBox::GetRotation() const
 {
-    float angle = 0.0f;
-    glm::vec2 norm = glm::normalize(points[1] - points[0]);
-    angle = glm::degrees(glm::acos(glm::clamp(norm.x, -1.0f, 1.0f)));
-    if(norm.y < 0.0f)
-    {
-        angle = -angle;
-    }
-    return angle;
+    return glm::degrees(glm::angleFromTo(glm::vec2(1.0f, 0.0f), points[1] - points[0]));
 }
 
 const glm::vec2& SOBBox::operator[](std::size_t index) const

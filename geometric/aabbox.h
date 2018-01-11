@@ -12,8 +12,10 @@ public:
     bool Intersects(const SAABBox2D& other) const;
     SAABBox2D Union(const SAABBox2D& other) const;
 
+    glm::vec2 GetRightTop() const;
     glm::vec2 GetRightBottom() const;
     glm::vec2 GetLeftTop() const;
+    glm::vec2 GetLeftBottom() const;
     float GetRight() const;
     float GetLeft() const;
     float GetTop() const;

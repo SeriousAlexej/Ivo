@@ -2,7 +2,10 @@
 #define OBBOX_H
 #include <array>
 #include <vector>
+#include <functional>
 #include <glm/vec2.hpp>
+
+struct SAABBox2D;
 
 struct SOBBox
 {
@@ -26,6 +29,6 @@ private:
     std::array<glm::vec2, 4> points;
 };
 
-SOBBox GetMinOBBox(const std::vector<glm::vec2>& points);
+SOBBox GetMinOBBox(const std::vector<glm::vec2>& points, std::function<float(const SAABBox2D&)> criteria = nullptr);
 
 #endif // OBBOX_H

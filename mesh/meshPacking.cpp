@@ -10,7 +10,7 @@ using glm::sqrt;
 
 namespace
 {
-const float groupGap = 0.75f;
+const float groupGap = 0.5f;
 
 struct SGroupBBox : SAABBox2D
 {
@@ -57,7 +57,7 @@ private:
     int y;
 };
 
-SOBBox GetGroupOBBox(const CMesh::STriGroup& group)
+SOBBox GetGroupOBBox(const CMesh::STriGroup& group, std::function<float(const SAABBox2D&)> price)
 {
     const auto& tris = group.GetTriangles();
     std::vector<vec2> points;
@@ -65,12 +65,12 @@ SOBBox GetGroupOBBox(const CMesh::STriGroup& group)
     for(const auto* triangle : tris)
         for(int i=0; i<3; i++)
             points.push_back((*triangle)[i]);
-    return GetMinOBBox(points);
+    return GetMinOBBox(points, price);
 }
 
 } //namespace anonymous
 
-void CMesh::PackGroups(bool undoable)
+bool CMesh::PackGroups(bool undoable)
 {
     CSettings& sett = CSettings::GetInstance();
     const float marginsH = static_cast<float>(sett.GetMarginsHorizontal())*0.1f;
@@ -80,6 +80,18 @@ void CMesh::PackGroups(bool undoable)
     const float binWidth = papWidth - marginsH*2.0f;
     const float binHeight = papHeight - marginsV*2.0f;
 
+    bool allPacked = true;
+
+    auto bboxPrice = [binWidth, binHeight](const SAABBox2D& b) -> float
+    {
+        if(b.width + groupGap*2.0f > binWidth || b.height + groupGap*2.0f > binHeight)
+            return std::numeric_limits<float>::max();
+
+        if(binWidth < binHeight)
+            return b.width;
+        return b.height;
+    };
+
     CIvoCommand* cmd = nullptr;
     CIvoCommand rotationCommand;
     if(undoable)
@@ -88,31 +100,35 @@ void CMesh::PackGroups(bool undoable)
     std::vector<std::shared_ptr<SAABBox2D>> bboxes;
     for(auto& grp : m_groups)
     {
-        SOBBox groupOOBBox = GetGroupOBBox(grp);
-        const float boxWidth = groupOOBBox.GetWidth();
-        const float boxHeight = groupOOBBox.GetHeight();
+        SOBBox groupOOBBox = GetGroupOBBox(grp, bboxPrice);
+        const float boxWidth = groupOOBBox.GetWidth() + groupGap*2.0f;
+        const float boxHeight = groupOOBBox.GetHeight() + groupGap*2.0f;
 
-        if((boxWidth > binWidth && boxWidth > binHeight) ||
-           (boxHeight > binWidth && boxHeight > binHeight))
+        if(boxWidth > binWidth || boxHeight > binHeight)
+        {
+            const SAABBox2D grpBBox = grp.GetAABBox();
+            CAtomicCommand cmdMoveAway(CT_MOVE);
+            cmdMoveAway.SetTriangle(grp.m_tris.front());
+            cmdMoveAway.SetTranslation(vec2(-grpBBox.width-groupGap, -grpBBox.height)*0.5f - grp.GetPosition());
+
+            if(undoable)
+                cmd->AddAction(cmdMoveAway);
+            else
+                cmdMoveAway.Redo();
+
+            allPacked = false;
             continue;
+        }
 
         float rotationAngle = -groupOOBBox.GetRotation();
-        if(boxWidth > binWidth || boxHeight > binHeight)
-            rotationAngle += 90.0f;
+
         CAtomicCommand cmdRot(CT_ROTATE);
         cmdRot.SetTriangle(grp.m_tris.front());
         cmdRot.SetRotation(rotationAngle);
         cmdRot.Redo();
 
-        if(grp.m_toRightDown.x - grp.m_toTopLeft.x + groupGap*2.0f > binWidth ||
-           grp.m_toTopLeft.y - grp.m_toRightDown.y + groupGap*2.0f > binHeight)
-        {
-            cmdRot.Undo();
-        }
-        else if(undoable)
-        {
+        if(undoable)
             rotationCommand.AddAction(cmdRot);
-        }
 
         SGroupBBox* bbox = new SGroupBBox();
         bbox->grp = &grp;
@@ -157,4 +173,6 @@ void CMesh::PackGroups(bool undoable)
 
     if(undoable)
         m_undoStack.push(cmd);
+
+    return allPacked && bboxes.empty();
 }

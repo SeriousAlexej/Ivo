@@ -405,7 +405,10 @@ void CMainWindow::on_actionAutoPack_triggered()
 {
     if(m_model)
     {
-        m_model->PackGroups();
+        if(!m_model->PackGroups())
+            QMessageBox::warning(this, "Warning", QString("Not all parts could be automatically arranged!\n") +
+                                                  QString("Some parts have been placed at the top left corner of the first sheet of paper.\n") +
+                                                  QString("Consider breaking them into smaller pieces, increasing paper size or shrinking margins."));
         UpdateView();
     }
 }

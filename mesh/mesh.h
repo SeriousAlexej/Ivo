@@ -75,7 +75,7 @@ public:
     void                        Serialize(FILE* f) const;
     void                        Deserialize(FILE* f);
     void                        Scale(const float scale);
-    void                        PackGroups(bool undoable=true);
+    bool                        PackGroups(bool undoable=true);
     glm::vec3                   GetSizeMillimeters() const;
     glm::vec3                   GetAABBoxCenter() const;
     void                        SetTriangleAsPicked(int index);

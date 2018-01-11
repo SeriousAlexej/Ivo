@@ -17,6 +17,11 @@ SAABBox2D::SAABBox2D(const glm::vec2 &rightBottom, const glm::vec2 &leftTop)
     height = std::abs(leftTop.y - rightBottom.y);
 }
 
+glm::vec2 SAABBox2D::GetRightTop() const
+{
+    return glm::vec2(GetRight(), GetTop());
+}
+
 glm::vec2 SAABBox2D::GetRightBottom() const
 {
     return glm::vec2(GetRight(), GetBottom());
@@ -25,6 +30,11 @@ glm::vec2 SAABBox2D::GetRightBottom() const
 glm::vec2 SAABBox2D::GetLeftTop() const
 {
     return glm::vec2(GetLeft(), GetTop());
+}
+
+glm::vec2 SAABBox2D::GetLeftBottom() const
+{
+    return glm::vec2(GetLeft(), GetBottom());
 }
 
 float SAABBox2D::GetBottom() const
