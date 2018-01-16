@@ -4,6 +4,20 @@
 #include <glm/vec3.hpp>
 #include "geometric/compgeom.h"
 
+int glm::crossSign(const glm::ivec2& v1, const glm::ivec2& v2)
+{
+    int64_t v1x = static_cast<int64_t>(v1.x);
+    int64_t v1y = static_cast<int64_t>(v1.y);
+    int64_t v2x = static_cast<int64_t>(v2.x);
+    int64_t v2y = static_cast<int64_t>(v2.y);
+    int64_t res = v1x * v2y - v2x * v1y;
+    if(res > 0)
+        return 1;
+    if(res < 0)
+        return -1;
+    return 0;
+}
+
 float glm::cross(const glm::vec2& v1, const glm::vec2& v2)
 {
     return v1.x * v2.y - v2.x * v1.y;
@@ -16,6 +30,11 @@ float glm::angleFromTo(const glm::vec2& v1, const glm::vec2& v2)
     if(glm::rightTurn(v1, v2))
         angle *= -1.0f;
     return angle;
+}
+
+float glm::angleBetween(const glm::vec2& v1, const glm::vec2& v2)
+{
+    return glm::acos(glm::clamp(glm::dot(v1, v2) / (glm::length(v1) * glm::length(v2)), -1.0f, 1.0f));
 }
 
 float glm::angleBetween(const glm::vec3& v1, const glm::vec3& v2)

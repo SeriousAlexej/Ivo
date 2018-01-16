@@ -1,132 +1,133 @@
+#define GLM_ENABLE_EXPERIMENTAL
 #include <cmath>
-#include <deque>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
-#include <set>
-#include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
+#include <functional>
+#include <glm/gtx/norm.hpp>
 #include "geometric/aabbox.h"
 #include "geometric/obbox.h"
 #include "geometric/compgeom.h"
-#include "settings/settings.h"
 
 namespace
 {
-struct GrahamPointCmp
+
+static const float mult = 1000.0f;
+
+static int64_t len2(const glm::ivec2& vec)
 {
-    GrahamPointCmp(const glm::vec2& lowest)
+    int64_t x = static_cast<int64_t>(vec.x);
+    int64_t y = static_cast<int64_t>(vec.y);
+    return x*x + y*y;
+}
+
+std::vector<glm::ivec2> GetStablePoints(const std::vector<glm::vec2>& points)
+{
+    std::vector<glm::ivec2> intPoints;
+    intPoints.reserve(points.size());
+    for(const glm::vec2& vec : points)
     {
-        this->lowest = lowest;
+        const glm::ivec2 vecInt(static_cast<int>(vec.x * mult),
+                                static_cast<int>(vec.y * mult));
+        if(std::find(intPoints.begin(), intPoints.end(), vecInt) == intPoints.end())
+            intPoints.push_back(vecInt);
     }
+    return intPoints;
+}
 
-    bool operator()(const glm::vec2& a, const glm::vec2& b) const
+std::vector<glm::vec2> GetConvexHull(const std::vector<glm::vec2>& inputPoints)
+{
+    //this is Graham Scan algorithm
+    //first, move our points to integer numbers and remove duplicates
+    std::vector<glm::ivec2> intPoints = GetStablePoints(inputPoints);
+
+    const std::size_t sz = intPoints.size();
+    if(sz < 3)
+        throw std::logic_error("Trying to find convex hull for degenerate polygon!");
+
+    //find a point definitely inside convex hull
+    const glm::vec2 pivotF = (inputPoints[0] + inputPoints[1] + inputPoints[2]) / 3.0f;
+    const glm::ivec2 pivot(static_cast<int>(pivotF.x * mult),
+                           static_cast<int>(pivotF.y * mult));
+
+    //sort points counter-clockwise around this point
+    std::sort(intPoints.begin(), intPoints.end(), [&pivot](const glm::ivec2& v1, const glm::ivec2& v2)
     {
-        float thetaA = glm::atan(a.y - lowest.y, a.x - lowest.x);
-        float thetaB = glm::atan(b.y - lowest.y, b.x - lowest.x);
-
-        if(thetaA < thetaB)
-        {
+        const glm::ivec2 a = v1 - pivot;
+        const glm::ivec2 b = v2 - pivot;
+        if(a.y == 0 && a.x > 0)
             return true;
-        } else if(thetaA > thetaB) {
+        if(b.y == 0 && b.x > 0)
             return false;
-        } else {
-            float distanceA = glm::distance(lowest, a);
-            float distanceB = glm::distance(lowest, b);
+        if(a.y > 0 && b.y < 0)
+            return true;
+        if(a.y < 0 && b.y > 0)
+             return false;
+        int cross = glm::crossSign(a, b);
+        if(cross > 0)
+            return true;
+        if(cross < 0)
+            return false;
+        return len2(a) < len2(b);
+    });
 
-            if(distanceA < distanceB)
-                return true;
-            else
-                return false;
+    //find point that definitely belongs to convex hull
+    std::size_t lowestIndex = 0;
+    glm::ivec2 lowest = intPoints[0];
+    for(std::size_t i = 1; i < intPoints.size(); i++)
+    {
+        if(intPoints[i].y < lowest.y || (intPoints[i].y == lowest.y && intPoints[i].x < lowest.x))
+        {
+            lowestIndex = i;
+            lowest = intPoints[i];
         }
     }
 
-private:
-    glm::vec2 lowest;
-};
-
-enum Turn
-{
-    CLOCKWISE,
-    COUNTER_CLOCKWISE,
-    COLLINEAR
-};
-
-Turn GetTurn(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c)
-{
-    const float crossProduct = glm::cross(b - a, c - a);
-
-    if(crossProduct > 0.0f)
-        return COUNTER_CLOCKWISE;
-    else if(crossProduct < 0.0f)
-        return CLOCKWISE;
-    else
-        return COLLINEAR;
-}
-
-bool AreAllCollinear(const std::vector<glm::vec2>& points)
-{
-    if(points.size() < 2)
-        return true;
-
-    const glm::vec2& a = points[0];
-    const glm::vec2& b = points[1];
-
-    for(int i = 2, sz = points.size(); i < sz; i++)
+    //create doubly-linked structure for Graham Scan algorithm
+    struct GrahamNode
     {
-        const glm::vec2& c = points[i];
-
-        if(GetTurn(a, b, c) != COLLINEAR)
-            return false;
+        GrahamNode* next;
+        GrahamNode* prev;
+        glm::ivec2* pos;
+    };
+    std::vector<GrahamNode> nodes(sz);
+    for(std::size_t i=0; i<sz; i++)
+    {
+        nodes[i].next = &nodes[(i+1)%sz];
+        nodes[i].prev = &nodes[(i+sz-1)%sz];
+        nodes[i].pos = &intPoints[i];
     }
 
-    return true;
-}
-
-const glm::vec2& GetLowestPoint(const std::vector<glm::vec2>& points)
-{
-    const glm::vec2* lowest = &points[0];
-
-    for(int i = 1, sz = points.size(); i < sz; i++)
+    //perform actual Graham Scan with robust algorithm implementation
+    //and not that bullshit from wikipedia and alike
+    GrahamNode* start = &nodes[lowestIndex];
+    GrahamNode* v = start;
+    while(v->next != start)
     {
-        const glm::vec2* temp = &points[i];
-
-        if(temp->y < lowest->y || (temp->y == lowest->y && temp->x < lowest->x))
-            lowest = temp;
+        int crossSign = glm::crossSign(*(v->next->pos) - *(v->pos), *(v->next->next->pos) - *(v->pos));
+        if(crossSign > 0)
+        {
+            v = v->next;
+        } else {
+            v->next = v->next->next;
+            v->next->prev = v;
+            if(v != start)
+                v = v->prev;
+        }
     }
 
-    return *lowest;
-}
-
-std::vector<glm::vec2> GetSortedPointSet(const std::vector<glm::vec2>& points)
-{
-    std::set<glm::vec2, GrahamPointCmp> pointsSorted(GrahamPointCmp(GetLowestPoint(points)));
-    pointsSorted.insert(points.begin(), points.end());
-    return std::vector<glm::vec2>(pointsSorted.begin(), pointsSorted.end());
-}
-
-std::vector<glm::vec2> GetConvexHull(const std::vector<glm::vec2>& points)
-{
-    std::vector<glm::vec2> sorted = GetSortedPointSet(points);
-
-    if(sorted.size() < 3 || AreAllCollinear(sorted))
-        throw std::logic_error("Trying to find convex hull for degenerate polygon!");
-
-    std::deque<glm::vec2> stack;
-    stack.push_back(sorted[0]);
-    stack.push_back(sorted[1]);
-    stack.push_back(sorted[2]);
-
-    for(int i = 3, sz = sorted.size(); i < sz; i++)
+    //convex hull found! Now flush points to result vector and move them back to floats
+    std::vector<glm::vec2> result;
+    v = start;
+    do
     {
-        while (stack.size() >= 2 && GetTurn(stack[stack.size()-2], stack.back(), sorted[i]) != COUNTER_CLOCKWISE)
-           stack.pop_back();
-        stack.push_back(sorted[i]);
-    }
+        const glm::ivec2* ivec = v->pos;
+        result.push_back(glm::vec2(static_cast<float>(ivec->x) / mult,
+                                   static_cast<float>(ivec->y) / mult));
+        v = v->next;
+    } while(v != start);
 
-    stack.push_back(sorted[0]);
-
-    return {stack.begin(), stack.end()};
+    return result;
 }
 
 } //namespace anonymous
@@ -144,7 +145,7 @@ SOBBox GetMinOBBox(const std::vector<glm::vec2>& points, std::function<float(con
         float angle;
     };
 
-    std::vector<BoxInfo> minBoxes;
+    BoxInfo minBox;
     float minBoxPrice = std::numeric_limits<float>::max();
 
     for (int i = 0, sz = hullPoints.size(); i < sz; i++)
@@ -173,35 +174,17 @@ SOBBox GetMinOBBox(const std::vector<glm::vec2>& points, std::function<float(con
         const SAABBox2D box(glm::vec2(right, bottom), glm::vec2(left, top));
         const float price = criteria(box);
 
-        if (minBoxPrice >= price)
+        if (minBoxPrice > price)
         {
-            if(minBoxPrice != price)
-            {
-                minBoxes.clear();
-                minBoxPrice = price;
-            }
-            BoxInfo info;
-            info.box = box;
-            info.angle = angle;
-            minBoxes.push_back(info);
+            minBoxPrice = price;
+            minBox.box = box;
+            minBox.angle = angle;
         }
     }
 
-    BoxInfo* minBoxInfo = &minBoxes[0];
-    minBoxPrice = minBoxInfo->box.width;
-    for(auto& info : minBoxes)
-    {
-        const float price = info.box.width;
-        if(minBoxPrice > price)
-        {
-            minBoxInfo = &info;
-            minBoxPrice = price;
-        }
-    }
-    const SAABBox2D& minBox = minBoxInfo->box;
-    const glm::mat2 reverseRotMx = glm::rotation(-minBoxInfo->angle);
-    std::vector<glm::vec2> obboxPoints = {minBox.GetLeftBottom(), minBox.GetRightBottom(),
-                                          minBox.GetRightTop(),   minBox.GetLeftTop()};
+    const glm::mat2 reverseRotMx = glm::rotation(-minBox.angle);
+    std::vector<glm::vec2> obboxPoints = {minBox.box.GetLeftBottom(), minBox.box.GetRightBottom(),
+                                          minBox.box.GetRightTop(),   minBox.box.GetLeftTop()};
     for(glm::vec2& p : obboxPoints)
         p = reverseRotMx * p;
 

@@ -27,6 +27,7 @@ private slots:
     void on_doubleSpinBoxMultiplier_valueChanged(double i);
     void on_spinBoxHMargs_valueChanged(int i);
     void on_spinBoxVMargs_valueChanged(int i);
+    void on_listThemes_currentTextChanged(const QString& currentText);
 
 private:
     void SaveSettings() const;

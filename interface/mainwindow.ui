@@ -18,35 +18,15 @@
     <normaloff>:/icons/icons/stupid_logo.png</normaloff>:/icons/icons/stupid_logo.png</iconset>
   </property>
   <property name="styleSheet">
-   <string notr="true">QMenuBar {
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(234, 234, 234, 255), stop:1 rgba(255, 255, 255, 255));
+   <string notr="true">QDockWidget::title {
+padding-top: 4px;
 }
 
-QToolBar {
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(234, 234, 234, 255));
-border-color: transparent;
-}
-
-QDockWidget::title {
-border: 1px solid lightgrey;
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(255, 255, 255, 255));
-}
-
-QToolButton {
-border-radius: 4px;
-border: 1px solid  rgba(0, 0, 0, 0);
-}
-
-QToolButton::hover {
-border-radius: 4px;
-border: 1px solid  rgba(220, 220, 255, 120);
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(0, 0, 0, 10), stop:1 rgba(190, 210, 255, 255));
-}
-
-QToolButton::checked {
-border-radius: 4px;
-border: 1px solid  rgba(210, 210, 230, 120);
-background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0, 0, 0, 35), stop:1 rgba(240, 210, 160, 255));
+.QToolButton {
+min-width: 50px;
+max-width: 50px;
+min-height: 60px;
+max-height: 60px;
 }</string>
   </property>
   <property name="dockOptions">
@@ -260,7 +240,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Document-new.png</normaloff>:/icons/icons/48px-Document-new.png</iconset>
    </property>
    <property name="text">
-    <string>Import</string>
+    <string>&amp;Import</string>
    </property>
    <property name="toolTip">
     <string>Import Model</string>
@@ -308,7 +288,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
    </property>
    <property name="text">
-    <string>Materials</string>
+    <string>&amp;Materials</string>
    </property>
    <property name="toolTip">
     <string>Browse current model's materials and assign textures</string>
@@ -497,7 +477,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Document-open.png</normaloff>:/icons/icons/48px-Document-open.png</iconset>
    </property>
    <property name="text">
-    <string>Load</string>
+    <string>&amp;Load</string>
    </property>
    <property name="toolTip">
     <string>Load Model</string>
@@ -523,8 +503,18 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
    <property name="text">
     <string>&amp;Auto Pack</string>
    </property>
+   <property name="iconText">
+    <string>Auto
+Pack</string>
+   </property>
    <property name="toolTip">
     <string>Automatically arrange parts in 2D window</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionShow_Grid">
@@ -578,7 +568,11 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/48px-Polypaint.png</normaloff>:/icons/icons/48px-Polypaint.png</iconset>
    </property>
    <property name="text">
-    <string>Polypaint</string>
+    <string>Poly Paint</string>
+   </property>
+   <property name="iconText">
+    <string>Poly
+Paint</string>
    </property>
    <property name="toolTip">
     <string>Enter Polypaint mode</string>
@@ -608,7 +602,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgb
      <normaloff>:/icons/icons/close.png</normaloff>:/icons/icons/close.png</iconset>
    </property>
    <property name="text">
-    <string>Close Model</string>
+    <string>&amp;Close Model</string>
    </property>
    <property name="toolTip">
     <string>Close currently opened model</string>

@@ -1,7 +1,14 @@
 #include "settings.h"
 #include <cassert>
+#include <QTextStream>
+#include <QFile>
+#include <QTimer>
+#include <QFileInfo>
+#include <QDirIterator>
 
 CSettings::CSettings() :
+    QObject(nullptr),
+    m_config("config.ini", QSettings::IniFormat),
     m_renFlags(R_FLAPS | R_EDGES | R_TEXTR | R_FOLDS),
     m_papWidth(297u),
     m_papHeight(210u),
@@ -15,6 +22,13 @@ CSettings::CSettings() :
     m_detachAngle(70),
     m_foldMaxFlatAngle(1)
 {
+    LoadStyles();
+    QTimer::singleShot(0, [this]() { LoadSettings(); });
+}
+
+void CSettings::LoadSettings()
+{
+    SetActiveStyle(GetActiveStyle());
 }
 
 CSettings& CSettings::GetInstance()
@@ -150,4 +164,43 @@ void CSettings::SetFoldMaxFlatAngle(unsigned char aFoldFlatAngle)
 {
     assert(aFoldFlatAngle < 180);
     m_foldMaxFlatAngle = aFoldFlatAngle;
+}
+
+std::vector<QString> CSettings::GetStyleNames() const
+{
+    std::vector<QString> styleNames;
+    styleNames.reserve(m_styles.size());
+    for(auto style = m_styles.cbegin(); style != m_styles.cend(); style++)
+        styleNames.push_back(style->first.c_str());
+    return styleNames;
+}
+
+QString CSettings::GetActiveStyle() const
+{
+    return m_config.value("Style", QString("Native")).toString();
+}
+
+void CSettings::SetActiveStyle(const QString& style)
+{
+    auto found = m_styles.find(style.toStdString());
+    assert(found != m_styles.end());
+    m_config.setValue("Style", style);
+    emit SetAppStyle(found->second);
+}
+
+void CSettings::LoadStyles()
+{
+    m_styles.clear();
+    m_styles["Native"] = "";
+
+    QDirIterator it(":/themes/styles", QDirIterator::Subdirectories);
+    while(it.hasNext())
+    {
+        const QFileInfo styleFile = it.next();
+        QFile file(styleFile.absoluteFilePath());
+        if (!file.open(QFile::ReadOnly | QFile::Text))
+            continue;
+        QTextStream stream(&file);
+        m_styles[styleFile.baseName().toStdString()] = stream.readAll();
+    }
 }

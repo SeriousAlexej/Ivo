@@ -59,6 +59,19 @@ void CSettingsWindow::LoadSettings()
         }
         default: assert(false);
     }
+
+    std::vector<QString> styles = s.GetStyleNames();
+    const QString activeStyle = s.GetActiveStyle();
+    int activeRow = 0;
+    int i = 0;
+    for(auto& style : styles)
+    {
+        if(activeStyle == style)
+            activeRow = i;
+        ui->listThemes->addItem(style);
+        i++;
+    }
+    ui->listThemes->setCurrentItem(ui->listThemes->item(activeRow));
 }
 
 void CSettingsWindow::SaveSettings() const
@@ -228,4 +241,9 @@ void CSettingsWindow::on_spinBoxVMargs_valueChanged(int i)
 {
     Q_UNUSED(i);
     UpdateMargins();
+}
+
+void CSettingsWindow::on_listThemes_currentTextChanged(const QString& currentText)
+{
+    CSettings::GetInstance().SetActiveStyle(currentText);
 }

@@ -64,7 +64,7 @@ SOBBox GetGroupOBBox(const CMesh::STriGroup& group, std::function<float(const SA
     points.reserve(tris.size()*3);
     for(const auto* triangle : tris)
         for(int i=0; i<3; i++)
-            points.push_back((*triangle)[i]);
+            points.push_back((*triangle)[i] - group.GetPosition()); //subtract position to prevent integer overflow in algorithm
     return GetMinOBBox(points, price);
 }
 

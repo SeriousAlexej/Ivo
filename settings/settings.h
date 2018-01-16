@@ -1,8 +1,15 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
+#include <QObject>
+#include <QSettings>
+#include <QString>
+#include <unordered_map>
+#include <string>
+#include <vector>
 
-class CSettings
+class CSettings : public QObject
 {
+    Q_OBJECT
 public:
     enum ImageFormat
     {
@@ -23,46 +30,58 @@ public:
     static const unsigned char R_TEXTR = (1u << 2);
     static const unsigned char R_FOLDS = (1u << 3);
 
-    static CSettings&   GetInstance();
+    static CSettings&    GetInstance();
 
-    unsigned char       GetFoldMaxFlatAngle() const;
-    void                SetFoldMaxFlatAngle(unsigned char aFoldFlatAngle);
+    unsigned char        GetFoldMaxFlatAngle() const;
+    void                 SetFoldMaxFlatAngle(unsigned char aFoldFlatAngle);
 
-    unsigned char       GetRenderFlags() const;
-    void                SetRenderFlags(unsigned char aFlags);
+    unsigned char        GetRenderFlags() const;
+    void                 SetRenderFlags(unsigned char aFlags);
 
-    unsigned            GetPaperWidth() const;
-    void                SetPaperWidth(unsigned aWidth);
+    unsigned             GetPaperWidth() const;
+    void                 SetPaperWidth(unsigned aWidth);
 
-    unsigned            GetPaperHeight() const;
-    void                SetPaperHeight(unsigned aHeight);
+    unsigned             GetPaperHeight() const;
+    void                 SetPaperHeight(unsigned aHeight);
 
-    unsigned            GetMarginsHorizontal() const;
-    void                SetMarginsHorizontal(unsigned aHMargins);
+    unsigned             GetMarginsHorizontal() const;
+    void                 SetMarginsHorizontal(unsigned aHMargins);
 
-    unsigned            GetMarginsVertical() const;
-    void                SetMarginsVertical(unsigned aVMargins);
+    unsigned             GetMarginsVertical() const;
+    void                 SetMarginsVertical(unsigned aVMargins);
 
-    float               GetResolutionScale() const;
-    void                SetResolutionScale(float aScale);
+    float                GetResolutionScale() const;
+    void                 SetResolutionScale(float aScale);
 
-    ImageFormat         GetImageFormat() const;
-    void                SetImageFormat(ImageFormat aFormat);
+    ImageFormat          GetImageFormat() const;
+    void                 SetImageFormat(ImageFormat aFormat);
 
-    unsigned char       GetImageQuality() const;
-    void                SetImageQuality(unsigned char aQuality);
+    unsigned char        GetImageQuality() const;
+    void                 SetImageQuality(unsigned char aQuality);
 
-    float               GetLineWidth() const;
-    void                SetLineWidth(float aLineW);
+    float                GetLineWidth() const;
+    void                 SetLineWidth(float aLineW);
 
-    unsigned            GetStippleLoop() const;
-    void                SetStippleLoop(unsigned aStippleLoop);
+    unsigned             GetStippleLoop() const;
+    void                 SetStippleLoop(unsigned aStippleLoop);
 
-    unsigned char       GetDetachAngle() const;
-    void                SetDetachAngle(unsigned char aDetachAngle);
+    unsigned char        GetDetachAngle() const;
+    void                 SetDetachAngle(unsigned char aDetachAngle);
+
+    QString              GetActiveStyle() const;
+    void                 SetActiveStyle(const QString& style);
+    std::vector<QString> GetStyleNames() const;
+
+signals:
+    void SetAppStyle(const QString& style) const;
 
 private:
     CSettings();
+
+    void LoadSettings();
+    void LoadStyles();
+
+    QSettings     m_config;
 
     unsigned char m_renFlags;
     unsigned      m_papWidth;
@@ -76,6 +95,8 @@ private:
     unsigned      m_stippleLoop;
     unsigned char m_detachAngle;
     unsigned char m_foldMaxFlatAngle;
+
+    std::unordered_map<std::string, QString> m_styles;
 };
 
 #endif // SETTINGS_H

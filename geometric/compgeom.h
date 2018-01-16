@@ -7,8 +7,10 @@
 
 namespace glm
 {
+int     crossSign(const ivec2& v1, const ivec2& v2);
 float   cross(const vec2& v1, const vec2& v2);
 float   angleFromTo(const vec2& v1, const vec2& v2);
+float   angleBetween(const vec2& v1, const vec2& v2);
 float   angleBetween(const vec3& v1, const vec3& v2);
 bool    rightTurn(const vec2& v1, const vec2& v2);
 bool    leftTurn(const vec2& v1, const vec2& v2);

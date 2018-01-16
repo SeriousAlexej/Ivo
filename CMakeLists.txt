@@ -107,6 +107,7 @@ set(UIS
 
 set(RESOURCES
     "res.qrc"
+    "styles.qrc"
 )
 
 add_executable(Ivo
