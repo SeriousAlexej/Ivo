@@ -4,6 +4,8 @@
 #include <QActionGroup>
 #include <QCloseEvent>
 #include <QCoreApplication>
+#include <QToolButton>
+#include <QEvent>
 #include <cstdio>
 #include <thread>
 #include <mutex>
@@ -76,12 +78,61 @@ CMainWindow::CMainWindow(QWidget* parent) :
     RegisterUpdaters();
     for(auto& updater : m_actionUpdaters)
         updater->RequestUpdate();
+
+    SetToolButtonProperty();
+    ResizeToolButtons();
 }
 
 CMainWindow::~CMainWindow()
 {
     m_actionUpdaters.clear();
     delete ui;
+}
+
+void CMainWindow::SetToolButtonProperty()
+{
+    QList<QToolButton*> toolButtons = ui->toolBar->findChildren<QToolButton*>();
+    for(auto& t : toolButtons)
+        t->setProperty("at_toolbar", QVariant(true));
+}
+
+void CMainWindow::ResizeToolButtons()
+{
+    static const QString extensionButtonName = "qt_toolbar_ext_button";
+    glm::ivec2 maxSize(0, 0);
+    QList<QToolButton*> toolButtons = ui->toolBar->findChildren<QToolButton*>();
+    for(auto& t : toolButtons)
+    {
+        if(t->objectName() == extensionButtonName)
+            continue;
+        t->setMinimumSize(0, 0);
+        t->setMaximumSize(9999, 9999);
+        t->adjustSize();
+        maxSize.x = glm::max(t->width(), maxSize.x);
+        maxSize.y = glm::max(t->height(), maxSize.y);
+    }
+    for(auto& t : toolButtons)
+    {
+        if(t->objectName() == extensionButtonName)
+            continue;
+        t->setMinimumSize(maxSize.x, maxSize.y);
+        t->setMinimumSize(maxSize.x, maxSize.y);
+    }
+}
+
+void CMainWindow::changeEvent(QEvent* event)
+{
+    switch(event->type())
+    {
+        case QEvent::StyleChange:
+        case QEvent::LanguageChange:
+            ResizeToolButtons();
+            break;
+        default:
+            break;
+    }
+
+    QMainWindow::changeEvent(event);
 }
 
 bool CMainWindow::HasModel() const
@@ -380,9 +431,7 @@ void CMainWindow::on_actionScale_triggered()
         m_rw3->releaseKeyboard();
         float outScale = 1.0f;
 
-        CScaleWindow scaleWnd(this);
-        scaleWnd.SetOutputScalePtr(&outScale);
-        scaleWnd.SetInitialScale(m_model->GetSizeMillimeters());
+        CScaleWindow scaleWnd(outScale, m_model->GetSizeMillimeters(), this);
         scaleWnd.exec();
 
         if(outScale != 1.0f)

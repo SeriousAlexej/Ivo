@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <list>
 #include "geometric/binPacking.h"
 

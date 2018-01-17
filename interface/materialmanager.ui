@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>313</width>
-    <height>327</height>
+    <width>327</width>
+    <height>240</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -45,11 +45,14 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QPushButton" name="btnAddTex">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="toolTip">
           <string>Assign texture to selected material</string>
          </property>
          <property name="text">
-          <string/>
+          <string>Load texture</string>
          </property>
          <property name="icon">
           <iconset>
@@ -58,25 +61,28 @@
          </property>
          <property name="iconSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>16</width>
+           <height>16</height>
           </size>
          </property>
          <property name="default">
           <bool>false</bool>
          </property>
          <property name="flat">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnRemTex">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="toolTip">
           <string>Remove texture from selected material</string>
          </property>
          <property name="text">
-          <string/>
+          <string>Remove texture</string>
          </property>
          <property name="icon">
           <iconset>
@@ -85,12 +91,12 @@
          </property>
          <property name="iconSize">
           <size>
-           <width>32</width>
-           <height>32</height>
+           <width>16</width>
+           <height>16</height>
           </size>
          </property>
          <property name="flat">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>

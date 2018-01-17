@@ -183,7 +183,8 @@ QString CSettings::GetActiveStyle() const
 void CSettings::SetActiveStyle(const QString& style)
 {
     auto found = m_styles.find(style.toStdString());
-    assert(found != m_styles.end());
+    if(found == m_styles.end())
+        return;
     m_config.setValue("Style", style);
     emit SetAppStyle(found->second);
 }

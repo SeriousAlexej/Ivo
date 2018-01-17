@@ -3,7 +3,7 @@
 #include "materialmanager.h"
 #include "ui_materialmanager.h"
 
-CMaterialManager::CMaterialManager(QWidget *parent) :
+CMaterialManager::CMaterialManager(QWidget* parent) :
     QDialog(parent),
     ui(new Ui::CMaterialManager)
 {
@@ -18,7 +18,7 @@ CMaterialManager::~CMaterialManager()
     delete ui;
 }
 
-void CMaterialManager::SetMaterials(const std::unordered_map<unsigned, std::string> &mtls,
+void CMaterialManager::SetMaterials(const std::unordered_map<unsigned, std::string>& mtls,
                                     const std::unordered_map<unsigned, std::string>& txtrs)
 {
     if(&m_materials != &mtls)
@@ -87,4 +87,11 @@ void CMaterialManager::on_btnRemTex_clicked()
         }
     }
     SetMaterials(m_materials, m_textures);
+}
+
+void CMaterialManager::on_listMaterials_itemSelectionChanged()
+{
+    bool enable = ui->listMaterials->currentItem() != nullptr;
+    ui->btnAddTex->setEnabled(enable);
+    ui->btnRemTex->setEnabled(enable);
 }

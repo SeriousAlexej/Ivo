@@ -61,11 +61,16 @@ private slots:
     void on_actionModeSelect_triggered();
     void on_actionCloseModel_triggered();
 
+protected:
+    virtual void changeEvent(QEvent* event) override;
+
 private:
     void closeEvent(QCloseEvent *event) override;
     void RegisterUpdaters();
     void SetModelToWindows();
     void ClearModel();
+    void SetToolButtonProperty();
+    void ResizeToolButtons();
     QMessageBox::StandardButton AskToSaveChanges();
     void SaveToIVO(const char* filename);
     void LoadFromIVO(const char* filename);

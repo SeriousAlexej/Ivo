@@ -18,16 +18,7 @@
     <normaloff>:/icons/icons/stupid_logo.png</normaloff>:/icons/icons/stupid_logo.png</iconset>
   </property>
   <property name="styleSheet">
-   <string notr="true">QDockWidget::title {
-padding-top: 4px;
-}
-
-.QToolButton {
-min-width: 50px;
-max-width: 50px;
-min-height: 60px;
-max-height: 60px;
-}</string>
+   <string notr="true"/>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>

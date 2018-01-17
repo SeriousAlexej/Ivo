@@ -1,37 +1,30 @@
-QMenuBar {
+.QMenuBar {
 background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(234, 234, 234, 255), stop:1 rgba(255, 255, 255, 255));
 }
 
-QToolBar {
+.QToolBar {
 background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(234, 234, 234, 255));
 border-color: transparent;
 }
 
-QDockWidget::title {
+.QDockWidget::title {
 border: 1px solid lightgrey;
 background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(220, 220, 220, 255), stop:1 rgba(255, 255, 255, 255));
 padding-top: 4px;
 }
 
-.QToolButton {
-min-width: 50px;
-max-width: 50px;
-min-height: 60px;
-max-height: 60px;
-}
-
-QToolButton {
+.QToolButton[at_toolbar="true"] {
 border-radius: 4px;
 border: 1px solid  rgba(0, 0, 0, 0);
 }
 
-QToolButton::hover {
+.QToolButton[at_toolbar="true"]::hover {
 border-radius: 4px;
 border: 1px solid  rgba(220, 220, 255, 120);
 background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(0, 0, 0, 10), stop:1 rgba(190, 210, 255, 255));
 }
 
-QToolButton::checked {
+.QToolButton[at_toolbar="true"]::checked {
 border-radius: 4px;
 border: 1px solid  rgba(210, 210, 230, 120);
 background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0, 0, 0, 35), stop:1 rgba(240, 210, 160, 255));

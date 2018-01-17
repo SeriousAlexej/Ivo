@@ -14,7 +14,7 @@ class CMaterialManager : public QDialog
     Q_OBJECT
 
 public:
-    explicit CMaterialManager(QWidget *parent = 0);
+    explicit CMaterialManager(QWidget* parent = nullptr);
     ~CMaterialManager();
 
     void SetMaterials(const std::unordered_map<unsigned, std::string>& mtls,
@@ -25,6 +25,7 @@ public:
 private slots:
     void on_btnAddTex_clicked();
     void on_btnRemTex_clicked();
+    void on_listMaterials_itemSelectionChanged();
 
 private:
     Ui::CMaterialManager *ui;

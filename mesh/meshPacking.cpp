@@ -92,33 +92,13 @@ bool CMesh::PackGroups(bool undoable)
         return b.height;
     };
 
-    CIvoCommand* cmd = nullptr;
+    std::unique_ptr<CIvoCommand> cmd(new CIvoCommand());
     CIvoCommand rotationCommand;
-    if(undoable)
-        cmd = new CIvoCommand();
 
     std::vector<std::shared_ptr<SAABBox2D>> bboxes;
     for(auto& grp : m_groups)
     {
-        SOBBox groupOOBBox = GetGroupOBBox(grp, bboxPrice);
-        const float boxWidth = groupOOBBox.GetWidth() + groupGap*2.0f;
-        const float boxHeight = groupOOBBox.GetHeight() + groupGap*2.0f;
-
-        if(boxWidth > binWidth || boxHeight > binHeight)
-        {
-            const SAABBox2D grpBBox = grp.GetAABBox();
-            CAtomicCommand cmdMoveAway(CT_MOVE);
-            cmdMoveAway.SetTriangle(grp.m_tris.front());
-            cmdMoveAway.SetTranslation(vec2(-grpBBox.width-groupGap, -grpBBox.height)*0.5f - grp.GetPosition());
-
-            if(undoable)
-                cmd->AddAction(cmdMoveAway);
-            else
-                cmdMoveAway.Redo();
-
-            allPacked = false;
-            continue;
-        }
+        const SOBBox groupOOBBox = GetGroupOBBox(grp, bboxPrice);
 
         float rotationAngle = -groupOOBBox.GetRotation();
 
@@ -127,22 +107,37 @@ bool CMesh::PackGroups(bool undoable)
         cmdRot.SetRotation(rotationAngle);
         cmdRot.Redo();
 
-        if(undoable)
-            rotationCommand.AddAction(cmdRot);
+        const float boxWidth = grp.m_toRightDown.x - grp.m_toTopLeft.x + groupGap*2.0f;
+        const float boxHeight = grp.m_toTopLeft.y - grp.m_toRightDown.y + groupGap*2.0f;
+        if(boxWidth > binWidth || boxHeight > binHeight)
+        {
+            cmdRot.Undo();
+            const SAABBox2D grpBBox = grp.GetAABBox();
+            const glm::vec2 grpCenter(grp.m_toRightDown.x*0.5f + grp.m_toTopLeft.x*0.5f,
+                                      grp.m_toTopLeft.y*0.5f   + grp.m_toRightDown.y*0.5f);
+            const glm::vec2 grpPos = grp.GetPosition();
+            const glm::vec2 centerOffset(grpPos.x - grpCenter.x, grpPos.y - grpCenter.y);
+            CAtomicCommand cmdMoveAway(CT_MOVE);
+            cmdMoveAway.SetTriangle(grp.m_tris.front());
+            cmdMoveAway.SetTranslation(glm::vec2(-grpBBox.width*0.5f - groupGap, -grpBBox.height*0.5f) + centerOffset - grp.GetPosition());
+            cmd->AddAction(cmdMoveAway);
+
+            allPacked = false;
+            continue;
+        }
+
+        rotationCommand.AddAction(cmdRot);
 
         SGroupBBox* bbox = new SGroupBBox();
         bbox->grp = &grp;
-        bbox->width = grp.m_toRightDown.x - grp.m_toTopLeft.x + groupGap*2.0f;
-        bbox->height = grp.m_toTopLeft.y - grp.m_toRightDown.y + groupGap*2.0f;
+        bbox->width = boxWidth;
+        bbox->height = boxHeight;
         bbox->grpCenter = (grp.m_toRightDown + grp.m_toTopLeft) * 0.5f;;
         bboxes.emplace_back(bbox);
     }
 
-    if(undoable)
-    {
-        rotationCommand.undo();
-        cmd->AddAction(std::move(rotationCommand));
-    }
+    rotationCommand.undo();
+    cmd->AddAction(std::move(rotationCommand));
 
     unsigned prevSize = bboxes.size() + 1;
     SPaperDispencer paperDispencer;
@@ -157,22 +152,23 @@ bool CMesh::PackGroups(bool undoable)
             vec2 finalPos = b.GetFinalPosition();
             finalPos.x += paperDispencer.GetX() * papWidth + marginsH;
             finalPos.y -= (paperDispencer.GetY() + 1) * papHeight - marginsV;
-            if(undoable)
-            {
-                CAtomicCommand cmdMov(CT_MOVE);
-                cmdMov.SetTriangle(b.grp->m_tris.front());
-                cmdMov.SetTranslation(finalPos - b.grp->GetPosition());
-                cmd->AddAction(cmdMov);
-            } else {
-                b.grp->SetPosition(finalPos.x, finalPos.y);
-            }
+
+            CAtomicCommand cmdMov(CT_MOVE);
+            cmdMov.SetTriangle(b.grp->m_tris.front());
+            cmdMov.SetTranslation(finalPos - b.grp->GetPosition());
+            cmd->AddAction(cmdMov);
         }
 
         paperDispencer.NextSheet();
     }
 
     if(undoable)
-        m_undoStack.push(cmd);
+    {
+        m_undoStack.push(cmd.release());
+    } else {
+        cmd->redo();
+        m_undoStack.clear();
+    }
 
     return allPacked && bboxes.empty();
 }
