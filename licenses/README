@@ -1,0 +1,18 @@
+Ivo uses GPL v3.0 license or any later version.
+
+It also uses following libraries with these licenses:
+
+- assimp:     BSD license
+- glm:        Happy Bunny License (Modified MIT) or the MIT License (X11 License as stated on gnu.org)
+- Qt:         LGPL v3
+- TabToolbar: LGPL v3
+
+All of them are compatible with GPL v3.0
+
+Copies of licenses are provided in directory containing this README file.
+
+To get sources for these libraries, you can follow these links (as of 08.04.2018 in dd.mm.yy format):
+assimp:     https://github.com/assimp/assimp
+glm:        https://github.com/g-truc/glm
+Qt:         https://www.qt.io
+TabToolbar: https://github.com/SeriousAlexej/TabToolbar

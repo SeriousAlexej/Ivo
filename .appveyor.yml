@@ -49,6 +49,8 @@ build:
 
 after_build:
   - mkdir deploy
+  - mkdir deploy\licenses
+  - copy licenses\* deploy\licenses\
   - copy .\Release\Ivo.exe .\deploy\Ivo.exe
   - copy ..\tabtoolbar_install\bin\*.dll .\deploy\
   - copy ..\assimp_install\bin\*.dll .\deploy\
@@ -61,7 +63,7 @@ artifacts:
     type: zip
 
 deploy:
-  description: Ivo-windows-$(platform)-$(configuration)-$(appveyor_build_version)
+  description: Ivo-Windows-$(configuration)-$(appveyor_build_version)
   provider: GitHub
   auth_token:
     secure: mET6ZcC/362vT7+SgLRmMpZDfqibxGzYwF57Rm0ioKJikkkNj8nd86kWdnP+KuRA
