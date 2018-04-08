@@ -59,7 +59,7 @@ after_build:
 
 artifacts:
   - path: .\deploy
-    name: Ivo-windows-$(platform)-$(configuration)-$(appveyor_build_version)
+    name: Ivo-Windows-$(configuration)-$(appveyor_build_version)
     type: zip
 
 deploy:
