@@ -21,10 +21,13 @@ before_install:
   - cd glm
   - git reset --hard ad744735f66359b6aecdfe75e93c024f0c7ec055
   - cmake -G "Unix Makefiles" && sudo make install && cd ..
-
-before_script:
+  - git clone https://github.com/seriousalexej/TabToolbar.git
   - QT_ENV_SCRIPT=$(find /opt -name 'qt*-env.sh')
   - source $QT_ENV_SCRIPT
+  - cd TabToolbar
+  - mkdir build
+  - cd build
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && sudo make install && cd ../..
 
 script:
-  - cmake -DCMAKE_BUILD_TYPE=Release && cmake --build .
+  - cmake -DCMAKE_BUILD_TYPE=Release ./src && cmake --build .

@@ -1,0 +1,128 @@
+{
+  "groupHeight":75,
+  "groupRowCount":3,
+  "specialTab":false,
+  "compactButtons":true,
+  "cornerActions":["actionAbout"],
+  "menus":[
+    {
+      "name":"saveMenu",
+      "actions":["actionSave", "actionSave_As"]
+    },
+    {
+      "name":"zoomMenu",
+      "actions":["actionZoom_fit", "actionZoom_2D", "actionZoom_3D"]
+    },
+    {
+      "name":"themesMenu",
+      "actions":[]
+    }
+  ],
+  "tabs":[
+    {
+      "displayName":"File", "name":"File",
+      "groups":[
+        {
+          "displayName":"Project", "name":"ProjectGroup",
+          "content":[
+            { "itemType":"action", "name":"actionLoad_Model", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionOpen_obj", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionSave", "type":"menuButtonPopup", "menu":"saveMenu" },
+            { "itemType":"action", "name":"actionCloseModel", "type":"delayedPopup", "menu":null },
+            { "itemType":"separator" },
+            { "itemType":"action", "name":"actionLoad_Texture", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionExport_Sheets", "type":"delayedPopup", "menu":null }
+          ]
+        },
+        {
+          "displayName":"", "name":"SettingsGroup",
+          "content":[
+            { "itemType":"action", "name":"actionSettings", "type":"delayedPopup", "menu":null }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName":"View", "name":"View",
+      "groups":[
+        {
+          "displayName":"Visualization", "name":"Visualization",
+          "content":[
+            {
+              "itemType":"subgroup", "name":"RSubgroup3", "aligned":true,
+              "content":[
+                { "itemType":"spinBox", "name":"maxFlatAngle", "label":"Max flat angle" },
+                { "itemType":"dspinBox", "name":"lineWidth", "label":"Line width" },
+                { "itemType":"spinBox", "name":"stippleFactor", "label":"Stipple factor" }
+              ]
+            },
+            { "itemType":"separator" },
+            {
+              "itemType":"subgroup", "name":"RSubgroup1", "aligned":true,
+              "content":[
+                { "itemType":"action", "name":"actionShow_Flaps", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionShow_Folds", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionShow_Edges", "type":"delayedPopup", "menu":null }
+              ]
+            },
+            {
+              "itemType":"subgroup", "name":"RSubgroup2", "aligned":true,
+              "content":[
+                { "itemType":"action", "name":"actionToggle_Lighting", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionShow_Texture", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionShow_Grid", "type":"delayedPopup", "menu":null }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName":"", "name":"ZoomGroup",
+          "content":[
+            { "itemType":"action", "name":"actionZoom_fit", "type":"menuButtonPopup", "menu":"zoomMenu" },
+            { "itemType":"action", "name":"actionTheme", "type":"instantPopup", "menu":"themesMenu" }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName":"Edit", "name":"Edit",
+      "groups":[
+        {
+          "displayName":"Actions", "name":"ActionsGroup",
+          "content":[
+            {
+              "itemType":"subgroup", "name":"ActionsSubgroup", "aligned":false,
+              "content":[
+                { "itemType":"action", "name":"actionUndo", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionRedo", "type":"delayedPopup", "menu":null }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName":"Modes", "name":"ModesGroup",
+          "content":[
+            { "itemType":"action", "name":"actionModeSelect", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionModeMove", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionModeRotate", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionModeSnap", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionModeFlaps", "type":"delayedPopup", "menu":null }
+          ]
+        },
+        {
+          "displayName":"Utilities", "name":"UtilitiesGroup",
+          "content":[
+            {
+              "itemType":"subgroup", "name":"UtilitiesSubgroup", "aligned":true,
+              "content":[
+                { "itemType":"action", "name":"actionScale", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionPolypaint", "type":"delayedPopup", "menu":null },
+                { "itemType":"action", "name":"actionAutoPack", "type":"delayedPopup", "menu":null }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

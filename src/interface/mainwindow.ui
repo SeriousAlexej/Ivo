@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>951</width>
+    <height>632</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Ivo</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../res.qrc">
+    <normaloff>:/icons/icons/stupid_logo.png</normaloff>:/icons/icons/stupid_logo.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow[IvoMain=&quot;true&quot;] {background-color: lightgrey; }</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
+  </property>
+  <property name="IvoMain" stdset="0">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+   </layout>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget3D">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>3D Model</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="CRenWin3D" name="frameLeft"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget2D">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>2D Layout</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="CRenWin2D" name="frameRight"/>
+  </widget>
+  <action name="actionOpen_obj">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-new.png</normaloff>:/icons/icons/48px-Document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+   <property name="toolTip">
+    <string>New Model</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionSave_As">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-save-as.png</normaloff>:/icons/icons/48px-Document-save-as.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save &amp;As</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-save.png</normaloff>:/icons/icons/48px-Document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionLoad_Texture">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Materials</string>
+   </property>
+   <property name="toolTip">
+    <string>Browse current model's materials and assign textures</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Help-browser.png</normaloff>:/icons/icons/Help-browser.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionModeRotate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-View-refresh.png</normaloff>:/icons/icons/48px-View-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rotate</string>
+   </property>
+   <property name="toolTip">
+    <string>Rotate</string>
+   </property>
+   <property name="shortcut">
+    <string>2</string>
+   </property>
+  </action>
+  <action name="actionModeSnap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Go-bottom.png</normaloff>:/icons/icons/48px-Go-bottom.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edges</string>
+   </property>
+   <property name="toolTip">
+    <string>Join/Break edges</string>
+   </property>
+   <property name="shortcut">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="actionModeMove">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Move_mode.png</normaloff>:/icons/icons/Move_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move</string>
+   </property>
+   <property name="toolTip">
+    <string>Move</string>
+   </property>
+   <property name="shortcut">
+    <string>1</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionModeFlaps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Flaps_mode.png</normaloff>:/icons/icons/Flaps_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>Flaps</string>
+   </property>
+   <property name="toolTip">
+    <string>Switch flaps</string>
+   </property>
+   <property name="shortcut">
+    <string>4</string>
+   </property>
+  </action>
+  <action name="actionExport_Sheets">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Printer.png</normaloff>:/icons/icons/48px-Printer.png</iconset>
+   </property>
+   <property name="text">
+    <string>E&amp;xport</string>
+   </property>
+   <property name="toolTip">
+    <string>Export Sheets</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Preferences-system.png</normaloff>:/icons/icons/48px-Preferences-system.png</iconset>
+   </property>
+   <property name="text">
+    <string>Paper Settings</string>
+   </property>
+   <property name="iconText">
+    <string>Paper
+Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit rendering, paper and export settings</string>
+   </property>
+  </action>
+  <action name="actionZoom_fit">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-View-zoom-fit.png</normaloff>:/icons/icons/48px-View-zoom-fit.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Zoom</string>
+   </property>
+   <property name="iconText">
+    <string>Zoom</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom all windows</string>
+   </property>
+  </action>
+  <action name="actionZoom_2D">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-View-zoom-fit.png</normaloff>:/icons/icons/48px-View-zoom-fit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom &amp;2D</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom fit 2D window</string>
+   </property>
+  </action>
+  <action name="actionZoom_3D">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-View-zoom-fit.png</normaloff>:/icons/icons/48px-View-zoom-fit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom &amp;3D</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom fit 3D window</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Edit-undo.png</normaloff>:/icons/icons/48px-Edit-undo.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Edit-redo.png</normaloff>:/icons/icons/48px-Edit-redo.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+  </action>
+  <action name="actionLoad_Model">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Document-open.png</normaloff>:/icons/icons/48px-Document-open.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Load</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Model</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionScale">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Scale.png</normaloff>:/icons/icons/Scale.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Scale</string>
+   </property>
+  </action>
+  <action name="actionAutoPack">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Package-x-generic.svg.png</normaloff>:/icons/icons/48px-Package-x-generic.svg.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Auto pack</string>
+   </property>
+   <property name="iconText">
+    <string>Auto pack</string>
+   </property>
+   <property name="toolTip">
+    <string>Automatically arrange parts in 2D window</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionShow_Grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</normaloff>:/icons/icons/48px-Antialias_Icon.svg.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Show grid in 3D window</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionToggle_Lighting">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/light_bulb.png</normaloff>:/icons/icons/light_bulb.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Lighting</string>
+   </property>
+   <property name="toolTip">
+    <string>Lighting</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WindowShortcut</enum>
+   </property>
+  </action>
+  <action name="actionPolypaint">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Polypaint.png</normaloff>:/icons/icons/48px-Polypaint.png</iconset>
+   </property>
+   <property name="text">
+    <string>Polypaint</string>
+   </property>
+   <property name="iconText">
+    <string>Polypaint</string>
+   </property>
+   <property name="toolTip">
+    <string>Enter Polypaint mode</string>
+   </property>
+  </action>
+  <action name="actionModeSelect">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Select_mode.png</normaloff>:/icons/icons/Select_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>Select</string>
+   </property>
+   <property name="toolTip">
+    <string>Select</string>
+   </property>
+   <property name="shortcut">
+    <string>`</string>
+   </property>
+  </action>
+  <action name="actionCloseModel">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/close.png</normaloff>:/icons/icons/close.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Close</string>
+   </property>
+   <property name="toolTip">
+    <string>Close currently opened model</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
+  </action>
+  <action name="actionShow_Edges">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Edges_icon.png</normaloff>:/icons/icons/Edges_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edges</string>
+   </property>
+   <property name="toolTip">
+    <string>Show edges</string>
+   </property>
+  </action>
+  <action name="actionShow_Flaps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Flaps_icon.png</normaloff>:/icons/icons/Flaps_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Flaps</string>
+   </property>
+   <property name="toolTip">
+    <string>Show flaps</string>
+   </property>
+  </action>
+  <action name="actionShow_Folds">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/Folds_icon.png</normaloff>:/icons/icons/Folds_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Folds</string>
+   </property>
+   <property name="toolTip">
+    <string>Show folds</string>
+   </property>
+  </action>
+  <action name="actionShow_Texture">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-Image-x-generic.png</normaloff>:/icons/icons/48px-Image-x-generic.png</iconset>
+   </property>
+   <property name="text">
+    <string>Texture</string>
+   </property>
+   <property name="toolTip">
+    <string>Show texture</string>
+   </property>
+  </action>
+  <action name="actionTheme">
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/icons/icons/48px-theme.png</normaloff>:/icons/icons/48px-theme.png</iconset>
+   </property>
+   <property name="text">
+    <string>Theme</string>
+   </property>
+   <property name="toolTip">
+    <string>Choose visual theme</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>CRenWin3D</class>
+   <extends>QWidget</extends>
+   <header>interface/renwin3d.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CRenWin2D</class>
+   <extends>QWidget</extends>
+   <header>interface/renwin2d.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../res.qrc"/>
+ </resources>
+ <connections/>
+</ui>

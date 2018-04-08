@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/themes">
-        <file>styles/Smooth.qss</file>
-    </qresource>
-</RCC>

@@ -1,35 +1,70 @@
-version: 0.18.{build}
+version: 1.18.{build}
 
 image: Visual Studio 2015
 
 clone_folder: c:\projects\ivo
 
-clone_depth: 1
+shallow_clone: false
+
+configuration:
+  - Release
 
 install:
 #install and build assimp
   - cd c:\projects
+  - mkdir assimp_install
   - git clone https://github.com/assimp/assimp.git
   - cd assimp
   - git reset --hard a8673d4828df5107186f49e5e4efa5316b727482
   - mkdir build
   - cd build
-  - cmake -G "Visual Studio 14 2015" -DASSIMP_BUILD_TESTS=OFF ..
-  - cmake --build .
-  - copy .\code\debug\*.* .\code\
+  - cmake -G "Visual Studio 14 2015" -DASSIMP_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="c:/projects/assimp_install" ..
+  - cmake --build . --target install --config Release
 #install glm
   - cd c:\projects
   - git clone https://github.com/g-truc/glm.git
   - cd glm
   - git reset --hard ad744735f66359b6aecdfe75e93c024f0c7ec055
+#install TabToolbar
+  - cd c:\projects
+  - mkdir tabtoolbar_install
+  - git clone https://github.com/seriousalexej/TabToolbar.git
+  - cd TabToolbar
+  - mkdir build
+  - cd build
+  - set CMAKE_PREFIX_PATH=C:\Qt\5.7\msvc2015\
+  - cmake -G "Visual Studio 14 2015" -DCMAKE_INSTALL_PREFIX="c:/projects/tabtoolbar_install" ..
+  - cmake --build . --target install --config Release
 #done
   - cd c:\projects\ivo
 
 before_build:
-  - set CMAKE_PREFIX_PATH=C:\Qt\5.9.2\msvc2015\
-  - cmake -G "Visual Studio 14 2015" -Dassimp_ROOT="c:/projects/assimp" -Dglm_ROOT="c:/projects/glm"
+  - set CMAKE_PREFIX_PATH=C:\Qt\5.7\msvc2015\
+  - cmake -G "Visual Studio 14 2015" -Dassimp_ROOT="c:/projects/assimp_install" -Dglm_ROOT="c:/projects/glm" -DTabToolbar_ROOT="c:/projects/tabtoolbar_install" ./src
 
 build:
   parallel: true
   project: Ivo.sln
   verbosity: normal
+
+after_build:
+  - mkdir deploy
+  - copy .\Release\Ivo.exe .\deploy\Ivo.exe
+  - copy ..\tabtoolbar_install\bin\*.dll .\deploy\
+  - copy ..\assimp_install\bin\*.dll .\deploy\
+  - cd C:\Qt\5.7\msvc2015\bin
+  - windeployqt.exe c:\projects\ivo\deploy\Ivo.exe
+
+artifacts:
+  - path: .\deploy
+    name: Ivo-windows-$(platform)-$(configuration)-$(appveyor_build_version)
+    type: zip
+
+deploy:
+  description: Ivo-windows-$(platform)-$(configuration)-$(appveyor_build_version)
+  provider: GitHub
+  auth_token:
+    secure: mET6ZcC/362vT7+SgLRmMpZDfqibxGzYwF57Rm0ioKJikkkNj8nd86kWdnP+KuRA
+  force_update: true
+  on:
+    appveyor_repo_tag: true
