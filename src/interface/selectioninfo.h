@@ -17,19 +17,29 @@
 */
 #ifndef SELECTION_INFO_H
 #define SELECTION_INFO_H
-#include "interface/renwin2d.h"
+#include <typeindex>
+#include <glm/vec2.hpp>
 #include "mesh/mesh.h"
 
-struct SSelectionInfo
+struct SEditInfo
 {
-    bool                        m_modeIsActive;
-    glm::vec2                   m_mouseWorldPosStart;
-    glm::vec2                   m_mouseWorldPos;
-    CRenWin2D::EditMode         m_editMode;
-    CMesh::STriangle2D*         m_triangle;
-    int                         m_edge;
-    std::vector
-        <CMesh::STriGroup*>     m_selection;
+    SEditInfo() : editMode(std::type_index(typeid(nullptr))) {}
+
+    CMesh*                         mesh;
+    bool                           modeIsActive;
+    glm::vec2                      mousePressPointOrig;
+    glm::vec2                      mousePressPoint;
+    glm::vec2                      mousePosition;
+    std::type_index                editMode;
+    CMesh::STriangle2D*            currTri = nullptr;
+    int                            currEdge = -1;
+    glm::vec2                      currEdgeVec;
+    glm::vec2                      rotationCenter = glm::vec2(0.0f,0.0f);
+    bool                           selectionFilledOnSpot = false;
+    std::vector<glm::vec2>         selectionOldPositions;
+    std::vector<float>             selectionOldRotations;
+    std::vector<float>             selectionLastRotations;
+    std::vector<CMesh::STriGroup*> selection;
 };
 
 #endif

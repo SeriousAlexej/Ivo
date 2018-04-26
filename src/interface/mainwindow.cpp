@@ -39,6 +39,11 @@
 #include "interface/actionupdater.h"
 #include "interface/exportwindow.h"
 #include "interface/importwindow.h"
+#include "interface/modes2D/move.h"
+#include "interface/modes2D/snap.h"
+#include "interface/modes2D/flaps.h"
+#include "interface/modes2D/rotate.h"
+#include "interface/modes2D/select.h"
 #include "pdo/pdotools.h"
 #include "notification/hub.h"
 
@@ -88,7 +93,7 @@ CMainWindow::CMainWindow(QWidget* parent) :
     ag->addAction(ui->actionModeSnap);
     ag->addAction(ui->actionModeFlaps);
     ag->addAction(ui->actionModeSelect);
-    ui->actionModeMove->setChecked(true);
+    ui->actionModeMove->trigger();
 
     connect(ui->actionOpen_obj,     &QAction::triggered,         this,  &CMainWindow::LoadModel);
     connect(ui->actionLoad_Texture, &QAction::triggered,         this,  &CMainWindow::OpenMaterialManager);
@@ -292,22 +297,22 @@ QMessageBox::StandardButton CMainWindow::AskToSaveChanges()
 
 void CMainWindow::on_actionModeRotate_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EditMode::Rotate);
+    m_rw2->SetMode(new CModeRotate());
 }
 
 void CMainWindow::on_actionModeSnap_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EditMode::Snap);
+    m_rw2->SetMode(new CModeSnap());
 }
 
 void CMainWindow::on_actionModeMove_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EditMode::Move);
+    m_rw2->SetMode(new CModeMove());
 }
 
 void CMainWindow::on_actionModeFlaps_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EditMode::Flaps);
+    m_rw2->SetMode(new CModeFlaps());
 }
 
 void CMainWindow::on_actionExport_Sheets_triggered()
@@ -496,7 +501,7 @@ void CMainWindow::on_actionPolypaint_triggered()
 
 void CMainWindow::on_actionModeSelect_triggered()
 {
-    m_rw2->SetMode(CRenWin2D::EditMode::Select);
+    m_rw2->SetMode(new CModeSelect());
 }
 
 void CMainWindow::on_actionCloseModel_triggered()

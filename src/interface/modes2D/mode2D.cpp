@@ -1,7 +1,7 @@
 /*
     Ivo - a free software for unfolding 3D models and papercrafting
     Copyright (C) 2015-2018 Oleksii Sierov (seriousalexej@gmail.com)
-	
+
     Ivo is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -15,26 +15,28 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "interface/modes2D/flaps.h"
+#include "interface/modes2D/mode2D.h"
 
-using glm::vec2;
-
-void CModeFlaps::MouseLBPress()
+void IMode2D::TryFillSelection()
 {
-    const vec2 mouseWorldCoords = EditInfo().mousePressPoint;
-    CMesh::STriangle2D* trUnderCursor = nullptr;
-    int edgeUnderCursor = 0;
-    EditInfo().mesh->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
-    if(trUnderCursor)
-        trUnderCursor->GetEdge(edgeUnderCursor)->NextFlapPosition();
+    m_editInfo->selectionFilledOnSpot = false;
+    if(!m_editInfo->selection.empty())
+        return;
 
-    Deactivate();
+    CMesh::STriGroup* grp = m_editInfo->mesh->GroupUnderCursor(m_editInfo->mousePressPoint);
+    if(grp)
+    {
+        m_editInfo->selection.push_back(grp);
+        m_editInfo->selectionFilledOnSpot = true;
+    }
 }
 
-void CModeFlaps::MouseMove()
+void IMode2D::Deactivate()
 {
+    m_active = false;
 }
 
-void CModeFlaps::MouseLBRelease()
+SEditInfo& IMode2D::EditInfo()
 {
+    return *m_editInfo;
 }

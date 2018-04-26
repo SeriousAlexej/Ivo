@@ -29,7 +29,7 @@
 #include "settings/settings.h"
 #include "renderers/renderlegacy2d.h"
 #include "interface/selectioninfo.h"
-#include "interface/renwin2dEditInfo.h"
+#include "interface/modes2D/mode2D.h"
 
 using glm::vec2;
 using glm::vec3;
@@ -56,14 +56,6 @@ CRenWin2D::CRenWin2D(QWidget *parent) :
 
     m_editInfo.reset(new SEditInfo());
     Subscribe<CMesh::GroupStructureChanging>(&CRenWin2D::ClearSelection);
-
-#define MODE_FUNCS(mode)\
-    SModeFuncs{std::bind(&CRenWin2D::MODE_FUNC_START(mode), this),\
-               std::bind(&CRenWin2D::MODE_FUNC_END(mode), this),\
-               std::bind(&CRenWin2D::MODE_FUNC_UPDATE(mode), this)}
-#define RENWIN_MODE(mode) m_modeFunctions[static_cast<int>(EditMode::mode)] = MODE_FUNCS(mode);
-#include "interface/modes2D/renwin2DModes.h"
-#undef RENWIN_MODE
 }
 
 CRenWin2D::~CRenWin2D()
@@ -83,22 +75,29 @@ void CRenWin2D::ClearSelection()
     update();
 }
 
-void CRenWin2D::SetMode(EditMode m)
+void CRenWin2D::SetMode(IMode2D* m)
 {
     if(m_cameraMode == CAM_MODE)
-    {
-        ModeEnd();
-    }
+        m_mode->MouseLBRelease();
 
-    m_editInfo->editMode = m;
-    m_cameraMode = CAM_STILL;
+    m_mode.reset(m);
+    m_mode->m_editInfo = m_editInfo.get();
+    m_editInfo->editMode = std::type_index(typeid(*m));
+    SetCameraMode(CAM_STILL);
     update();
+}
+
+void CRenWin2D::SetCameraMode(ECameraMode m)
+{
+    m_cameraMode = m;
+    m_editInfo->modeIsActive = (m == CAM_MODE);
 }
 
 void CRenWin2D::SetModel(CMesh *mdl)
 {
     ClearSelection();
     m_model = mdl;
+    m_editInfo->mesh = mdl;
     m_renderer->SetModel(mdl);
     ZoomFit();
 }
@@ -150,14 +149,6 @@ void CRenWin2D::FillOccupiedSheetsSize(unsigned &horizontal, unsigned &vertical)
 
 void CRenWin2D::paintGL()
 {
-    const SSelectionInfo selInfo {m_cameraMode == CAM_MODE,
-                                  PointToWorldCoords(m_editInfo->mousePressPoint),
-                                  PointToWorldCoords(m_editInfo->mousePosition),
-                                  m_editInfo->editMode,
-                                  m_editInfo->currTri,
-                                  m_editInfo->currEdge,
-                                  m_editInfo->selection};
-
     m_renderer->PreDraw();
 
     unsigned papHorizontal;
@@ -166,7 +157,7 @@ void CRenWin2D::paintGL()
     m_renderer->DrawPaperSheets(papHorizontal, papVertical);
 
     m_renderer->DrawScene();
-    m_renderer->DrawSelection(selInfo);
+    m_renderer->DrawSelection(*m_editInfo);
     m_renderer->PostDraw();
 }
 
@@ -260,7 +251,7 @@ void CRenWin2D::resizeGL(int w, int h)
     RecalcProjection();
 }
 
-bool CRenWin2D::event(QEvent *e)
+bool CRenWin2D::event(QEvent* e)
 {
     static vec3 oldPos = m_cameraPosition;
 
@@ -269,7 +260,7 @@ bool CRenWin2D::event(QEvent *e)
         case QEvent::Wheel :
         {
             setFocus();
-            QWheelEvent *we = static_cast<QWheelEvent*>(e);
+            QWheelEvent* we = static_cast<QWheelEvent*>(e);
             m_cameraPosition[2] = clamp(float(m_cameraPosition[2] + 0.01f*we->delta()), 0.1f, 1000000.0f);
             makeCurrent();
             RecalcProjection();
@@ -285,29 +276,29 @@ bool CRenWin2D::event(QEvent *e)
             if(m_cameraMode != CAM_STILL)
             {
                 if(m_cameraMode == CAM_ZOOM && me->button() == Qt::LeftButton)
-                {
-                    m_cameraMode = CAM_TRANSLATE;
-                }
+                    SetCameraMode(CAM_TRANSLATE);
+
                 break;
             }
 
-            m_editInfo->mousePressPoint = me->pos();
+            m_editInfo->mousePressPointOrig = vec2(me->localPos().x(), me->localPos().y());
+            m_editInfo->mousePressPoint = PointToWorldCoords(me->localPos());
             oldPos = m_cameraPosition;
             switch(me->button())
             {
                 case Qt::MiddleButton :
                 {
-                    m_cameraMode = CAM_TRANSLATE;
+                    SetCameraMode(CAM_TRANSLATE);
                     break;
                 }
                 case Qt::RightButton :
                 {
-                    m_cameraMode = CAM_ZOOM;
+                    SetCameraMode(CAM_ZOOM);
                     break;
                 }
                 case Qt::LeftButton :
                 {
-                    m_cameraMode = CAM_MODE;
+                    SetCameraMode(CAM_MODE);
                     ModeLMB();
                     update();
                     break;
@@ -319,54 +310,42 @@ bool CRenWin2D::event(QEvent *e)
         case QEvent::MouseButtonRelease :
         {
             if(m_cameraMode == CAM_MODE)
-            {
                 ModeEnd();
-            }
-            m_cameraMode = CAM_STILL;
+
+            SetCameraMode(CAM_STILL);
             update();
             break;
         }
         case QEvent::MouseMove :
         {
-            QMouseEvent *me = static_cast<QMouseEvent*>(e);
+            QMouseEvent* me = static_cast<QMouseEvent*>(e);
             QPointF newPos = me->pos();
-            bool shouldUpdate = false;
-            const auto& editMode = m_editInfo->editMode;
-            if(m_editInfo->mousePosition != newPos &&
-                    (editMode == EditMode::Snap    ||
-                     editMode == EditMode::Flaps   ||
-                     editMode == EditMode::Rotate))
-                shouldUpdate = true;
-            m_editInfo->mousePosition = newPos;
+            m_editInfo->mousePosition = PointToWorldCoords(newPos);
             switch(m_cameraMode)
             {
                 case CAM_ZOOM :
                 {
-                    m_cameraPosition[2] = clamp(oldPos[2] - float(m_editInfo->mousePressPoint.ry() - newPos.ry())*0.1f, 0.1f, 1000000.0f);
+                    m_cameraPosition[2] = clamp(oldPos[2] - float(m_editInfo->mousePressPointOrig.y - newPos.ry())*0.1f, 0.1f, 1000000.0f);
                     makeCurrent();
                     RecalcProjection();
                     doneCurrent();
-                    shouldUpdate = true;
                     break;
                 }
                 case CAM_TRANSLATE :
                 {
-                    m_cameraPosition[0] = oldPos[0] + (newPos.rx() - m_editInfo->mousePressPoint.rx())*0.0025f*m_cameraPosition[2];
-                    m_cameraPosition[1] = oldPos[1] - (newPos.ry() - m_editInfo->mousePressPoint.ry())*0.0025f*m_cameraPosition[2];
+                    m_cameraPosition[0] = oldPos[0] + (newPos.rx() - m_editInfo->mousePressPointOrig.x)*0.0025f*m_cameraPosition[2];
+                    m_cameraPosition[1] = oldPos[1] - (newPos.ry() - m_editInfo->mousePressPointOrig.y)*0.0025f*m_cameraPosition[2];
                     m_renderer->UpdateCameraPosition(m_cameraPosition);
-                    shouldUpdate = true;
                     break;
                 }
                 case CAM_MODE :
                 {
                     ModeUpdate();
-                    shouldUpdate = true;
                     break;
                 }
                 default : break;
             }
-            if(shouldUpdate)
-                update();
+            update();
             break;
         }
         default : return QWidget::event(e);
@@ -380,27 +359,26 @@ void CRenWin2D::RecalcProjection()
     m_renderer->RecalcProjection();
 }
 
-vec2 CRenWin2D::PointToWorldCoords(QPointF &pt) const
+vec2 CRenWin2D::PointToWorldCoords(const QPointF& pt) const
 {
     float height = 2.0f * m_cameraPosition[2] * m_h/m_w;
     vec2 topLeftWorldCoords = vec2(-m_cameraPosition[0], -m_cameraPosition[1]);
     topLeftWorldCoords += vec2(-m_cameraPosition[2], height*0.5f);
-    vec2 pointWorldCoords = vec2(+(pt.rx()/m_w)*m_cameraPosition[2]*2.0f,
-                                 -(pt.ry()/m_h)*height);
-    pointWorldCoords += topLeftWorldCoords ;
+    vec2 pointWorldCoords = vec2(+(pt.x()/m_w)*m_cameraPosition[2]*2.0f,
+                                 -(pt.y()/m_h)*height);
+    pointWorldCoords += topLeftWorldCoords;
     return pointWorldCoords;
 }
 
 void CRenWin2D::ModeLMB()
 {
-    if(!m_model)
+    if(!m_model || !m_mode)
         return;
 
-    const int editMode = static_cast<int>(m_editInfo->editMode);
-    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
-        m_modeFunctions[editMode].start();
-    else
-        assert(false);
+    m_mode->m_active = true;
+    m_mode->MouseLBPress();
+    if(!m_mode->m_active)
+        SetCameraMode(CAM_STILL);
 }
 
 void CRenWin2D::ModeUpdate()
@@ -408,11 +386,10 @@ void CRenWin2D::ModeUpdate()
     if(!m_model)
         return;
 
-    const int editMode = static_cast<int>(m_editInfo->editMode);
-    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
-        m_modeFunctions[editMode].update();
-    else
-        assert(false);
+    m_mode->m_active = true;
+    m_mode->MouseMove();
+    if(!m_mode->m_active)
+        SetCameraMode(CAM_STILL);
 }
 
 void CRenWin2D::ModeEnd()
@@ -420,11 +397,12 @@ void CRenWin2D::ModeEnd()
     if(!m_model)
         return;
 
-    const int editMode = static_cast<int>(m_editInfo->editMode);
-    if(m_modeFunctions.find(editMode) != m_modeFunctions.end())
-        m_modeFunctions[editMode].end();
-    else
-        assert(false);
+    m_mode->m_active = true;
+    m_mode->MouseLBRelease();
+    if(!m_mode->m_active)
+        SetCameraMode(CAM_STILL);
+    if(m_editInfo->selectionFilledOnSpot)
+        ClearSelection();
 }
 
 void CRenWin2D::ZoomFit()

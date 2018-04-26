@@ -16,45 +16,36 @@
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <cassert>
-#include "interface/selectioninfo.h"
-#include "interface/renwin2dEditInfo.h"
+#include "interface/modes2D/move.h"
 
 using glm::vec2;
 
-//------------------------------------------------------------------------
-void CRenWin2D::MoveStart()
+void CModeMove::MouseLBPress()
 {
-    TryFillSelection(PointToWorldCoords(m_editInfo->mousePressPoint));
-    if(m_editInfo->selection.empty())
+    TryFillSelection();
+    if(EditInfo().selection.empty())
     {
-        m_cameraMode = CAM_STILL;
+        Deactivate();
         return;
     }
-    m_editInfo->selectionOldPositions.clear();
-    m_editInfo->selectionOldPositions.reserve(m_editInfo->selection.size());
-    for(auto* grp : m_editInfo->selection)
-        m_editInfo->selectionOldPositions.push_back(grp->GetPosition());
+    EditInfo().selectionOldPositions.clear();
+    EditInfo().selectionOldPositions.reserve(EditInfo().selection.size());
+    for(auto* grp : EditInfo().selection)
+        EditInfo().selectionOldPositions.push_back(grp->GetPosition());
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::MoveUpdate()
+void CModeMove::MouseMove()
 {
-    const vec2 newPosOffset = PointToWorldCoords(m_editInfo->mousePosition)
-                              -
-                              PointToWorldCoords(m_editInfo->mousePressPoint);
+    const vec2 newPosOffset = EditInfo().mousePosition - EditInfo().mousePressPoint;
     int i = 0;
-    for(auto* grp : m_editInfo->selection)
+    for(auto* grp : EditInfo().selection)
     {
-        const vec2 newPos = m_editInfo->selectionOldPositions[i++] + newPosOffset;
+        const vec2 newPos = EditInfo().selectionOldPositions[i++] + newPosOffset;
         grp->SetPosition(newPos.x, newPos.y);
     }
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::MoveEnd()
+void CModeMove::MouseLBRelease()
 {
-    m_model->NotifyGroupsMovement(m_editInfo->selection, m_editInfo->selectionOldPositions);
-
-    if(m_editInfo->selectionFilledOnSpot)
-        ClearSelection();
+    EditInfo().mesh->NotifyGroupsMovement(EditInfo().selection, EditInfo().selectionOldPositions);
 }

@@ -1,7 +1,7 @@
 /*
     Ivo - a free software for unfolding 3D models and papercrafting
     Copyright (C) 2015-2018 Oleksii Sierov (seriousalexej@gmail.com)
-	
+
     Ivo is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -15,26 +15,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "interface/modes2D/flaps.h"
+#ifndef MODE_ROTATE_H
+#define MODE_ROTATE_H
+#include "interface/modes2D/mode2D.h"
 
-using glm::vec2;
-
-void CModeFlaps::MouseLBPress()
+class CModeRotate : public IMode2D
 {
-    const vec2 mouseWorldCoords = EditInfo().mousePressPoint;
-    CMesh::STriangle2D* trUnderCursor = nullptr;
-    int edgeUnderCursor = 0;
-    EditInfo().mesh->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
-    if(trUnderCursor)
-        trUnderCursor->GetEdge(edgeUnderCursor)->NextFlapPosition();
+protected:
+    void MouseLBPress() override;
+    void MouseLBRelease() override;
+    void MouseMove() override;
+};
 
-    Deactivate();
-}
-
-void CModeFlaps::MouseMove()
-{
-}
-
-void CModeFlaps::MouseLBRelease()
-{
-}
+#endif // MODE_ROTATE_H

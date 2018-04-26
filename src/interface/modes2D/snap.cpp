@@ -15,37 +15,30 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "interface/selectioninfo.h"
-#include "interface/renwin2dEditInfo.h"
+#include "interface/modes2D/snap.h"
 
 using glm::vec2;
 
-//------------------------------------------------------------------------
-void CRenWin2D::SnapStart()
+void CModeSnap::MouseLBPress()
 {
-    const vec2 mouseWorldCoords = PointToWorldCoords(m_editInfo->mousePressPoint);
     CMesh::STriangle2D* trUnderCursor = nullptr;
     int edgeUnderCursor = 0;
-    m_model->GetStuffUnderCursor(mouseWorldCoords, trUnderCursor, edgeUnderCursor);
+    EditInfo().mesh->GetStuffUnderCursor(EditInfo().mousePressPoint, trUnderCursor, edgeUnderCursor);
     if(trUnderCursor)
     {
         CMesh::STriGroup* grp = trUnderCursor->GetGroup();
         if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-        {
             grp->BreakEdge(trUnderCursor, edgeUnderCursor);
-        } else {
+        else
             grp->JoinEdge(trUnderCursor, edgeUnderCursor);
-        }
     }
-    m_cameraMode = CAM_STILL;
+    Deactivate();
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::SnapUpdate()
+void CModeSnap::MouseMove()
 {
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::SnapEnd()
+void CModeSnap::MouseLBRelease()
 {
 }

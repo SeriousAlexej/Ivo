@@ -31,7 +31,7 @@ public:
 
     void    PreDraw() const override;
     void    DrawScene() const override;
-    void    DrawSelection(const SSelectionInfo& sinfo) const override;
+    void    DrawSelection(const SEditInfo& sinfo) const override;
     void    DrawPaperSheets(unsigned numHorizontal, unsigned numVertical) const override;
 
     void    RecalcProjection() override;

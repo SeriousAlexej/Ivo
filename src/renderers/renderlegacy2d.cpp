@@ -17,12 +17,18 @@
 */
 #include <QOpenGLFramebufferObject>
 #include <stdexcept>
+#include <typeinfo>
+#include <typeindex>
 #include "renderlegacy2d.h"
 #include "mesh/mesh.h"
 #include "settings/settings.h"
 #include "interface/renwin2d.h"
 #include "interface/selectioninfo.h"
-#include <geometric/aabbox.h>
+#include "interface/modes2D/snap.h"
+#include "interface/modes2D/flaps.h"
+#include "interface/modes2D/rotate.h"
+#include "interface/modes2D/select.h"
+#include "geometric/aabbox.h"
 
 CRenderer2DLegacy::CRenderer2DLegacy(QOpenGLFunctions_2_0& gl) :
     m_gl(gl)
@@ -91,125 +97,121 @@ void CRenderer2DLegacy::PreDraw() const
     m_gl.glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
+void CRenderer2DLegacy::DrawSelection(const SEditInfo& sinfo) const
 {
     if(!m_model)
         return;
 
     m_gl.glClear(GL_DEPTH_BUFFER_BIT);
 
-    switch(sinfo.m_editMode)
-    {
-        case CRenWin2D::EditMode::Snap:
-        case CRenWin2D::EditMode::Flaps:
-        case CRenWin2D::EditMode::Rotate:
-        {
-            CMesh::STriangle2D* trUnderCursor = nullptr;
-            int edgeUnderCursor = 0;
-            m_model->GetStuffUnderCursor(sinfo.m_mouseWorldPos, trUnderCursor, edgeUnderCursor);
+    static const std::type_index tiSnap(typeid(CModeSnap));
+    static const std::type_index tiFlaps(typeid(CModeFlaps));
+    static const std::type_index tiRotate(typeid(CModeRotate));
+    static const std::type_index tiSelect(typeid(CModeSelect));
 
-            if(sinfo.m_editMode == CRenWin2D::EditMode::Rotate && sinfo.m_triangle)
+    if(sinfo.editMode == tiSnap  ||
+       sinfo.editMode == tiFlaps ||
+       sinfo.editMode == tiRotate)
+    {
+        CMesh::STriangle2D* trUnderCursor = nullptr;
+        int edgeUnderCursor = 0;
+        m_model->GetStuffUnderCursor(sinfo.mousePosition, trUnderCursor, edgeUnderCursor);
+
+        if(sinfo.editMode == tiRotate && sinfo.currTri)
+        {
+            trUnderCursor = sinfo.currTri;
+            edgeUnderCursor = sinfo.currEdge;
+        }
+
+        //highlight edge under cursor (if it has neighbour)
+        if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() || sinfo.editMode == tiRotate) &&
+           (sinfo.editMode != tiFlaps || !trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped()))
+        {
+            const glm::vec2 &v1 = (*trUnderCursor)[0];
+            const glm::vec2 &v2 = (*trUnderCursor)[1];
+            const glm::vec2 &v3 = (*trUnderCursor)[2];
+
+            glm::vec2 e1Middle;
+
+            if(sinfo.editMode == tiFlaps)
             {
-                trUnderCursor = sinfo.m_triangle;
-                edgeUnderCursor = sinfo.m_edge;
+                m_gl.glColor3f(0.0f, 0.0f, 1.0f);
+            } else if(sinfo.editMode == tiSnap) {
+                if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
+                    m_gl.glColor3f(1.0f, 0.0f, 0.0f);
+                else
+                    m_gl.glColor3f(0.0f, 1.0f, 0.0f);
+            } else {
+                m_gl.glColor3f(0.0f, 1.0f, 1.0f);
+            }
+            m_gl.glLineWidth(3.0f);
+            m_gl.glBegin(GL_LINES);
+            switch(edgeUnderCursor)
+            {
+                case 0:
+                    m_gl.glVertex2f(v1[0], v1[1]);
+                    m_gl.glVertex2f(v2[0], v2[1]);
+                    e1Middle = 0.5f*(v1+v2);
+                    break;
+                case 1:
+                    m_gl.glVertex2f(v3[0], v3[1]);
+                    m_gl.glVertex2f(v2[0], v2[1]);
+                    e1Middle = 0.5f*(v3+v2);
+                    break;
+                case 2:
+                    m_gl.glVertex2f(v1[0], v1[1]);
+                    m_gl.glVertex2f(v3[0], v3[1]);
+                    e1Middle = 0.5f*(v1+v3);
+                    break;
+                default : break;
             }
 
-            //highlight edge under cursor (if it has neighbour)
-            if(trUnderCursor && (trUnderCursor->GetEdge(edgeUnderCursor)->HasTwoTriangles() ||
-                                 sinfo.m_editMode == CRenWin2D::EditMode::Rotate))
+            if(sinfo.editMode != tiRotate)
             {
-                if(sinfo.m_editMode == CRenWin2D::EditMode::Flaps &&
-                   trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                    break;
+                const CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
+                int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
+                const glm::vec2 &v12 = (*tr2)[0];
+                const glm::vec2 &v22 = (*tr2)[1];
+                const glm::vec2 &v32 = (*tr2)[2];
 
-                const glm::vec2 &v1 = (*trUnderCursor)[0];
-                const glm::vec2 &v2 = (*trUnderCursor)[1];
-                const glm::vec2 &v3 = (*trUnderCursor)[2];
-
-                glm::vec2 e1Middle;
-
-                if(sinfo.m_editMode == CRenWin2D::EditMode::Flaps)
-                {
-                    m_gl.glColor3f(0.0f, 0.0f, 1.0f);
-                } else if(sinfo.m_editMode == CRenWin2D::EditMode::Snap) {
-                    if(trUnderCursor->GetEdge(edgeUnderCursor)->IsSnapped())
-                        m_gl.glColor3f(1.0f, 0.0f, 0.0f);
-                    else
-                        m_gl.glColor3f(0.0f, 1.0f, 0.0f);
-                } else {
-                    m_gl.glColor3f(0.0f, 1.0f, 1.0f);
-                }
-                m_gl.glLineWidth(3.0f);
-                m_gl.glBegin(GL_LINES);
-                switch(edgeUnderCursor)
+                switch(e2)
                 {
                     case 0:
-                        m_gl.glVertex2f(v1[0], v1[1]);
-                        m_gl.glVertex2f(v2[0], v2[1]);
-                        e1Middle = 0.5f*(v1+v2);
+                        m_gl.glVertex2f(v12[0], v12[1]);
+                        m_gl.glVertex2f(v22[0], v22[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v12+v22);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     case 1:
-                        m_gl.glVertex2f(v3[0], v3[1]);
-                        m_gl.glVertex2f(v2[0], v2[1]);
-                        e1Middle = 0.5f*(v3+v2);
+                        m_gl.glVertex2f(v32[0], v32[1]);
+                        m_gl.glVertex2f(v22[0], v22[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v32+v22);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     case 2:
-                        m_gl.glVertex2f(v1[0], v1[1]);
-                        m_gl.glVertex2f(v3[0], v3[1]);
-                        e1Middle = 0.5f*(v1+v3);
+                        m_gl.glVertex2f(v12[0], v12[1]);
+                        m_gl.glVertex2f(v32[0], v32[1]);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
+                        e1Middle = 0.5f*(v12+v32);
+                        m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
                         break;
                     default : break;
                 }
-
-                if(sinfo.m_editMode != CRenWin2D::EditMode::Rotate)
-                {
-                    const CMesh::STriangle2D* tr2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriangle(trUnderCursor);
-                    int e2 = trUnderCursor->GetEdge(edgeUnderCursor)->GetOtherTriIndex(trUnderCursor);
-                    const glm::vec2 &v12 = (*tr2)[0];
-                    const glm::vec2 &v22 = (*tr2)[1];
-                    const glm::vec2 &v32 = (*tr2)[2];
-
-                    switch(e2)
-                    {
-                        case 0:
-                            m_gl.glVertex2f(v12[0], v12[1]);
-                            m_gl.glVertex2f(v22[0], v22[1]);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            e1Middle = 0.5f*(v12+v22);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            break;
-                        case 1:
-                            m_gl.glVertex2f(v32[0], v32[1]);
-                            m_gl.glVertex2f(v22[0], v22[1]);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            e1Middle = 0.5f*(v32+v22);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            break;
-                        case 2:
-                            m_gl.glVertex2f(v12[0], v12[1]);
-                            m_gl.glVertex2f(v32[0], v32[1]);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            e1Middle = 0.5f*(v12+v32);
-                            m_gl.glVertex2f(e1Middle[0], e1Middle[1]);
-                            break;
-                        default : break;
-                    }
-                }
-                m_gl.glEnd();
-                m_gl.glLineWidth(1.0f);
-                m_gl.glColor3f(1.0f, 1.0f, 1.0f);
             }
-            break;
+            m_gl.glEnd();
+            m_gl.glLineWidth(1.0f);
+            m_gl.glColor3f(1.0f, 1.0f, 1.0f);
         }
-        default: break;
     }
 
     //draw selection rectangles
-    if(!sinfo.m_selection.empty())
+    if(!sinfo.selection.empty())
     {
         m_gl.glClear(GL_DEPTH_BUFFER_BIT);
         m_gl.glColor3f(1.0f, 0.0f, 0.0f);
-        for(const auto* tGroup : sinfo.m_selection)
+        for(const auto* tGroup : sinfo.selection)
         {
             const SAABBox2D bbox = tGroup->GetAABBox();
 
@@ -224,11 +226,10 @@ void CRenderer2DLegacy::DrawSelection(const SSelectionInfo& sinfo) const
     }
 
     //draw selection area
-    if(sinfo.m_editMode == CRenWin2D::EditMode::Select &&
-       sinfo.m_modeIsActive)
+    if(sinfo.editMode == tiSelect && sinfo.modeIsActive)
     {
-        const glm::vec2& pos_1 = sinfo.m_mouseWorldPosStart;
-        const glm::vec2& pos_2 = sinfo.m_mouseWorldPos;
+        const glm::vec2& pos_1 = sinfo.mousePressPoint;
+        const glm::vec2& pos_2 = sinfo.mousePosition;
 
         m_gl.glClear(GL_DEPTH_BUFFER_BIT);
         m_gl.glEnable(GL_BLEND);

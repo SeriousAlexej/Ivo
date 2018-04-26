@@ -18,7 +18,7 @@
 #include <unordered_set>
 #include <glm/common.hpp>
 #include <QGuiApplication>
-#include "interface/renwin2dEditInfo.h"
+#include "interface/modes2D/select.h"
 #include "geometric/aabbox.h"
 
 using glm::max;
@@ -53,59 +53,43 @@ static TSelection SubtractSelection(const TSelection& s1, const TSelection& s2)
     return TSelection(subtracted.begin(), subtracted.end());
 }
 
-void CRenWin2D::TryFillSelection(const glm::vec2& pos)
-{
-    m_editInfo->selectionFilledOnSpot = false;
-    if(!m_editInfo->selection.empty())
-        return;
-
-    CMesh::STriGroup* grp = m_model->GroupUnderCursor(pos);
-    if(grp)
-    {
-        m_editInfo->selection.push_back(grp);
-        m_editInfo->selectionFilledOnSpot = true;
-    }
-}
-
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
-void CRenWin2D::SelectStart()
+void CModeSelect::MouseLBPress()
 {
-    decltype(m_editInfo->selection) selectionBackup;
+    decltype(EditInfo().selection) selectionBackup;
     const bool additive = IsAdditive();
     const bool subtractive = IsSubtractive();
     if(additive || subtractive)
-        selectionBackup = m_editInfo->selection;
+        selectionBackup = EditInfo().selection;
 
-    m_editInfo->selection.clear();
-    TryFillSelection(PointToWorldCoords(m_editInfo->mousePressPoint));
+    EditInfo().selection.clear();
+    TryFillSelection();
 
     if(additive)
-        m_editInfo->selection = MergeSelection(m_editInfo->selection, selectionBackup);
+        EditInfo().selection = MergeSelection(EditInfo().selection, selectionBackup);
     else if(subtractive)
-        m_editInfo->selection = SubtractSelection(selectionBackup, m_editInfo->selection);
+        EditInfo().selection = SubtractSelection(selectionBackup, EditInfo().selection);
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::SelectUpdate()
+void CModeSelect::MouseMove()
 {
-    const vec2 pos_1 = PointToWorldCoords(m_editInfo->mousePressPoint);
-    const vec2 pos_2 = PointToWorldCoords(m_editInfo->mousePosition);
+    const vec2& pos_1 = EditInfo().mousePressPoint;
+    const vec2& pos_2 = EditInfo().mousePosition;
     const vec2 rb(max(pos_1.x, pos_2.x), min(pos_1.y, pos_2.y));
     const vec2 lt(min(pos_1.x, pos_2.x), max(pos_1.y, pos_2.y));
     const SAABBox2D selectionBox(rb, lt);
 
-    auto newSelection = m_model->GetGroupsInRange(selectionBox);
+    auto newSelection = EditInfo().mesh->GetGroupsInRange(selectionBox);
     if(IsAdditive())
-        m_editInfo->selection = MergeSelection(m_editInfo->selection, newSelection);
+        EditInfo().selection = MergeSelection(EditInfo().selection, newSelection);
     else if(IsSubtractive())
-        m_editInfo->selection = SubtractSelection(m_editInfo->selection, newSelection);
+        EditInfo().selection = SubtractSelection(EditInfo().selection, newSelection);
     else
-        m_editInfo->selection = newSelection;
+        EditInfo().selection = newSelection;
 }
 
-//------------------------------------------------------------------------
-void CRenWin2D::SelectEnd()
+void CModeSelect::MouseLBRelease()
 {
-    m_editInfo->selectionFilledOnSpot = false;
+    EditInfo().selectionFilledOnSpot = false;
 }

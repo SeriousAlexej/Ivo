@@ -23,7 +23,7 @@
 #include "abstractrenderer.h"
 
 class CMesh;
-struct SSelectionInfo;
+struct SEditInfo;
 
 class IRenderer2D : public IAbstractRenderer
 {
@@ -37,7 +37,7 @@ public:
 
     virtual void    PreDraw() const override;
     virtual void    DrawScene() const override = 0;
-    virtual void    DrawSelection(const SSelectionInfo& sinfo) const = 0;
+    virtual void    DrawSelection(const SEditInfo& sinfo) const = 0;
     virtual void    DrawPaperSheets(unsigned numHorizontal, unsigned numVertical) const = 0;
     virtual void    PostDraw() const override;
 
