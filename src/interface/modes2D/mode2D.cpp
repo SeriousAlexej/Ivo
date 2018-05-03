@@ -31,9 +31,116 @@ void IMode2D::TryFillSelection()
     }
 }
 
+bool IMode2D::BRelease()
+{
+    bool result = false;
+    for(const auto& cb : m_releaseCallbacks)
+        result = result || cb();
+    m_releaseCallbacks.clear();
+    return result;
+}
+
+void IMode2D::Move()
+{
+    MouseMove();
+}
+
+bool IMode2D::LBPress()
+{
+    m_releaseCallbacks.emplace_back([this]
+    {
+        m_editInfo->modeIsActive = false;
+        return MouseLBRelease();
+    });
+
+    if(!m_passive)
+        m_editInfo->modeIsActive = true;
+    bool res = MouseLBPress();
+    if(!m_passive)
+        m_editInfo->modeIsActive = res;
+    return res;
+}
+
+bool IMode2D::MBPress()
+{
+    m_releaseCallbacks.emplace_back([this]
+    {
+        m_editInfo->modeIsActive = false;
+        return MouseMBRelease();
+    });
+
+    if(!m_passive)
+        m_editInfo->modeIsActive = true;
+    bool res = MouseMBPress();
+    if(!m_passive)
+        m_editInfo->modeIsActive = res;
+    return res;
+}
+
+bool IMode2D::RBPress()
+{
+    m_releaseCallbacks.emplace_back([this]
+    {
+        m_editInfo->modeIsActive = false;
+        return MouseRBRelease();
+    });
+
+    if(!m_passive)
+        m_editInfo->modeIsActive = true;
+    bool res = MouseRBPress();
+    if(!m_passive)
+        m_editInfo->modeIsActive = res;
+    return res;
+}
+
+bool IMode2D::Wheel(int delta)
+{
+    return MouseWheel(delta);
+}
+
+void IMode2D::MouseMove()
+{
+}
+
+bool IMode2D::MouseLBPress()
+{
+    return false;
+}
+
+bool IMode2D::MouseLBRelease()
+{
+    return false;
+}
+
+bool IMode2D::MouseMBPress()
+{
+    return false;
+}
+
+bool IMode2D::MouseMBRelease()
+{
+    return false;
+}
+
+bool IMode2D::MouseRBPress()
+{
+    return false;
+}
+
+bool IMode2D::MouseRBRelease()
+{
+    return false;
+}
+
+bool IMode2D::MouseWheel(int delta)
+{
+    (void)delta;
+    return false;
+}
+
 void IMode2D::Deactivate()
 {
-    m_active = false;
+    m_editInfo->modeIsActive = false;
 }
 
 SEditInfo& IMode2D::EditInfo()

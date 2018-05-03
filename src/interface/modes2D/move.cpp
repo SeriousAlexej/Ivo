@@ -20,18 +20,21 @@
 
 using glm::vec2;
 
-void CModeMove::MouseLBPress()
+bool CModeMove::MouseLBPress()
 {
     TryFillSelection();
     if(EditInfo().selection.empty())
     {
         Deactivate();
-        return;
     }
-    EditInfo().selectionOldPositions.clear();
-    EditInfo().selectionOldPositions.reserve(EditInfo().selection.size());
-    for(auto* grp : EditInfo().selection)
-        EditInfo().selectionOldPositions.push_back(grp->GetPosition());
+    else
+    {
+        EditInfo().selectionOldPositions.clear();
+        EditInfo().selectionOldPositions.reserve(EditInfo().selection.size());
+        for(auto* grp : EditInfo().selection)
+            EditInfo().selectionOldPositions.push_back(grp->GetPosition());
+    }
+    return true;
 }
 
 void CModeMove::MouseMove()
@@ -45,7 +48,8 @@ void CModeMove::MouseMove()
     }
 }
 
-void CModeMove::MouseLBRelease()
+bool CModeMove::MouseLBRelease()
 {
     EditInfo().mesh->NotifyGroupsMovement(EditInfo().selection, EditInfo().selectionOldPositions);
+    return true;
 }

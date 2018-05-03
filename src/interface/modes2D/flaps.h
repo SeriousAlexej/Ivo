@@ -22,9 +22,7 @@
 class CModeFlaps : public IMode2D
 {
 protected:
-    void MouseLBPress() override;
-    void MouseLBRelease() override;
-    void MouseMove() override;
+    bool MouseLBPress() override;
 };
 
 #endif // MODE_FLAPS_H

@@ -17,7 +17,9 @@
 */
 #ifndef MODE2D_H
 #define MODE2D_H
-#include "interface/selectioninfo.h"
+#include <functional>
+#include <vector>
+#include "interface/editinfo2d.h"
 
 class IMode2D
 {
@@ -26,17 +28,30 @@ public:
     virtual ~IMode2D() = default;
 
 protected:
-    virtual void MouseMove() = 0;
-    virtual void MouseLBPress() = 0;
-    virtual void MouseLBRelease() = 0;
+    void         Move();
+    bool         LBPress();
+    bool         MBPress();
+    bool         RBPress();
+    bool         BRelease();
+    bool         Wheel(int delta);
+
+    virtual bool MouseLBPress();
+    virtual bool MouseLBRelease();
+    virtual bool MouseMBPress();
+    virtual bool MouseMBRelease();
+    virtual bool MouseRBPress();
+    virtual bool MouseRBRelease();
+    virtual void MouseMove();
+    virtual bool MouseWheel(int delta);
 
     void         TryFillSelection();
     void         Deactivate();
     SEditInfo&   EditInfo();
 
 private:
-    SEditInfo* m_editInfo = nullptr;
-    bool       m_active = true;
+    SEditInfo*                         m_editInfo = nullptr;
+    bool                               m_passive = false;
+    std::vector<std::function<bool()>> m_releaseCallbacks;
 
     friend class CRenWin2D;
 };

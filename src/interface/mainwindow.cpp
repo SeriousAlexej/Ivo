@@ -44,6 +44,7 @@
 #include "interface/modes2D/flaps.h"
 #include "interface/modes2D/rotate.h"
 #include "interface/modes2D/select.h"
+#include "interface/modes2D/navigation.h"
 #include "pdo/pdotools.h"
 #include "notification/hub.h"
 
@@ -86,6 +87,8 @@ CMainWindow::CMainWindow(QWidget* parent) :
     setCentralWidget(nullptr);
     m_rw3 = ui->frameLeft;
     m_rw2 = ui->frameRight;
+
+    m_rw2->SetDefaultMode(new CModeNavigation2D());
 
     QActionGroup* ag = new QActionGroup(this);
     ag->addAction(ui->actionModeMove);

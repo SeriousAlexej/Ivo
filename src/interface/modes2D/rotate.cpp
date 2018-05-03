@@ -37,7 +37,7 @@ using glm::cos;
 using glm::rotation;
 using glm::angleFromTo;
 
-void CModeRotate::MouseLBPress()
+bool CModeRotate::MouseLBPress()
 {
     const vec2& mouseWorldCoords = EditInfo().mousePressPoint;
     EditInfo().mesh->GetStuffUnderCursor(mouseWorldCoords, EditInfo().currTri, EditInfo().currEdge);
@@ -45,7 +45,7 @@ void CModeRotate::MouseLBPress()
     if(EditInfo().selection.empty())
     {
         Deactivate();
-        return;
+        return true;
     }
 
     if(EditInfo().currTri)
@@ -71,6 +71,7 @@ void CModeRotate::MouseLBPress()
         EditInfo().selectionOldPositions.push_back(grp->GetPosition());
     }
     EditInfo().rotationCenter = bbox.position;
+    return true;
 }
 
 void CModeRotate::MouseMove()
@@ -130,10 +131,11 @@ void CModeRotate::MouseMove()
     }
 }
 
-void CModeRotate::MouseLBRelease()
+bool CModeRotate::MouseLBRelease()
 {
     EditInfo().mesh->NotifyGroupsTransformation(EditInfo().selection,
                                                 EditInfo().selectionOldPositions,
                                                 EditInfo().selectionOldRotations);
     EditInfo().currTri = nullptr;
+    return true;
 }

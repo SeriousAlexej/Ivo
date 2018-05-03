@@ -55,7 +55,7 @@ static TSelection SubtractSelection(const TSelection& s1, const TSelection& s2)
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
-void CModeSelect::MouseLBPress()
+bool CModeSelect::MouseLBPress()
 {
     decltype(EditInfo().selection) selectionBackup;
     const bool additive = IsAdditive();
@@ -70,6 +70,8 @@ void CModeSelect::MouseLBPress()
         EditInfo().selection = MergeSelection(EditInfo().selection, selectionBackup);
     else if(subtractive)
         EditInfo().selection = SubtractSelection(selectionBackup, EditInfo().selection);
+
+    return true;
 }
 
 void CModeSelect::MouseMove()
@@ -89,7 +91,8 @@ void CModeSelect::MouseMove()
         EditInfo().selection = newSelection;
 }
 
-void CModeSelect::MouseLBRelease()
+bool CModeSelect::MouseLBRelease()
 {
     EditInfo().selectionFilledOnSpot = false;
+    return true;
 }

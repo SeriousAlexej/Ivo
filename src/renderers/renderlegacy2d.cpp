@@ -23,7 +23,7 @@
 #include "mesh/mesh.h"
 #include "settings/settings.h"
 #include "interface/renwin2d.h"
-#include "interface/selectioninfo.h"
+#include "interface/editinfo2d.h"
 #include "interface/modes2D/snap.h"
 #include "interface/modes2D/flaps.h"
 #include "interface/modes2D/rotate.h"

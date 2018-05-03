@@ -19,7 +19,7 @@
 
 using glm::vec2;
 
-void CModeSnap::MouseLBPress()
+bool CModeSnap::MouseLBPress()
 {
     CMesh::STriangle2D* trUnderCursor = nullptr;
     int edgeUnderCursor = 0;
@@ -33,12 +33,5 @@ void CModeSnap::MouseLBPress()
             grp->JoinEdge(trUnderCursor, edgeUnderCursor);
     }
     Deactivate();
-}
-
-void CModeSnap::MouseMove()
-{
-}
-
-void CModeSnap::MouseLBRelease()
-{
+    return true;
 }

@@ -22,8 +22,8 @@
 class CModeMove : public IMode2D
 {
 protected:
-    void MouseLBPress() override;
-    void MouseLBRelease() override;
+    bool MouseLBPress() override;
+    bool MouseLBRelease() override;
     void MouseMove() override;
 };
 

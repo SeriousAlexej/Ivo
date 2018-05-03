@@ -41,6 +41,7 @@ public:
 
     void         SetModel(CMesh* mdl) override final;
     void         SetMode(IMode2D* m);
+    void         SetDefaultMode(IMode2D* m);
     void         ExportSheets(const QString baseName);
     void         ZoomFit() override final;
 
@@ -56,31 +57,18 @@ protected:
     virtual bool event(QEvent* e) override final;
 
 private:
-    enum ECameraMode
-    {
-        CAM_TRANSLATE,
-        CAM_STILL,
-        CAM_ZOOM,
-        CAM_MODE
-    };
-
-    void         SetCameraMode(ECameraMode m);
     void         TryFillSelection(const glm::vec2& pos);
     void         RecalcProjection();
-    void         ModeLMB();
-    void         ModeUpdate();
-    void         ModeEnd();
     glm::vec2    PointToWorldCoords(const QPointF& pt) const;
     void         FillOccupiedSheetsSize(unsigned& horizontal, unsigned& vertical) const;
 
 private:
-    ECameraMode                     m_cameraMode = CAM_STILL;
-    glm::vec3                       m_cameraPosition; //3rd component - zoom coeff.
     float                           m_w;
     float                           m_h;
-    std::unique_ptr<SEditInfo>      m_editInfo;
-    std::unique_ptr<IRenderer2D>    m_renderer;
     std::unique_ptr<IMode2D>        m_mode;
+    std::unique_ptr<IMode2D>        m_defaultMode;
+    std::unique_ptr<IRenderer2D>    m_renderer;
+    std::unique_ptr<SEditInfo>      m_editInfo;
 };
 
 #endif // RENWIN2D_H

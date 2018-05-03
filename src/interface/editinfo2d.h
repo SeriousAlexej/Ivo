@@ -15,20 +15,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef SELECTION_INFO_H
-#define SELECTION_INFO_H
+#ifndef EDIT_INFO2D_H
+#define EDIT_INFO2D_H
 #include <typeindex>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include "mesh/mesh.h"
 
 struct SEditInfo
 {
-    SEditInfo() : editMode(std::type_index(typeid(nullptr))) {}
+    SEditInfo() : editMode(typeid(nullptr)) {}
 
     CMesh*                         mesh;
+    glm::vec3                      cameraPosition; //3rd component - zoom coeff
     bool                           modeIsActive;
     glm::vec2                      mousePressPointOrig;
     glm::vec2                      mousePressPoint;
+    glm::vec2                      mousePositionOrig;
     glm::vec2                      mousePosition;
     std::type_index                editMode;
     CMesh::STriangle2D*            currTri = nullptr;
@@ -42,4 +45,4 @@ struct SEditInfo
     std::vector<CMesh::STriGroup*> selection;
 };
 
-#endif
+#endif // EDIT_INFO2D_H
