@@ -22,6 +22,7 @@
 #include <QLabel>
 #include <QJsonObject>
 #include <QFontMetrics>
+#include <QShortcut>
 #include <TabToolbar/Builder.h>
 #include <TabToolbar/TabToolbar.h>
 #include <TabToolbar/StyleTools.h>
@@ -82,11 +83,25 @@ private:
 
 void CMainWindow::SetupGUI()
 {
+    ui->actionExport_Sheets->setShortcut(QKeySequence::Print);
+    ui->actionSave->setShortcut(QKeySequence::Save);
+    ui->actionSave_As->setShortcut(QKeySequence::SaveAs);
+    ui->actionAbout->setShortcut(QKeySequence::HelpContents);
+    ui->actionLoad_Model->setShortcut(QKeySequence::Open);
+    ui->actionOpen_obj->setShortcut(QKeySequence::New);
+    ui->actionCloseModel->setShortcut(QKeySequence::Close);
     ui->actionRedo->setShortcut(QKeySequence::Redo);
     ui->actionUndo->setShortcut(QKeySequence::Undo);
     for(QAction* action : findChildren<QAction*>())
         if(!action->shortcut().isEmpty())
+        {
             action->setToolTip(action->toolTip() + "    " + QKeySequence(action->shortcut()).toString(QKeySequence::NativeText));
+            //make shortcuts's context global
+            QShortcut* shortcut = new QShortcut(action->shortcut(), this);
+            QObject::connect(shortcut, &QShortcut::activated, this, [action]()
+                { if(action->isEnabled()) action->trigger(); });
+            action->setShortcut(QKeySequence());
+        }
 
     //force settings to load
     CSettings& sett = CSettings::GetInstance();
@@ -105,6 +120,8 @@ void CMainWindow::SetupGUI()
     if(sett.ttCollapsed)
         QTimer::singleShot(0, this, [this]() { m_tabToolbar->HideAction()->trigger(); });
     UpdateStyle();
+
+    m_rw2->SetContextMenu((QMenu*)(toolbarBuilder["2DMenu"]));
 
     //create themes menu
     QMenu* themesMenu = (QMenu*)(toolbarBuilder["themesMenu"]);

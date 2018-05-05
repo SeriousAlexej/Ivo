@@ -42,13 +42,13 @@ bool CModeNavigation2D::MouseMBPress()
 bool CModeNavigation2D::MouseMBRelease()
 {
     m_type = Navigation::None;
-    return true;
+    return Moved();
 }
 
 bool CModeNavigation2D::MouseRBRelease()
 {
     m_type = Navigation::None;
-    return true;
+    return Moved();
 }
 
 void CModeNavigation2D::MouseMove()

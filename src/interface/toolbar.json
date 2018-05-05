@@ -2,7 +2,6 @@
   "groupHeight":75,
   "groupRowCount":3,
   "specialTab":false,
-  "compactButtons":true,
   "cornerActions":["actionAbout"],
   "menus":[
     {
@@ -14,36 +13,40 @@
       "actions":["actionZoom_fit", "actionZoom_2D", "actionZoom_3D"]
     },
     {
+      "name":"2DMenu",
+      "actions":["actionAutoPack", "actionZoom_2D"]
+    },
+    {
       "name":"themesMenu",
       "actions":[]
     }
   ],
   "tabs":[
     {
-      "displayName":"File", "name":"File",
+      "displayName":"FILE", "name":"File",
       "groups":[
         {
           "displayName":"Project", "name":"ProjectGroup",
           "content":[
-            { "itemType":"action", "name":"actionLoad_Model", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionOpen_obj", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionOpen_obj", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionLoad_Model", "type":"delayedPopup" },
             { "itemType":"action", "name":"actionSave", "type":"menuButtonPopup", "menu":"saveMenu" },
-            { "itemType":"action", "name":"actionCloseModel", "type":"delayedPopup", "menu":null },
+            { "itemType":"action", "name":"actionCloseModel", "type":"delayedPopup" },
             { "itemType":"separator" },
-            { "itemType":"action", "name":"actionLoad_Texture", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionExport_Sheets", "type":"delayedPopup", "menu":null }
+            { "itemType":"action", "name":"actionLoad_Texture", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionExport_Sheets", "type":"delayedPopup" }
           ]
         },
         {
           "displayName":"", "name":"SettingsGroup",
           "content":[
-            { "itemType":"action", "name":"actionSettings", "type":"delayedPopup", "menu":null }
+            { "itemType":"action", "name":"actionSettings", "type":"delayedPopup" }
           ]
         }
       ]
     },
     {
-      "displayName":"View", "name":"View",
+      "displayName":"VIEW", "name":"View",
       "groups":[
         {
           "displayName":"Visualization", "name":"Visualization",
@@ -60,17 +63,17 @@
             {
               "itemType":"subgroup", "name":"RSubgroup1", "aligned":true,
               "content":[
-                { "itemType":"action", "name":"actionShow_Flaps", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionShow_Folds", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionShow_Edges", "type":"delayedPopup", "menu":null }
+                { "itemType":"action", "name":"actionShow_Flaps", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionShow_Folds", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionShow_Edges", "type":"delayedPopup" }
               ]
             },
             {
               "itemType":"subgroup", "name":"RSubgroup2", "aligned":true,
               "content":[
-                { "itemType":"action", "name":"actionToggle_Lighting", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionShow_Texture", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionShow_Grid", "type":"delayedPopup", "menu":null }
+                { "itemType":"action", "name":"actionToggle_Lighting", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionShow_Texture", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionShow_Grid", "type":"delayedPopup" }
               ]
             }
           ]
@@ -85,7 +88,7 @@
       ]
     },
     {
-      "displayName":"Edit", "name":"Edit",
+      "displayName":"EDIT", "name":"Edit",
       "groups":[
         {
           "displayName":"Actions", "name":"ActionsGroup",
@@ -93,8 +96,8 @@
             {
               "itemType":"subgroup", "name":"ActionsSubgroup", "aligned":false,
               "content":[
-                { "itemType":"action", "name":"actionUndo", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionRedo", "type":"delayedPopup", "menu":null }
+                { "itemType":"action", "name":"actionUndo", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionRedo", "type":"delayedPopup" }
               ]
             }
           ]
@@ -102,11 +105,11 @@
         {
           "displayName":"Modes", "name":"ModesGroup",
           "content":[
-            { "itemType":"action", "name":"actionModeSelect", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionModeMove", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionModeRotate", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionModeSnap", "type":"delayedPopup", "menu":null },
-            { "itemType":"action", "name":"actionModeFlaps", "type":"delayedPopup", "menu":null }
+            { "itemType":"action", "name":"actionModeSelect", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionModeMove", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionModeRotate", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionModeSnap", "type":"delayedPopup" },
+            { "itemType":"action", "name":"actionModeFlaps", "type":"delayedPopup" }
           ]
         },
         {
@@ -115,9 +118,9 @@
             {
               "itemType":"subgroup", "name":"UtilitiesSubgroup", "aligned":true,
               "content":[
-                { "itemType":"action", "name":"actionScale", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionPolypaint", "type":"delayedPopup", "menu":null },
-                { "itemType":"action", "name":"actionAutoPack", "type":"delayedPopup", "menu":null }
+                { "itemType":"action", "name":"actionScale", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionPolypaint", "type":"delayedPopup" },
+                { "itemType":"action", "name":"actionAutoPack", "type":"delayedPopup" }
               ]
             }
           ]

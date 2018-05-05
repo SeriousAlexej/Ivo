@@ -133,9 +133,13 @@ void CModeRotate::MouseMove()
 
 bool CModeRotate::MouseLBRelease()
 {
+    EditInfo().currTri = nullptr;
+
+    if(!Moved())
+        return false;
+
     EditInfo().mesh->NotifyGroupsTransformation(EditInfo().selection,
                                                 EditInfo().selectionOldPositions,
                                                 EditInfo().selectionOldRotations);
-    EditInfo().currTri = nullptr;
     return true;
 }

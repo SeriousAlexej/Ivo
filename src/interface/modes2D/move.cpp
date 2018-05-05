@@ -50,6 +50,10 @@ void CModeMove::MouseMove()
 
 bool CModeMove::MouseLBRelease()
 {
-    EditInfo().mesh->NotifyGroupsMovement(EditInfo().selection, EditInfo().selectionOldPositions);
+    if(!Moved())
+        return false;
+
+    EditInfo().mesh->NotifyGroupsMovement(EditInfo().selection,
+                                          EditInfo().selectionOldPositions);
     return true;
 }

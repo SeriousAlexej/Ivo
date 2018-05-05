@@ -20,6 +20,7 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QMenu>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <limits>
@@ -48,7 +49,9 @@ using glm::max;
 using glm::min;
 
 CRenWin2D::CRenWin2D(QWidget *parent) :
-    IRenWin(parent)
+    IRenWin(parent),
+    m_showMenu(false),
+    m_contextMenu(nullptr)
 {
     m_w = m_h = 100.0f;
     setMouseTracking(true);
@@ -100,6 +103,11 @@ void CRenWin2D::SetModel(CMesh* mdl)
     m_editInfo->mesh = mdl;
     m_renderer->SetModel(mdl);
     ZoomFit();
+}
+
+void CRenWin2D::SetContextMenu(QMenu* menu)
+{
+    m_contextMenu = menu;
 }
 
 void CRenWin2D::LoadTexture(const QImage *img, unsigned index)
@@ -285,6 +293,7 @@ bool CRenWin2D::event(QEvent* e)
                 }
                 case Qt::RightButton :
                 {
+                    m_showMenu = true;
                     if(!m_mode->RBPress())
                         m_defaultMode->RBPress();
                     break;
@@ -301,8 +310,10 @@ bool CRenWin2D::event(QEvent* e)
         }
         case QEvent::MouseButtonRelease :
         {
-            if(!m_mode->BRelease())
-                m_defaultMode->BRelease();
+            if(!m_mode->BRelease() && !m_defaultMode->BRelease() && m_showMenu && m_contextMenu)
+                m_contextMenu->exec(QCursor::pos());
+
+            m_showMenu = false;
 
             if(m_editInfo->selectionFilledOnSpot)
                 ClearSelection();
@@ -310,6 +321,8 @@ bool CRenWin2D::event(QEvent* e)
         }
         case QEvent::MouseMove :
         {
+            m_showMenu = false;
+
             QMouseEvent* me = static_cast<QMouseEvent*>(e);
             const QPointF& newPos = me->localPos();
             m_editInfo->mousePositionOrig = vec2(newPos.x(), newPos.y());

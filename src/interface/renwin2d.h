@@ -20,6 +20,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <QString>
+#include <QPointer>
 #include <memory>
 #include <cstdio>
 #include <unordered_map>
@@ -27,6 +28,7 @@
 #include "interface/renwin.h"
 #include "notification/subscriber.h"
 
+class QMenu;
 class IRenderer2D;
 class IMode2D;
 struct SEditInfo;
@@ -44,6 +46,7 @@ public:
     void         SetDefaultMode(IMode2D* m);
     void         ExportSheets(const QString baseName);
     void         ZoomFit() override final;
+    void         SetContextMenu(QMenu* menu);
 
 public slots:
     void         LoadTexture(const QImage* img, unsigned index) override;
@@ -65,6 +68,8 @@ private:
 private:
     float                           m_w;
     float                           m_h;
+    bool                            m_showMenu;
+    QPointer<QMenu>                 m_contextMenu;
     std::unique_ptr<IMode2D>        m_mode;
     std::unique_ptr<IMode2D>        m_defaultMode;
     std::unique_ptr<IRenderer2D>    m_renderer;

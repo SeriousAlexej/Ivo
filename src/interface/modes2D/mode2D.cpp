@@ -33,25 +33,30 @@ void IMode2D::TryFillSelection()
 
 bool IMode2D::BRelease()
 {
+    m_moved = false;
     bool result = false;
     for(const auto& cb : m_releaseCallbacks)
         result = result || cb();
     m_releaseCallbacks.clear();
+    m_editInfo->modeIsActive = false;
     return result;
 }
 
 void IMode2D::Move()
 {
+    m_moved = true;
     MouseMove();
+}
+
+bool IMode2D::Moved() const
+{
+    return m_moved;
 }
 
 bool IMode2D::LBPress()
 {
-    m_releaseCallbacks.emplace_back([this]
-    {
-        m_editInfo->modeIsActive = false;
-        return MouseLBRelease();
-    });
+    m_moved = false;
+    m_releaseCallbacks.emplace_back([this] { return MouseLBRelease(); });
 
     if(!m_passive)
         m_editInfo->modeIsActive = true;
@@ -63,11 +68,8 @@ bool IMode2D::LBPress()
 
 bool IMode2D::MBPress()
 {
-    m_releaseCallbacks.emplace_back([this]
-    {
-        m_editInfo->modeIsActive = false;
-        return MouseMBRelease();
-    });
+    m_moved = false;
+    m_releaseCallbacks.emplace_back([this] { return MouseMBRelease(); });
 
     if(!m_passive)
         m_editInfo->modeIsActive = true;
@@ -79,11 +81,8 @@ bool IMode2D::MBPress()
 
 bool IMode2D::RBPress()
 {
-    m_releaseCallbacks.emplace_back([this]
-    {
-        m_editInfo->modeIsActive = false;
-        return MouseRBRelease();
-    });
+    m_moved = false;
+    m_releaseCallbacks.emplace_back([this] { return MouseRBRelease(); });
 
     if(!m_passive)
         m_editInfo->modeIsActive = true;
@@ -140,7 +139,9 @@ bool IMode2D::MouseWheel(int delta)
 
 void IMode2D::Deactivate()
 {
+    m_moved = false;
     m_editInfo->modeIsActive = false;
+    m_releaseCallbacks.clear();
 }
 
 SEditInfo& IMode2D::EditInfo()

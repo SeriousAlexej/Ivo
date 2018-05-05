@@ -47,10 +47,12 @@ protected:
     void         TryFillSelection();
     void         Deactivate();
     SEditInfo&   EditInfo();
+    bool         Moved() const;
 
 private:
     SEditInfo*                         m_editInfo = nullptr;
     bool                               m_passive = false;
+    bool                               m_moved = false;
     std::vector<std::function<bool()>> m_releaseCallbacks;
 
     friend class CRenWin2D;
