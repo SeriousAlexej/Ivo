@@ -33,10 +33,10 @@ void IMode2D::TryFillSelection()
 
 bool IMode2D::BRelease()
 {
-    m_moved = false;
     bool result = false;
     for(const auto& cb : m_releaseCallbacks)
         result = result || cb();
+    m_moved = false;
     m_releaseCallbacks.clear();
     m_editInfo->modeIsActive = false;
     return result;

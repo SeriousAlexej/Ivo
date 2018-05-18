@@ -47,4 +47,10 @@ std::string ReadLine(std::FILE* fi)
     return line;
 }
 
+void FileReadBuffer(void* buffer, std::size_t elemSize, std::size_t numElems, std::FILE* fi)
+{
+    if(std::fread(buffer, elemSize, numElems, fi) != numElems)
+        BadFile(fi);
+}
+
 }//namespace SafeRead

@@ -51,7 +51,7 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     SafeRead::ReadLine(fi);//model %f %f %f %f %f %f
 
     int solids = 0;
-    SAFE_FLSCANF(fi, "solids %d", &solids);
+    SafeRead::FileLineScanf(fi, "solids %d", &solids);
     for(int i=0; i<solids; i++)
     {
         std::size_t prevFacesSize = faces.size();
@@ -62,29 +62,29 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
             int doNotSkip = 1;
             SafeRead::ReadLine(fi);//solid
             SafeRead::ReadLine(fi);//name
-            SAFE_FLSCANF(fi, "%d", &doNotSkip);
+            SafeRead::FileLineScanf(fi, "%d", &doNotSkip);
             skip = doNotSkip == 0;
         }
 
         int vertices = 0;
-        SAFE_FLSCANF(fi, "vertices %d", &vertices);
+        SafeRead::FileLineScanf(fi, "vertices %d", &vertices);
         for(int j=0; j<vertices; j++)
         {
             glm::vec3 vert(0.0f, 0.0f, 0.0f);
-            SAFE_FLSCANF(fi, "%f %f %f", &vert.x, &vert.y, &vert.z);
+            SafeRead::FileLineScanf(fi, "%f %f %f", &vert.x, &vert.y, &vert.z);
             //vert.y *= -1.0f;
             if(!skip)
                 vertices3D.push_back(vert);
         }
 
         int numFaces = 0;
-        SAFE_FLSCANF(fi, "faces %d", &numFaces);
+        SafeRead::FileLineScanf(fi, "faces %d", &numFaces);
         for(int j=0; j<numFaces; j++)
         {
             int numvertices = 0;
             int matID = 0;
             int partID = 0;
-            SAFE_FLSCANF(fi, "%d %d %*f %*f %*f %*f %d", &matID, &partID, &numvertices);
+            SafeRead::FileLineScanf(fi, "%d %d %*f %*f %*f %*f %d", &matID, &partID, &numvertices);
 
             PDO_Face face;
             face.id = prevFacesSize + j;
@@ -96,7 +96,7 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
                 PDO_2DVertex vert;
                 std::size_t vert3dindex;
                 int hasFlap;
-                SAFE_FLSCANF(fi, "%zd %f %f %f %f %d %*d %f", &vert3dindex, &vert.pos.x, &vert.pos.y, &vert.uv.x, &vert.uv.y, &hasFlap, &vert.flapLength);
+                SafeRead::FileLineScanf(fi, "%zd %f %f %f %f %d %*d %f", &vert3dindex, &vert.pos.x, &vert.pos.y, &vert.uv.x, &vert.uv.y, &hasFlap, &vert.flapLength);
                 vert.index3Dvert = vert3dindex + prevVerticesSize;
                 vert.hasFlap = (hasFlap != 0);
                 vert.pos.y *= -1.0f;
@@ -110,12 +110,12 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
         }
 
         int numEdges = 0;
-        SAFE_FLSCANF(fi, "edges %d", &numEdges);
+        SafeRead::FileLineScanf(fi, "edges %d", &numEdges);
         for(int j=0; j<numEdges; j++)
         {
             PDO_Edge edge;
             int snapped;
-            SAFE_FLSCANF(fi, "%d %d %zd %zd %*d %d", &edge.face1ID, &edge.face2ID, &edge.vtx1ID, &edge.vtx2ID, &snapped);
+            SafeRead::FileLineScanf(fi, "%d %d %zd %zd %*d %d", &edge.face1ID, &edge.face2ID, &edge.vtx1ID, &edge.vtx2ID, &snapped);
             edge.face1ID += static_cast<int>(prevFacesSize);
             if(edge.face2ID >= 0)
                 edge.face2ID += static_cast<int>(prevFacesSize);
@@ -142,7 +142,7 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     SafeRead::ReadLine(fi);//default material settings, ignore
 
     int materials = 0;
-    SAFE_FLSCANF(fi, "materials %d", &materials);
+    SafeRead::FileLineScanf(fi, "materials %d", &materials);
     for(int j=0; j<materials; j++)
     {
         SafeRead::ReadLine(fi);//material
@@ -155,7 +155,7 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
 
         int hasTexture = 0;
         float colR, colG, colB;
-        SAFE_FLSCANF(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
+        SafeRead::FileLineScanf(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
 
         m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
 
@@ -166,10 +166,10 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
             int texWidth=0;
             int texHeight=0;
 
-            SAFE_FLSCANF(fi, "%d %d", &texWidth, &texHeight);
+            SafeRead::FileLineScanf(fi, "%d %d", &texWidth, &texHeight);
 
             std::unique_ptr<unsigned char[]> imgBuffer(new unsigned char[texWidth * texHeight * 3]);
-            SAFE_FREAD(imgBuffer.get(), sizeof(unsigned char), texWidth * texHeight * 3, fi);
+            SafeRead::FileReadBuffer(imgBuffer.get(), sizeof(unsigned char), texWidth * texHeight * 3, fi);
 
             SafeRead::ReadLine(fi);//
 
@@ -190,18 +190,18 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     }
 
     int numParts = 0;
-    SAFE_FLSCANF(fi, "parts %d", &numParts);
+    SafeRead::FileLineScanf(fi, "parts %d", &numParts);
     for(int j=0; j<numParts; j++)
     {
         glm::vec2 offs;
-        SAFE_FLSCANF(fi, "%*d %f %f %*f %*f", &offs.x, &offs.y);
+        SafeRead::FileLineScanf(fi, "%*d %f %f %*f %*f", &offs.x, &offs.y);
         offs.y *= -1.0f;
 
         offsets.push_back(offs);
     }
 
     int texts = 0;
-    SAFE_FLSCANF(fi, "text %d", &texts);
+    SafeRead::FileLineScanf(fi, "text %d", &texts);
     for(int j=0; j<texts; ++j)
     {
         SafeRead::ReadLine(fi);//%d //???
@@ -218,8 +218,8 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     SafeRead::ReadLine(fi);//info
     SafeRead::ReadLine(fi);//key
     SafeRead::ReadLine(fi);//iLlevel
-    SAFE_FLSCANF(fi, "dMag3d %f", &scale3d);
-    SAFE_FLSCANF(fi, "dMag2d %f", &scale2d);
+    SafeRead::FileLineScanf(fi, "dMag3d %f", &scale3d);
+    SafeRead::FileLineScanf(fi, "dMag2d %f", &scale2d);
     SafeRead::ReadLine(fi);//"dTenkaizuX %f
     SafeRead::ReadLine(fi);//"dTenkaizuY %f
     SafeRead::ReadLine(fi);//"dTenkaizuWidth %f"  - 2D pattern width
@@ -241,9 +241,9 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     SafeRead::ReadLine(fi);//"bEnableLineAlpha %d
     SafeRead::ReadLine(fi);//"dTextureLineAlpha %f
     SafeRead::ReadLine(fi);//"bCullEdge %d
-    SAFE_FLSCANF(fi, "iPageType %d", &pageType);//"iPageType %d
-    SAFE_FLSCANF(fi, "dPageMarginSide %f", &margins.x);
-    SAFE_FLSCANF(fi, "dPageMarginTop %f", &margins.y);
+    SafeRead::FileLineScanf(fi, "iPageType %d", &pageType);//"iPageType %d
+    SafeRead::FileLineScanf(fi, "dPageMarginSide %f", &margins.x);
+    SafeRead::FileLineScanf(fi, "dPageMarginTop %f", &margins.y);
 
     std::fclose(fi);
 

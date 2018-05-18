@@ -267,11 +267,10 @@
      <normaloff>:/icons/icons/48px-Preferences-system.png</normaloff>:/icons/icons/48px-Preferences-system.png</iconset>
    </property>
    <property name="text">
-    <string>Paper Settings</string>
+    <string>Settings</string>
    </property>
    <property name="iconText">
-    <string>Paper
-Settings</string>
+    <string>Settings</string>
    </property>
    <property name="toolTip">
     <string>Edit rendering, paper and export settings</string>

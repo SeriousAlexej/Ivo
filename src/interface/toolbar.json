@@ -32,14 +32,13 @@
             { "itemType":"action", "name":"actionLoad_Model", "type":"delayedPopup" },
             { "itemType":"action", "name":"actionSave", "type":"menuButtonPopup", "menu":"saveMenu" },
             { "itemType":"action", "name":"actionCloseModel", "type":"delayedPopup" },
-            { "itemType":"separator" },
-            { "itemType":"action", "name":"actionLoad_Texture", "type":"delayedPopup" },
-            { "itemType":"action", "name":"actionExport_Sheets", "type":"delayedPopup" }
+            { "itemType":"action", "name":"actionLoad_Texture", "type":"delayedPopup" }
           ]
         },
         {
-          "displayName":"", "name":"SettingsGroup",
+          "displayName":"Paper", "name":"PaperGroup",
           "content":[
+            { "itemType":"action", "name":"actionExport_Sheets", "type":"delayedPopup" },
             { "itemType":"action", "name":"actionSettings", "type":"delayedPopup" }
           ]
         }
