@@ -21,21 +21,38 @@
 #include <string>
 #include <tuple>
 
-namespace SafeRead
+class CSafeFile
 {
-//reads bytes from file, if number of read elements is wrong -> close file and throws
-extern void        FileReadBuffer(void* buffer, std::size_t elemSize, std::size_t numElems, std::FILE* fi);
-extern void        BadFile(std::FILE* fi);
-extern std::string ReadLine(std::FILE* fi);
+public:
+    CSafeFile(const std::string& path);
+    CSafeFile(const CSafeFile&) = delete;
+    CSafeFile(CSafeFile&&) = delete;
+    ~CSafeFile();
 
-//reads formatted line from file, if errors occur -> closes file and throws
+    CSafeFile& operator=(const CSafeFile&) = delete;
+    CSafeFile& operator=(CSafeFile&&) = delete;
+    operator bool() const;
+
+    template<typename...Args>
+    void        LineScanf(Args&&... args);
+    void        ReadBuffer(void* buffer, std::size_t elemSize, std::size_t numElems);
+    void        SafetyCheck();
+    std::string ReadLine();
+
+private:
+    void BadFile();
+    void Close();
+
+    std::FILE* m_file = nullptr;
+};
+
+//--------------------------------------------------------
 template<typename...Args>
-void FileLineScanf(std::FILE* fi, Args&&... args)
+void CSafeFile::LineScanf(Args&&... args)
 {
-    if(std::sscanf(ReadLine(fi).c_str(), args...) != sizeof...(args)-1)
-        BadFile(fi);
+    SafetyCheck();
+    if(std::sscanf(ReadLine().c_str(), args...) != sizeof...(args)-1)
+        BadFile();
 }
-
-}//namespace SafeRead
 
 #endif // SAFEREAD_H

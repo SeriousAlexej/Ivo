@@ -31,9 +31,8 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
 {
     std::setlocale(LC_NUMERIC, "C");
 
-    FILE* fi = std::fopen(filename.toStdString().c_str(), "rb");
-    if(!fi)
-        SafeRead::BadFile(fi);
+    CSafeFile fi(filename.toStdString());
+    fi.SafetyCheck();
 
     std::vector<glm::vec3>                      vertices3D;
     std::vector<glm::vec2>                      offsets;
@@ -42,16 +41,16 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     std::unordered_map<unsigned, std::string>   materialNames;
     std::unordered_map<unsigned, PDO_Part>      parts;
 
-    SafeRead::ReadLine(fi);//# Pepakura Designer Work Info ver 2
-    SafeRead::ReadLine(fi);//#
-    SafeRead::ReadLine(fi);//
-    SafeRead::ReadLine(fi);//version 2
-    SafeRead::ReadLine(fi);//min_version 2
-    SafeRead::ReadLine(fi);//
-    SafeRead::ReadLine(fi);//model %f %f %f %f %f %f
+    fi.ReadLine();//# Pepakura Designer Work Info ver 2
+    fi.ReadLine();//#
+    fi.ReadLine();//
+    fi.ReadLine();//version 2
+    fi.ReadLine();//min_version 2
+    fi.ReadLine();//
+    fi.ReadLine();//model %f %f %f %f %f %f
 
     int solids = 0;
-    SafeRead::FileLineScanf(fi, "solids %d", &solids);
+    fi.LineScanf("solids %d", &solids);
     for(int i=0; i<solids; i++)
     {
         std::size_t prevFacesSize = faces.size();
@@ -60,31 +59,31 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
         bool skip = false;
         {
             int doNotSkip = 1;
-            SafeRead::ReadLine(fi);//solid
-            SafeRead::ReadLine(fi);//name
-            SafeRead::FileLineScanf(fi, "%d", &doNotSkip);
+            fi.ReadLine();//solid
+            fi.ReadLine();//name
+            fi.LineScanf("%d", &doNotSkip);
             skip = doNotSkip == 0;
         }
 
         int vertices = 0;
-        SafeRead::FileLineScanf(fi, "vertices %d", &vertices);
+        fi.LineScanf("vertices %d", &vertices);
         for(int j=0; j<vertices; j++)
         {
             glm::vec3 vert(0.0f, 0.0f, 0.0f);
-            SafeRead::FileLineScanf(fi, "%f %f %f", &vert.x, &vert.y, &vert.z);
+            fi.LineScanf("%f %f %f", &vert.x, &vert.y, &vert.z);
             //vert.y *= -1.0f;
             if(!skip)
                 vertices3D.push_back(vert);
         }
 
         int numFaces = 0;
-        SafeRead::FileLineScanf(fi, "faces %d", &numFaces);
+        fi.LineScanf("faces %d", &numFaces);
         for(int j=0; j<numFaces; j++)
         {
             int numvertices = 0;
             int matID = 0;
             int partID = 0;
-            SafeRead::FileLineScanf(fi, "%d %d %*f %*f %*f %*f %d", &matID, &partID, &numvertices);
+            fi.LineScanf("%d %d %*f %*f %*f %*f %d", &matID, &partID, &numvertices);
 
             PDO_Face face;
             face.id = prevFacesSize + j;
@@ -96,7 +95,7 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
                 PDO_2DVertex vert;
                 std::size_t vert3dindex;
                 int hasFlap;
-                SafeRead::FileLineScanf(fi, "%zd %f %f %f %f %d %*d %f", &vert3dindex, &vert.pos.x, &vert.pos.y, &vert.uv.x, &vert.uv.y, &hasFlap, &vert.flapLength);
+                fi.LineScanf("%zd %f %f %f %f %d %*d %f", &vert3dindex, &vert.pos.x, &vert.pos.y, &vert.uv.x, &vert.uv.y, &hasFlap, &vert.flapLength);
                 vert.index3Dvert = vert3dindex + prevVerticesSize;
                 vert.hasFlap = (hasFlap != 0);
                 vert.pos.y *= -1.0f;
@@ -110,12 +109,12 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
         }
 
         int numEdges = 0;
-        SafeRead::FileLineScanf(fi, "edges %d", &numEdges);
+        fi.LineScanf("edges %d", &numEdges);
         for(int j=0; j<numEdges; j++)
         {
             PDO_Edge edge;
             int snapped;
-            SafeRead::FileLineScanf(fi, "%d %d %zd %zd %*d %d", &edge.face1ID, &edge.face2ID, &edge.vtx1ID, &edge.vtx2ID, &snapped);
+            fi.LineScanf("%d %d %zd %zd %*d %d", &edge.face1ID, &edge.face2ID, &edge.vtx1ID, &edge.vtx2ID, &snapped);
             edge.face1ID += static_cast<int>(prevFacesSize);
             if(edge.face2ID >= 0)
                 edge.face2ID += static_cast<int>(prevFacesSize);
@@ -136,17 +135,17 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
         }
     }
 
-    SafeRead::ReadLine(fi);//defaultmaterial
-    SafeRead::ReadLine(fi);//material
-    SafeRead::ReadLine(fi);//
-    SafeRead::ReadLine(fi);//default material settings, ignore
+    fi.ReadLine();//defaultmaterial
+    fi.ReadLine();//material
+    fi.ReadLine();//
+    fi.ReadLine();//default material settings, ignore
 
     int materials = 0;
-    SafeRead::FileLineScanf(fi, "materials %d", &materials);
+    fi.LineScanf("materials %d", &materials);
     for(int j=0; j<materials; j++)
     {
-        SafeRead::ReadLine(fi);//material
-        std::string matName = SafeRead::ReadLine(fi);
+        fi.ReadLine();//material
+        std::string matName = fi.ReadLine();
         if(matName.empty())
         {
             matName = std::string("<unnamed_material_") + std::to_string(j+1) + ">";
@@ -155,23 +154,22 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
 
         int hasTexture = 0;
         float colR, colG, colB;
-        SafeRead::FileLineScanf(fi, "%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
+        fi.LineScanf("%*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %*f %f %f %f %*d %d", &colR, &colG, &colB, &hasTexture);
 
         m_textures[j] = std::string("<imported_") + std::to_string(j+1) + ">";
 
         if(hasTexture != 0)
         {
-            SafeRead::ReadLine(fi);//
+            fi.ReadLine();//
 
             int texWidth=0;
             int texHeight=0;
 
-            SafeRead::FileLineScanf(fi, "%d %d", &texWidth, &texHeight);
+            fi.LineScanf("%d %d", &texWidth, &texHeight);
 
             std::unique_ptr<unsigned char[]> imgBuffer(new unsigned char[texWidth * texHeight * 3]);
-            SafeRead::FileReadBuffer(imgBuffer.get(), sizeof(unsigned char), texWidth * texHeight * 3, fi);
-
-            SafeRead::ReadLine(fi);//
+            fi.ReadBuffer(imgBuffer.get(), sizeof(unsigned char), texWidth * texHeight * 3);
+            fi.ReadLine();
 
             m_textureImages[j].reset(new QImage(texWidth, texHeight, QImage::Format_RGB32));
 
@@ -190,24 +188,24 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     }
 
     int numParts = 0;
-    SafeRead::FileLineScanf(fi, "parts %d", &numParts);
+    fi.LineScanf("parts %d", &numParts);
     for(int j=0; j<numParts; j++)
     {
         glm::vec2 offs;
-        SafeRead::FileLineScanf(fi, "%*d %f %f %*f %*f", &offs.x, &offs.y);
+        fi.LineScanf("%*d %f %f %*f %*f", &offs.x, &offs.y);
         offs.y *= -1.0f;
 
         offsets.push_back(offs);
     }
 
     int texts = 0;
-    SafeRead::FileLineScanf(fi, "text %d", &texts);
+    fi.LineScanf("text %d", &texts);
     for(int j=0; j<texts; ++j)
     {
-        SafeRead::ReadLine(fi);//%d //???
-        SafeRead::ReadLine(fi);//font name
-        SafeRead::ReadLine(fi);//string
-        SafeRead::ReadLine(fi);//params...
+        fi.ReadLine();//%d //???
+        fi.ReadLine();//font name
+        fi.ReadLine();//string
+        fi.ReadLine();//params...
     }
 
     int pageType = 0;
@@ -215,37 +213,35 @@ void CMainWindow::LoadFromPDOv2_0(const QString& filename)
     float scale3d = 1.0f;
     glm::vec2 margins(0.0f, 0.0f);
 
-    SafeRead::ReadLine(fi);//info
-    SafeRead::ReadLine(fi);//key
-    SafeRead::ReadLine(fi);//iLlevel
-    SafeRead::FileLineScanf(fi, "dMag3d %f", &scale3d);
-    SafeRead::FileLineScanf(fi, "dMag2d %f", &scale2d);
-    SafeRead::ReadLine(fi);//"dTenkaizuX %f
-    SafeRead::ReadLine(fi);//"dTenkaizuY %f
-    SafeRead::ReadLine(fi);//"dTenkaizuWidth %f"  - 2D pattern width
-    SafeRead::ReadLine(fi);//"dTenkaizuHeight %f" - 2D pattern height
-    SafeRead::ReadLine(fi);//"dTenkaizuMargin %f
-    SafeRead::ReadLine(fi);//"bReverse %d
-    SafeRead::ReadLine(fi);//"bFinished %d
-    SafeRead::ReadLine(fi);//"iAngleEps %d
-    SafeRead::ReadLine(fi);//"iTaniLineType %d
-    SafeRead::ReadLine(fi);//"iYamaLineType %d
-    SafeRead::ReadLine(fi);//"iCutLineType %d
-    SafeRead::ReadLine(fi);//"bTextureCoodinates %d
-    SafeRead::ReadLine(fi);//"bDrawFlap %d"           - show flaps
-    SafeRead::ReadLine(fi);//"bDrawNumber %d"         - show edge ID
-    SafeRead::ReadLine(fi);//"bUseMaterial %d
-    SafeRead::ReadLine(fi);//"iEdgeNumberFontSize %d" - edge ID font size
-    SafeRead::ReadLine(fi);//"bNorishiroReverse %d
-    SafeRead::ReadLine(fi);//"bEdgeIdReverse %d"      - place edge ID outside face
-    SafeRead::ReadLine(fi);//"bEnableLineAlpha %d
-    SafeRead::ReadLine(fi);//"dTextureLineAlpha %f
-    SafeRead::ReadLine(fi);//"bCullEdge %d
-    SafeRead::FileLineScanf(fi, "iPageType %d", &pageType);//"iPageType %d
-    SafeRead::FileLineScanf(fi, "dPageMarginSide %f", &margins.x);
-    SafeRead::FileLineScanf(fi, "dPageMarginTop %f", &margins.y);
-
-    std::fclose(fi);
+    fi.ReadLine();//info
+    fi.ReadLine();//key
+    fi.ReadLine();//iLlevel
+    fi.LineScanf("dMag3d %f", &scale3d);
+    fi.LineScanf("dMag2d %f", &scale2d);
+    fi.ReadLine();//"dTenkaizuX %f
+    fi.ReadLine();//"dTenkaizuY %f
+    fi.ReadLine();//"dTenkaizuWidth %f"  - 2D pattern width
+    fi.ReadLine();//"dTenkaizuHeight %f" - 2D pattern height
+    fi.ReadLine();//"dTenkaizuMargin %f
+    fi.ReadLine();//"bReverse %d
+    fi.ReadLine();//"bFinished %d
+    fi.ReadLine();//"iAngleEps %d
+    fi.ReadLine();//"iTaniLineType %d
+    fi.ReadLine();//"iYamaLineType %d
+    fi.ReadLine();//"iCutLineType %d
+    fi.ReadLine();//"bTextureCoodinates %d
+    fi.ReadLine();//"bDrawFlap %d"           - show flaps
+    fi.ReadLine();//"bDrawNumber %d"         - show edge ID
+    fi.ReadLine();//"bUseMaterial %d
+    fi.ReadLine();//"iEdgeNumberFontSize %d" - edge ID font size
+    fi.ReadLine();//"bNorishiroReverse %d
+    fi.ReadLine();//"bEdgeIdReverse %d"      - place edge ID outside face
+    fi.ReadLine();//"bEnableLineAlpha %d
+    fi.ReadLine();//"dTextureLineAlpha %f
+    fi.ReadLine();//"bCullEdge %d
+    fi.LineScanf("iPageType %d", &pageType);//"iPageType %d
+    fi.LineScanf("dPageMarginSide %f", &margins.x);
+    fi.LineScanf("dPageMarginTop %f", &margins.y);
 
     //pdo v2 likes to store quads and such...
     PdoTools::TriangulateFaces(faces, edges);

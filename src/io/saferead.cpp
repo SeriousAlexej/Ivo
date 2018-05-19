@@ -18,28 +18,40 @@
 #include <string>
 #include <cstdio>
 #include <stdexcept>
+#include "saferead.h"
 
-namespace SafeRead
+CSafeFile::CSafeFile(const std::string& path)
 {
-
-void BadFile(std::FILE* fi)
-{
-    if(fi)
-        std::fclose(fi);
-    throw std::logic_error("Error reading from file!");
+    m_file = std::fopen(path.c_str(), "rb");
 }
 
-std::string ReadLine(std::FILE* fi)
+CSafeFile::~CSafeFile()
+{
+    Close();
+}
+
+CSafeFile::operator bool() const
+{
+    return m_file != nullptr;
+}
+
+void CSafeFile::BadFile()
+{
+    Close();
+    throw std::runtime_error("Error reading from file!");
+}
+
+std::string CSafeFile::ReadLine()
 {
     std::string line = "";
     char tmp;
     while(1)
     {
-        if(std::feof(fi))
+        if(std::feof(m_file))
             break;
-        size_t read = std::fread(&tmp, 1, 1, fi);
+        size_t read = std::fread(&tmp, 1, 1, m_file);
         if(read != 1)
-            BadFile(fi);
+            BadFile();
         if(tmp == '\n')
             break;
         line += (tmp);
@@ -47,10 +59,23 @@ std::string ReadLine(std::FILE* fi)
     return line;
 }
 
-void FileReadBuffer(void* buffer, std::size_t elemSize, std::size_t numElems, std::FILE* fi)
+void CSafeFile::ReadBuffer(void* buffer, std::size_t elemSize, std::size_t numElems)
 {
-    if(std::fread(buffer, elemSize, numElems, fi) != numElems)
-        BadFile(fi);
+    SafetyCheck();
+
+    if(std::fread(buffer, elemSize, numElems, m_file) != numElems)
+        BadFile();
 }
 
-}//namespace SafeRead
+void CSafeFile::SafetyCheck()
+{
+    if(!m_file)
+        throw std::runtime_error("File is not opened!");
+}
+
+void CSafeFile::Close()
+{
+    if(m_file)
+        std::fclose(m_file);
+    m_file = nullptr;
+}

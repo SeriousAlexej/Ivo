@@ -32,14 +32,14 @@ install:
   - cd TabToolbar
   - mkdir build
   - cd build
-  - set CMAKE_PREFIX_PATH=C:\Qt\5.7\msvc2015\
+  - set CMAKE_PREFIX_PATH=C:\Qt\5.9.5\msvc2015\
   - cmake -G "Visual Studio 14 2015" -DCMAKE_INSTALL_PREFIX="c:/projects/tabtoolbar_install" ..
   - cmake --build . --target install --config Release
 #done
   - cd c:\projects\ivo
 
 before_build:
-  - set CMAKE_PREFIX_PATH=C:\Qt\5.7\msvc2015\
+  - set CMAKE_PREFIX_PATH=C:\Qt\5.9.5\msvc2015\
   - cmake -G "Visual Studio 14 2015" -Dassimp_ROOT="c:/projects/assimp_install" -Dglm_ROOT="c:/projects/glm" -DTabToolbar_ROOT="c:/projects/tabtoolbar_install" ./src
 
 build:
@@ -54,7 +54,7 @@ after_build:
   - copy .\Release\Ivo.exe .\deploy\Ivo.exe
   - copy ..\tabtoolbar_install\bin\*.dll .\deploy\
   - copy ..\assimp_install\bin\*.dll .\deploy\
-  - cd C:\Qt\5.7\msvc2015\bin
+  - cd C:\Qt\5.9.5\msvc2015\bin
   - windeployqt.exe c:\projects\ivo\deploy\Ivo.exe
 
 artifacts:

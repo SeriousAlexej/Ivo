@@ -17,9 +17,10 @@
 */
 #include <QString>
 #include <glm/common.hpp>
-#include <cstring>
+#include <array>
 #include "pdotools.h"
 #include "geometric/compgeom.h"
+#include "io/saferead.h"
 
 using glm::leftTurn;
 using glm::rightTurn;
@@ -85,23 +86,25 @@ namespace PdoTools
 
 int GetVersionPDO(const QString& filename)
 {
-    FILE* f = std::fopen(filename.toStdString().c_str(), "rb");
-    if(!f)
+    std::string header;
+
+    try
+    {
+        std::array<char, 36> head;
+        CSafeFile f(filename.toStdString());
+        f.ReadBuffer(head.data(), sizeof(char), head.size());
+        head.back() = '\0';
+        header = head.data();
+    }
+    catch(const std::runtime_error&)
+    {
         return -1;
+    }
 
-    char head[36];
-    head[35] = '\0';
-    size_t read = std::fread(head, sizeof(char), 35, f);
-    std::fclose(f);
-
-    if(read != 35)
-        return -1;
-
-    if(std::strcmp(head, "# Pepakura Designer Work Info ver 2") == 0)
+    if(header == "# Pepakura Designer Work Info ver 2")
         return 20;
 
-    head[10] = '\0';
-    if(std::strcmp(head, "version 3\n") == 0)
+    if(header.substr(0, 10) == "version 3\n")
         return 30;
 
     return -1;
