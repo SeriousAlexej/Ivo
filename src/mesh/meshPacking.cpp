@@ -112,7 +112,7 @@ bool CMesh::PackGroups(bool undoable)
     std::unique_ptr<CIvoCommand> cmd(new CIvoCommand());
     CIvoCommand rotationCommand;
 
-    std::vector<std::shared_ptr<SAABBox2D>> bboxes;
+    std::vector<std::unique_ptr<SAABBox2D>> bboxes;
     for(auto& grp : m_groups)
     {
         const SOBBox groupOOBBox = GetGroupOBBox(grp, bboxPrice);
@@ -161,7 +161,7 @@ bool CMesh::PackGroups(bool undoable)
     while(prevSize != bboxes.size())
     {
         prevSize = bboxes.size();
-        std::vector<std::shared_ptr<SAABBox2D>> packed = BinPacking::PackFCNR(bboxes, binWidth, binHeight);
+        std::vector<std::unique_ptr<SAABBox2D>> packed = BinPacking::PackFCNR(bboxes, binWidth, binHeight);
 
         for(auto& boxPtr : packed)
         {

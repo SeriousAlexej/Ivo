@@ -23,7 +23,7 @@
 
 namespace BinPacking
 {
-using AABBoxPtr = std::shared_ptr<SAABBox2D>;
+using AABBoxPtr = std::unique_ptr<SAABBox2D>;
 
 std::vector<AABBoxPtr> PackFCNR(std::vector<AABBoxPtr>& bboxes, float binWidth, float binHeight);
 }
