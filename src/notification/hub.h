@@ -38,8 +38,8 @@ public:
     {
         TReactions& reactions = g_subscriptions[std::type_index(typeid(typename std::decay<TNotification>::type))];
         for(auto it = reactions.begin(); it != reactions.end(); it++)
-            for(TCallback& t : (*it).second)
-                t();
+            for(TCallback& cb : (*it).second)
+                cb();
     }
 
 private:
