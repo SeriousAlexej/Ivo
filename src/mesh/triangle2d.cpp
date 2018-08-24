@@ -15,6 +15,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ivo.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include "geometric/compgeom.h"

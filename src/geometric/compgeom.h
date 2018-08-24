@@ -24,6 +24,7 @@
 
 namespace glm
 {
+float   sign(float f);
 int     crossSign(const ivec2& v1, const ivec2& v2);
 float   cross(const vec2& v1, const vec2& v2);
 float   angleFromTo(const vec2& v1, const vec2& v2);

@@ -21,6 +21,15 @@
 #include <glm/vec3.hpp>
 #include "geometric/compgeom.h"
 
+float glm::sign(float f)
+{
+    if(f < 0.0f)
+        return -1.0f;
+    if(f > 0.0f)
+        return 1.0f;
+    return 0.0f;
+}
+
 int glm::crossSign(const glm::ivec2& v1, const glm::ivec2& v2)
 {
     int64_t v1x = static_cast<int64_t>(v1.x);
